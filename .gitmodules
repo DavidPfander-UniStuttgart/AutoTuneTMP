@@ -1,0 +1,3 @@
+[submodule "cppjit"]
+	path = cppjit
+	url = https://github.com/DavidPfander-UniStuttgart/cppjit
