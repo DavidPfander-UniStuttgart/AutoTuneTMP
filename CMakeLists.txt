@@ -13,6 +13,9 @@ include_directories(include)
 #However, the file(GLOB...) allows for wildcard additions:
 set(SOURCES_UNROLL_LOOP "examples/unroll_example.cpp")
 add_executable(unroll_example ${SOURCES_UNROLL_LOOP})
+
+set(SOURCES_LOOP_NEST "examples/loop_nest_example.cpp")
+add_executable(loop_nest_example ${SOURCES_LOOP_NEST})
 # target_link_libraries(hello_world_jit dl)
 
 # file(GLOB SOURCES_TEST "test/test_cppjit.cpp")
