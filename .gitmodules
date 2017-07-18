@@ -1,3 +1,6 @@
 [submodule "cppjit"]
 	path = dependencies/cppjit
 	url = https://github.com/DavidPfander-UniStuttgart/cppjit
+[submodule "dependencies/jsoncpp"]
+	path = dependencies/jsoncpp
+	url = git@github.com:DavidPfander-UniStuttgart/jsoncpp.git
