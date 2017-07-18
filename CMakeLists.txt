@@ -2,23 +2,43 @@ cmake_minimum_required(VERSION 3.2)
 
 project(cppjit)
 
-# find_package(PkgConfig REQUIRED)
-
 include_directories(include)
 
 set(CMAKE_CXX_FLAGS "-std=c++14 -g -Wall -Wextra ${CMAKE_CXX_FLAGS}")
 
 include_directories(include)
 
-#However, the file(GLOB...) allows for wildcard additions:
+##################################
+# add files of jsoncpp dependency
+##################################
+set(SOURCES_JSONCPP "dependencies/jsoncpp/src/dict_node.cpp" "dependencies/jsoncpp/src/id_node.cpp" "dependencies/jsoncpp/src/json.cpp" "dependencies/jsoncpp/src/json_exception.cpp" "dependencies/jsoncpp/src/list_node.cpp" "dependencies/jsoncpp/src/node.cpp" "dependencies/jsoncpp/src/text_node.cpp")
+
+set(HEADERS_JSONCPP "dependencies/jsoncpp/src/dict_node.hpp" "dependencies/jsoncpp/src/id_node.hpp" "dependencies/jsoncpp/src/json.hpp" "dependencies/jsoncpp/src/json_exception.hpp" "dependencies/jsoncpp/src/list_node.hpp" "dependencies/jsoncpp/src/node.hpp" "dependencies/jsoncpp/src/text_node.hpp" "dependencies/jsoncpp/src/token.hpp")
+
+add_library(jsoncpp SHARED ${SOURCES_JSONCPP})
+add_library(jsoncpp_static STATIC ${SOURCES_JSONCPP})
+
+install(TARGETS jsoncpp DESTINATION lib)
+install(TARGETS jsoncpp_static DESTINATION lib)
+install(FILES ${HEADERS_JSONCPP} DESTINATION include)
+##############
+# end jsoncpp
+##############
+
+# cppjit is header only, it is therefore not built
+
+#################
+# build examples
+#################
+
 set(SOURCES_UNROLL_LOOP "examples/unroll_example.cpp")
 add_executable(unroll_example ${SOURCES_UNROLL_LOOP})
+install(TARGETS unroll_example DESTINATION examples)
 
 set(SOURCES_LOOP_NEST "examples/loop_nest_example.cpp")
 add_executable(loop_nest_example ${SOURCES_LOOP_NEST})
-# target_link_libraries(hello_world_jit dl)
+install(TARGETS loop_nest_example DESTINATION examples)
 
-# file(GLOB SOURCES_TEST "test/test_cppjit.cpp")
-# add_executable(test_cppjit ${SOURCES_TEST})
-# target_link_libraries(test_cppjit dl)
-
+#################
+# end examples
+#################
