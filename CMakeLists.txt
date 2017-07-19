@@ -40,6 +40,11 @@ set(SOURCES_LOOP_NEST "examples/loop_nest_example.cpp")
 add_executable(loop_nest_example ${SOURCES_LOOP_NEST})
 install(TARGETS loop_nest_example DESTINATION examples)
 
+set(SOURCES_UNROLL_LOOP_AUTOTUNE_INLINE "examples/unroll_loop_autotune_inline.cpp")
+add_executable(unroll_example_autotune_inline ${SOURCES_UNROLL_LOOP_AUTOTUNE_INLINE})
+target_link_libraries(unroll_example_autotune_inline dl)
+install(TARGETS unroll_example_autotune_inline DESTINATION examples)
+
 set(SOURCES_UNROLL_LOOP_AUTOTUNE "examples/unroll_loop_autotune.cpp")
 add_executable(unroll_example_autotune ${SOURCES_UNROLL_LOOP_AUTOTUNE})
 target_link_libraries(unroll_example_autotune dl)
