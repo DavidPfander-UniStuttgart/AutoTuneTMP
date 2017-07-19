@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 
+#include "cppjit/cppjit.hpp"
+
 #include "parameter.hpp"
 
 // #define DEFINE_KERNEL(kernel_name)
@@ -44,12 +46,25 @@ public:
 };
 }
 
-#define AUTOTUNE_DEFINE_KERNEL(kernel_name)                                    \
+#define AUTOTUNE_DECLARE_KERNEL(signature, kernel_name)                        \
+  CPPJIT_DECLARE_KERNEL(signature, kernel_name)                                \
+  namespace autotune {                                                         \
+  namespace kernels {                                                          \
+  extern kernel kernel_name;                                     \
+  } /* namespace kernels */                                                    \
+  } /* namespace autotune */
+
+#define AUTOTUNE_DEFINE_KERNEL(signature, kernel_name)                         \
+  CPPJIT_DEFINE_KERNEL(signature, kernel_name)                                 \
   namespace autotune {                                                         \
   namespace kernels {                                                          \
   kernel kernel_name(#kernel_name);                                            \
   } /* namespace kernels */                                                    \
   } /* namespace autotune */
+
+#define AUTOTUNE_DECLARE_DEFINE_KERNEL(signature, kernel_name)                 \
+  AUTOTUNE_DECLARE_KERNEL(signature, kernel_name)                              \
+  AUTOTUNE_DEFINE_KERNEL(signature, kernel_name)
 
 // constructor of struct is used to run code before main
 #define AUTOTUNE_ADD_PARAMETER(kernel_name, parameter_name, values)            \
