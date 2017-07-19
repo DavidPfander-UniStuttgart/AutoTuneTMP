@@ -4,9 +4,10 @@ project(cppjit)
 
 include_directories(include)
 
-set(CMAKE_CXX_FLAGS "-std=c++14 -g -Wall -Wextra ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++14 -g -Wall -Wextra -Wno-unused-parameter ${CMAKE_CXX_FLAGS}")
 
-include_directories(include)
+include_directories(src)
+include_directories(dependencies/cppjit/include)
 
 ##################################
 # add files of jsoncpp dependency
@@ -38,6 +39,11 @@ install(TARGETS unroll_example DESTINATION examples)
 set(SOURCES_LOOP_NEST "examples/loop_nest_example.cpp")
 add_executable(loop_nest_example ${SOURCES_LOOP_NEST})
 install(TARGETS loop_nest_example DESTINATION examples)
+
+set(SOURCES_UNROLL_LOOP_AUTOTUNE "examples/unroll_loop_autotune.cpp")
+add_executable(unroll_example_autotune ${SOURCES_UNROLL_LOOP_AUTOTUNE})
+target_link_libraries(unroll_example_autotune dl)
+install(TARGETS unroll_example_autotune DESTINATION examples)
 
 #################
 # end examples
