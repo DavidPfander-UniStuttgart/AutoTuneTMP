@@ -44,13 +44,18 @@ public:
     }
   }
 };
+
+template <class F, class... Ts> void tune(F f, Ts... args) {
+    // brute-force tuner
+    
+}
 }
 
 #define AUTOTUNE_DECLARE_KERNEL(signature, kernel_name)                        \
   CPPJIT_DECLARE_KERNEL(signature, kernel_name)                                \
   namespace autotune {                                                         \
   namespace kernels {                                                          \
-  extern kernel kernel_name;                                     \
+  extern kernel kernel_name;                                                   \
   } /* namespace kernels */                                                    \
   } /* namespace autotune */
 

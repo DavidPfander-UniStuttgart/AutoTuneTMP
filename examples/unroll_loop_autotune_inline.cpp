@@ -26,7 +26,7 @@ int main(void) {
   builder->set_verbose(true);
   builder->set_include_paths("-I src");
 
-  compile_inline_unrolling_kernel(
+  cppjit::compile_inline_unrolling_kernel(
       "#include \"opttmp/loop/unroll_loop.hpp\"\n"
       "#include <vector>\n"
       "extern \"C\" void unrolling_kernel(std::vector<double> &arr, const "
@@ -40,7 +40,7 @@ int main(void) {
 
   autotune::kernels::unrolling_kernel.print_parameters();
 
-  unrolling_kernel(arr, N);
+  cppjit::unrolling_kernel(arr, N);
 
   return 0;
 }
