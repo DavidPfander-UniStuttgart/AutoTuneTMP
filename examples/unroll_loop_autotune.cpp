@@ -12,9 +12,6 @@
 AUTOTUNE_DECLARE_DEFINE_KERNEL(void(std::vector<double> &, const size_t),
                                unrolling_kernel)
 
-AUTOTUNE_ADD_PARAMETER(unrolling_kernel, UNROLL_LOOP,
-                       std::vector<std::string>({"0", "1"}))
-
 int main(void) {
   constexpr size_t N = 20;
 
@@ -27,13 +24,21 @@ int main(void) {
   // assuming the example is run from the repository base folder
   builder->set_include_paths("-I src");
 
-  // tune kernel, not that arguments are reused
-  // autotune::tune(unrolling_kernel, arr, N);
+  autotune::unrolling_kernel.add_parameter(
+      "UNROLL_LOOP", std::vector<std::string>({"0", "1"}));
+
+  autotune::unrolling_kernel.add_parameter(
+      "DUMMY_PAR_2", std::vector<std::string>({"0", "1", "2", "3"}));
+
+  autotune::unrolling_kernel.add_parameter(
+      "DUMMY_PAR_3", std::vector<std::string>({"a", "b", "c", "d"}));
+
+  // tune kernel, note that arguments are reused
+  autotune::unrolling_kernel.tune(arr, N);
 
   cppjit::compile_unrolling_kernel("examples/kernels_unroll_loop_autotune/");
 
-  autotune::kernels::unrolling_kernel.print_parameters();
-  cppjit::unrolling_kernel(arr, N);
-
+  autotune::unrolling_kernel.print_parameters();
+  autotune::unrolling_kernel(arr, N);
   return 0;
 }

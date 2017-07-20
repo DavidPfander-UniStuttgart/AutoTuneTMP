@@ -10,11 +10,16 @@ private:
   std::vector<std::string> values;
 
 public:
-  tunable_parameter(std::string name, std::vector<std::string> values)
+  tunable_parameter(const std::string &name,
+                    const std::vector<std::string> &values)
       : name(name), values(values) {}
 
   const std::string &get_name() const { return this->name; }
 
   const std::vector<std::string> &get_values() const { return this->values; }
+
+  const std::string &get_value(size_t i) const { return this->values[i]; }
+
+  size_t size() { return values.size(); }
 };
 }

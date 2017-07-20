@@ -9,11 +9,7 @@
 #include <vector>
 
 AUTOTUNE_DECLARE_DEFINE_KERNEL(void(std::vector<double> &, const size_t),
-                       unrolling_kernel)
-
-
-AUTOTUNE_ADD_PARAMETER(unrolling_kernel, UNROLL_LOOP,
-                       std::vector<std::string>({"0", "1"}))
+                               unrolling_kernel)
 
 int main(void) {
   constexpr size_t N = 50;
@@ -25,6 +21,9 @@ int main(void) {
       cppjit::get_builder_unrolling_kernel());
   builder->set_verbose(true);
   builder->set_include_paths("-I src");
+
+  autotune::unrolling_kernel.add_parameter(
+      "UNROLL_LOOP", std::vector<std::string>({"0", "1"}));
 
   cppjit::compile_inline_unrolling_kernel(
       "#include \"opttmp/loop/unroll_loop.hpp\"\n"
@@ -38,10 +37,9 @@ int main(void) {
       "  }\n"
       "}\n");
 
-  autotune::kernels::unrolling_kernel.print_parameters();
+  autotune::unrolling_kernel.print_parameters();
 
-  cppjit::unrolling_kernel(arr, N);
+  autotune::unrolling_kernel(arr, N);
 
   return 0;
 }
-
