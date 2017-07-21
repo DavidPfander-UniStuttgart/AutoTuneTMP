@@ -83,6 +83,8 @@ public:
 
   R operator()(Args... args);
 
+  void compile(const std::string &kernel_folder);
+
   // template <class F> F f,
   void tune(Args... args) {
     std::vector<size_t> optimal = bruteforce(this, std::forward<Args>(args)...);
@@ -108,6 +110,11 @@ public:
   R autotune::kernel<R, cppjit::detail::pack<Args...>>::operator()(            \
       Args... args) {                                                          \
     return cppjit::kernel_name(std::forward<Args>(args)...);                   \
+  }                                                                            \
+  template <typename R, typename... Args>                                      \
+  void autotune::kernel<R, cppjit::detail::pack<Args...>>::compile(            \
+      const std::string &kernel_folder) {                                      \
+    cppjit::compile_##kernel_name(kernel_folder);                              \
   }                                                                            \
   namespace autotune {                                                         \
   kernel<cppjit::detail::function_traits<kernel_signature>::return_type,       \

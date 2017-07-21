@@ -36,7 +36,7 @@ int main(void) {
   // tune kernel, note that arguments are reused
   autotune::unrolling_kernel.tune(arr, N);
 
-  cppjit::compile_unrolling_kernel("examples/kernels_unroll_loop_autotune/");
+  autotune::unrolling_kernel.compile("examples/kernels_unroll_loop_autotune/");
 
   autotune::unrolling_kernel.print_parameters();
   autotune::unrolling_kernel(arr, N);
