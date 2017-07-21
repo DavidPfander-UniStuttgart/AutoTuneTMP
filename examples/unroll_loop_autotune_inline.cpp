@@ -1,6 +1,6 @@
-#include "opttmp/loop/unroll_loop.hpp"
 #include "autotune/autotune.hpp"
 #include "autotune/parameter.hpp"
+#include "opttmp/loop/unroll_loop.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -15,8 +15,8 @@ int main(void) {
   std::vector<double> arr(N);
   std::fill(arr.begin(), arr.end(), 0.0);
 
-  auto builder = std::static_pointer_cast<cppjit::builder::gcc>(
-      autotune::unrolling_kernel.get_builder());
+  auto builder =
+      autotune::unrolling_kernel.get_builder_as<cppjit::builder::gcc>();
   builder->set_verbose(true);
   builder->set_include_paths("-I src");
 

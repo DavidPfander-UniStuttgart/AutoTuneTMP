@@ -1,6 +1,6 @@
-#include "opttmp/loop/unroll_loop.hpp"
 #include "autotune/autotune.hpp"
 #include "autotune/parameter.hpp"
+#include "opttmp/loop/unroll_loop.hpp"
 
 #include "cppjit/cppjit.hpp"
 
@@ -18,16 +18,14 @@ int main(void) {
   std::vector<double> arr(N);
   std::fill(arr.begin(), arr.end(), 0.0);
 
-  auto builder = std::static_pointer_cast<cppjit::builder::gcc>(
-      autotune::unrolling_kernel.get_builder());
+  auto builder =
+      autotune::unrolling_kernel.get_builder_as<cppjit::builder::gcc>();
   builder->set_verbose(true);
   // assuming the example is run from the repository base folder
   builder->set_include_paths("-I src");
 
   autotune::unrolling_kernel.add_parameter("UNROLL_LOOP", {"0", "1"});
-
   autotune::unrolling_kernel.add_parameter("DUMMY_PAR_2", {"0", "1", "2", "3"});
-
   autotune::unrolling_kernel.add_parameter("DUMMY_PAR_3", {"a", "b", "c", "d"});
 
   // tune kernel, note that arguments are reused
