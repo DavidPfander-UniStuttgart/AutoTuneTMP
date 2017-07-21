@@ -2,8 +2,6 @@
 #include "autotune/autotune.hpp"
 #include "autotune/parameter.hpp"
 
-#include "cppjit/cppjit.hpp"
-
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -18,14 +16,14 @@ int main(void) {
   std::fill(arr.begin(), arr.end(), 0.0);
 
   auto builder = std::static_pointer_cast<cppjit::builder::gcc>(
-      cppjit::get_builder_unrolling_kernel());
+      autotune::unrolling_kernel.get_builder());
   builder->set_verbose(true);
   builder->set_include_paths("-I src");
 
   autotune::unrolling_kernel.add_parameter(
       "UNROLL_LOOP", std::vector<std::string>({"0", "1"}));
 
-  cppjit::compile_inline_unrolling_kernel(
+  autotune::unrolling_kernel.compile_inline(
       "#include \"opttmp/loop/unroll_loop.hpp\"\n"
       "#include <vector>\n"
       "extern \"C\" void unrolling_kernel(std::vector<double> &arr, const "

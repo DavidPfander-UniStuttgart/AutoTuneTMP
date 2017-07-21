@@ -83,7 +83,20 @@ public:
 
   R operator()(Args... args);
 
-  void compile(const std::string &kernel_folder);
+  void compile(const std::string &source_dir = "");
+
+  void compile_inline(const std::string &source);
+
+  bool is_compiled();
+
+  void set_builder(std::shared_ptr<cppjit::builder::builder> builder_);
+
+  std::shared_ptr<cppjit::builder::builder> get_builder();
+
+  template <class builder_class>
+  std::shared_ptr<builder_class> get_builder_as();
+
+  void clear();
 
   // template <class F> F f,
   void tune(Args... args) {
@@ -113,8 +126,37 @@ public:
   }                                                                            \
   template <typename R, typename... Args>                                      \
   void autotune::kernel<R, cppjit::detail::pack<Args...>>::compile(            \
-      const std::string &kernel_folder) {                                      \
-    cppjit::compile_##kernel_name(kernel_folder);                              \
+      const std::string &source_dir) {                                         \
+    cppjit::kernel_name.compile(source_dir);                                   \
+  }                                                                            \
+  template <typename R, typename... Args>                                      \
+  void autotune::kernel<R, cppjit::detail::pack<Args...>>::compile_inline(     \
+      const std::string &source) {                                             \
+    cppjit::kernel_name.compile_inline(source);                                \
+  }                                                                            \
+  template <typename R, typename... Args>                                      \
+  bool autotune::kernel<R, cppjit::detail::pack<Args...>>::is_compiled() {     \
+    return cppjit::kernel_name.is_compiled();                                  \
+  }                                                                            \
+  template <typename R, typename... Args>                                      \
+  void autotune::kernel<R, cppjit::detail::pack<Args...>>::set_builder(        \
+      std::shared_ptr<cppjit::builder::builder> builder_) {                    \
+    cppjit::kernel_name.set_builder(builder_);                                 \
+  }                                                                            \
+  template <typename R, typename... Args>                                      \
+  std::shared_ptr<cppjit::builder::builder>                                    \
+  autotune::kernel<R, cppjit::detail::pack<Args...>>::get_builder() {          \
+    return cppjit::kernel_name.get_builder();                                  \
+  }                                                                            \
+  template <typename R, typename... Args>                                      \
+  template <typename builder_class>                                            \
+  std::shared_ptr<builder_class>                                               \
+  autotune::kernel<R, cppjit::detail::pack<Args...>>::get_builder_as() {       \
+    return cppjit::kernel_name.get_builder_as<builder_class>();                \
+  }                                                                            \
+  template <typename R, typename... Args>                                      \
+  void autotune::kernel<R, cppjit::detail::pack<Args...>>::clear() {           \
+    cppjit::kernel_name.clear();                                               \
   }                                                                            \
   namespace autotune {                                                         \
   kernel<cppjit::detail::function_traits<kernel_signature>::return_type,       \
