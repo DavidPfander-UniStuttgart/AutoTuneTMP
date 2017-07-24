@@ -21,5 +21,10 @@ public:
   const std::string &get_value(size_t i) const { return this->values[i]; }
 
   size_t size() { return values.size(); }
+
+  std::string to_parameter_source_line(size_t value_index) {
+    std::cout << ("#define " + name + " " + values[value_index] + "\n");
+    return "#define " + name + " " + values[value_index] + "\n";
+  }
 };
 }
