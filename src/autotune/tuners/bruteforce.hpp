@@ -17,7 +17,7 @@ std::vector<size_t> bruteforce(F f, const Args &... args) {
   std::vector<size_t> indices(parameters.size(), 0);
   std::vector<size_t> optimal_indices(parameters.size(), 0);
   // evalute initial vector, always valid
-  f->print_values(values);
+  // f->print_values(values);
   double optimal_duration = evaluate(indices, f, args...);
   std::copy(indices.begin(), indices.end(), optimal_indices.begin());
 

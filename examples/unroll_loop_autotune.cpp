@@ -15,15 +15,11 @@ int main(void) {
   std::vector<double> arr(N);
   std::fill(arr.begin(), arr.end(), 0.0);
 
-  auto builder =
-      autotune::unrolling_kernel.get_builder_as<cppjit::builder::gcc>();
-  builder->set_verbose(true);
-  // assuming the example is run from the repository base folder
-  builder->set_include_paths("-I src");
-
   autotune::unrolling_kernel.set_verbose(true);
 
-  // autotune::unrolling_kernel.set_source_inline("...");
+  // assuming the example is run from the repository base folder
+  autotune::unrolling_kernel.get_builder_as<cppjit::builder::gcc>()
+      ->set_include_paths("-I src");
 
   autotune::unrolling_kernel.set_source_dir(
       "examples/kernels_unroll_loop_autotune");
@@ -35,20 +31,16 @@ int main(void) {
   // autotune::unrolling_kernel.compile("examples/kernels_unroll_loop_autotune/");
 
   // tune kernel, note that arguments are reused
-  // autotune::unrolling_kernel.tune(arr, N);
+  std::vector<size_t> optimal_indices = autotune::unrolling_kernel.tune(arr, N);
 
-  autotune::unrolling_kernel.print_parameters();
+  autotune::unrolling_kernel.print_values(optimal_indices);
+  // autotune::unrolling_kernel.print_parameters();
 
   // std::cout << "now compiling and running..." << std::endl;
 
-  std::vector<size_t> indices = {0, 0, 0};
-  autotune::unrolling_kernel.create_parameter_file(indices);
-  autotune::unrolling_kernel.compile();
-  autotune::unrolling_kernel(arr, N);
-
-  indices = {1, 0, 0}; //CONTINUE: second invocation fails!
-  autotune::unrolling_kernel.create_parameter_file(indices);
-  autotune::unrolling_kernel.compile();
-  autotune::unrolling_kernel(arr, N);
+  // std::vector<size_t> indices = {0, 0, 0};
+  // autotune::unrolling_kernel.create_parameter_file(indices);
+  // autotune::unrolling_kernel.compile();
+  // autotune::unrolling_kernel(arr, N);
   return 0;
 }

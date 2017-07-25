@@ -34,7 +34,7 @@ public:
   kernel(const std::string &kernel_name)
       : verbose(false), kernel_name(kernel_name) {}
 
-  void set_verbose(bool verbose_) { verbose = verbose_; }
+  void set_verbose(bool verbose_);
 
   void set_source_inline(const std::string &source_);
 
@@ -85,13 +85,43 @@ public:
     }
   }
 
-  void print_values(std::vector<std::string> &values) {
-    std::cout << "current values: ";
-    for (size_t i = 0; i < values.size(); i++) {
+  void print_values(const std::vector<size_t> &indices) {
+    std::vector<size_t> padding(indices.size());
+    for (size_t i = 0; i < parameters.size(); i++) {
+      padding[i] = std::max(parameters[i].get_name().size(),
+                            parameters[i].get_value(indices[i]).size());
+    }
+    std::cout << "parameter name  | ";
+    for (size_t i = 0; i < parameters.size(); i++) {
       if (i > 0) {
         std::cout << ", ";
       }
-      std::cout << values[i];
+      const std::string &name = parameters[i].get_name();
+      std::cout << name;
+      // add padding
+      size_t cur_padding = padding[i] - name.size();
+
+      std::stringstream ss;
+      for (size_t j = 0; j < cur_padding; j++) {
+        ss << " ";
+      }
+      std::cout << ss.str();
+    }
+    std::cout << std::endl;
+    std::cout << "parameter value | ";
+    for (size_t i = 0; i < parameters.size(); i++) {
+      if (i > 0) {
+        std::cout << ", ";
+      }
+      const std::string &value = parameters[i].get_value(indices[i]);
+      std::cout << value;
+      // add padding
+      size_t cur_padding = padding[i] - value.size();
+      std::stringstream ss;
+      for (size_t j = 0; j < cur_padding; j++) {
+        ss << " ";
+      }
+      std::cout << ss.str();
     }
     std::cout << std::endl;
   }
@@ -117,14 +147,9 @@ public:
     std::ofstream parameter_file(source_dir + "parameters.hpp");
     parameter_file << "#pragma once" << std::endl;
     for (size_t i = 0; i < parameters.size(); i++) {
-        std::cout << "name: " << parameters[i].get_name() << " index: " << indices[i]
-                << std::endl;
       parameter_file << parameters[i].to_parameter_source_line(indices[i]);
     }
     parameter_file.close();
-    std::string cat_cmd("cat " + source_dir + "parameters.hpp");
-    std::cout << "------------------ cat --------------" << std::endl;
-    std::system(cat_cmd.c_str());
   }
 
   void set_builder(std::shared_ptr<cppjit::builder::builder> builder_);
@@ -137,9 +162,10 @@ public:
   void clear();
 
   // template <class F> F f,
-  void tune(Args... args) {
+  std::vector<size_t> tune(Args... args) {
     std::vector<size_t> optimal =
         bruteforce(this, std::forward<Args &>(args)...);
+    return optimal;
   }
 };
 }
@@ -159,6 +185,12 @@ public:
   R autotune::kernel<R, cppjit::detail::pack<Args...>>::operator()(            \
       Args... args) {                                                          \
     return cppjit::kernel_name(std::forward<Args>(args)...);                   \
+  }                                                                            \
+  template <typename R, typename... Args>                                      \
+  void autotune::kernel<R, cppjit::detail::pack<Args...>>::set_verbose(        \
+      bool verbose_) {                                                         \
+    verbose = verbose_;                                                        \
+    cppjit::kernel_name.get_builder()->set_verbose(verbose_);                  \
   }                                                                            \
   template <typename R, typename... Args>                                      \
   void autotune::kernel<R, cppjit::detail::pack<Args...>>::compile(            \

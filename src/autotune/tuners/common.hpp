@@ -8,7 +8,10 @@ namespace autotune {
 template <class F, typename... Args>
 double evaluate(const std::vector<size_t> &indices, F f, Args... args) {
 
-  std::cout << "----------------- eval begin ----------------" << std::endl;
+  if (f->is_verbose()) {
+    std::cout << "------ begin eval ------" << std::endl;
+    f->print_values(indices);
+  }
 
   f->create_parameter_file(indices);
 
@@ -22,7 +25,9 @@ double evaluate(const std::vector<size_t> &indices, F f, Args... args) {
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> duration = end - start;
 
-  std::cout << "----------------- eval end ----------------" << std::endl;
+  if (f->is_verbose()) {
+    std::cout << "------- end eval -------" << std::endl;
+  }
 
   return duration.count();
 }
