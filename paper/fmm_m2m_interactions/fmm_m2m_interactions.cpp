@@ -74,8 +74,10 @@ int main(void) {
     one_space_vector[i] = (static_cast<double>(i) + 1.0) / 5.0;
   }
 
-  std::vector<input_data> all_input_data(10000);
+  std::vector<input_data> all_input_data(1);
 
+  //TODO: continue verify initial values != 0
+  
   for (size_t input_index = 0; input_index < all_input_data.size();
        input_index++) {
     for (size_t repetitions = 0; repetitions < 1; repetitions++) {
@@ -101,6 +103,9 @@ int main(void) {
       std::cout << "new interaction kernel  (total w/o old non-multipole "
                    "boundary, ms): "
                 << duration.count() << std::endl;
+
+      // interactor.print_potential_expansions();
+      interactor.print_center_of_masses();
     }
   }
 
