@@ -4,10 +4,13 @@ project(cppjit)
 
 include_directories(include)
 
-set(CMAKE_CXX_FLAGS "-std=c++14 -g -Wall -Wextra -Wno-unused-parameter ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-march=native -mno-vzeroupper -ffast-math -std=c++14 -g -Wall -Wextra -Wno-unused-parameter ${CMAKE_CXX_FLAGS}")
 
 include_directories(src)
 include_directories(dependencies/cppjit/include)
+
+find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_ROOT})
+include_directories(${Vc_INCLUDE_DIR})
 
 ##################################
 # add files of jsoncpp dependency
@@ -52,4 +55,23 @@ install(TARGETS unroll_example_autotune DESTINATION examples)
 
 #################
 # end examples
+#################
+
+#################
+# paper examples
+#################
+
+set(SOURCES_FMM_M2M_INTERACTIONS
+  "paper/fmm_m2m_interactions/fmm_m2m_interactions.cpp"
+  "paper/fmm_m2m_interactions/kernels/m2m_interactions.cpp"
+  "paper/fmm_m2m_interactions/kernels/m2m_kernel.cpp"
+  "paper/fmm_m2m_interactions/kernels/m2m_kernel.cpp"
+  "paper/fmm_m2m_interactions/kernels/m2m_kernel_blocked_interaction.cpp"
+  "paper/fmm_m2m_interactions/kernels/calculate_stencil.cpp"
+)
+add_executable(fmm_m2m_interactions ${SOURCES_FMM_M2M_INTERACTIONS})
+install(TARGETS fmm_m2m_interactions DESTINATION paper)
+
+#################
+# end paper examples
 #################
