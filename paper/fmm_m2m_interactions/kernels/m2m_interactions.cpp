@@ -52,7 +52,6 @@ m2m_interactions::m2m_interactions(
     // this dir is setup as a multipole
     if (!neighbor.is_monopole) {
       if (!neighbor.data.M) {
-        // TODO: ask Dominic why !is_monopole and stuff still empty
         iterate_inner_cells_padding(
             dir, [this](const multiindex<> &i, const size_t flat_index,
                         const multiindex<> &, const size_t) {

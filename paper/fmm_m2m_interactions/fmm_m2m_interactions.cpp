@@ -3,18 +3,39 @@
 #include "kernels/m2m_interactions.hpp"
 #include "taylor.hpp" //for multipole
 #include "types.hpp"
+#include "compute_factor.hpp"
 
 #include <chrono>
 
 using namespace octotiger;
 using namespace octotiger::fmm;
 
-space_vector one_space_vector;
-multipole one_multipole;
+// space_vector one_space_vector;
+// multipole one_multipole;
 
-multipole multipole_value_generator() { return one_multipole; }
 
-space_vector space_vector_value_generator() { return one_space_vector; }
+taylor<4, real> factor;
+
+multipole multipole_value_generator() {
+  static double counter = 0.01;
+  multipole tmp;
+  for (size_t i = 0; i < tmp.size(); i++) {
+    tmp[i] = counter;
+    counter += 0.01;
+  }
+  return tmp;
+}
+
+space_vector space_vector_value_generator() {
+  static double counter = 0.01;
+  space_vector tmp;
+  for (size_t i = 0; i < NDIM; i++) {
+    tmp[i] = counter;
+  }
+  tmp[3] = 0.0;
+  counter += 0.01;
+  return tmp;
+}
 
 struct input_data {
   std::vector<multipole> M_ptr;
@@ -58,6 +79,8 @@ struct input_data {
       neighbor_gravity_data.data = neighbor_boundary_data;
       neighbor_gravity_data.is_monopole = false;
       neighbor_gravity_data.direction = dir;
+
+      all_neighbor_interaction_data[dir] = neighbor_gravity_data;
     }
   }
 };
@@ -67,17 +90,20 @@ int main(void) {
   // initialize stencil globally
   octotiger::fmm::m2m_interactions::stencil = calculate_stencil();
 
-  for (size_t i = 0; i < one_multipole.size(); i++) {
-    one_multipole[i] = static_cast<double>(i) + 0.5;
-  }
-  for (size_t i = 0; i < one_space_vector.size(); i++) {
-    one_space_vector[i] = (static_cast<double>(i) + 1.0) / 5.0;
-  }
+  // globally initialize factors
+  compute_factor();
 
-  std::vector<input_data> all_input_data(1);
+  // for (size_t i = 0; i < one_multipole.size(); i++) {
+  //   one_multipole[i] = static_cast<double>(i) + 0.5;
+  // }
+  // for (size_t i = 0; i < one_space_vector.size(); i++) {
+  //   one_space_vector[i] = (static_cast<double>(i) + 1.0) / 5.0;
+  // }
 
-  //TODO: continue verify initial values != 0
-  
+  std::vector<input_data> all_input_data(100);
+
+  // TODO: continue verify initial values != 0
+
   for (size_t input_index = 0; input_index < all_input_data.size();
        input_index++) {
     for (size_t repetitions = 0; repetitions < 1; repetitions++) {
@@ -104,8 +130,11 @@ int main(void) {
                    "boundary, ms): "
                 << duration.count() << std::endl;
 
+      // interactor.print_local_expansions();
+      // interactor.print_center_of_masses();
+
       // interactor.print_potential_expansions();
-      interactor.print_center_of_masses();
+      // interactor.print_angular_corrections();
     }
   }
 

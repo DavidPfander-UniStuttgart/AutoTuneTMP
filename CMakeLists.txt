@@ -9,6 +9,28 @@ set(CMAKE_CXX_FLAGS "-march=native -mno-vzeroupper -ffast-math -std=c++14 -g -Wa
 include_directories(src)
 include_directories(dependencies/cppjit/include)
 
+# add_external(dependencies/Vc "" "")
+
+# ExternalProject_Add(Vc
+#   URL https://github.com/VcDevel/Vc
+#   PREFIX ""
+#   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+#   )
+
+# include(ExternalProject)
+# ExternalProject_Add(Vc
+#   GIT_REPOSITORY    https://github.com/VcDevel/Vc
+#   GIT_TAG           mkretz/datapar
+#   SOURCE_DIR        "${CMAKE_BINARY_DIR}/Vc-src"
+#   BINARY_DIR        "${CMAKE_BINARY_DIR}/Vc-build"
+#   CONFIGURE_COMMAND ""
+#   BUILD_COMMAND     ""
+#   INSTALL_COMMAND   ""
+#   TEST_COMMAND      ""
+# )
+
+# add_subdirectory("dependencies/Vc")
+
 find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_ROOT})
 include_directories(${Vc_INCLUDE_DIR})
 
@@ -68,6 +90,8 @@ set(SOURCES_FMM_M2M_INTERACTIONS
   "paper/fmm_m2m_interactions/kernels/m2m_kernel.cpp"
   "paper/fmm_m2m_interactions/kernels/m2m_kernel_blocked_interaction.cpp"
   "paper/fmm_m2m_interactions/kernels/calculate_stencil.cpp"
+  "paper/fmm_m2m_interactions/compute_factor.cpp"
+  "paper/fmm_m2m_interactions/taylor.cpp"
 )
 add_executable(fmm_m2m_interactions ${SOURCES_FMM_M2M_INTERACTIONS})
 install(TARGETS fmm_m2m_interactions DESTINATION paper)
