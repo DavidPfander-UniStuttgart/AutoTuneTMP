@@ -16,8 +16,6 @@ size_t missing_neighbors = 0;
 namespace octotiger {
 namespace fmm {
 
-std::vector<multiindex<>> m2m_interactions::stencil;
-
 m2m_interactions::m2m_interactions(
     std::vector<multipole> &M_ptr,
     std::vector<std::shared_ptr<std::vector<space_vector>>> &com_ptr,

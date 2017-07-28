@@ -1,9 +1,10 @@
+#include "compute_factor.hpp"
 #include "geometry.hpp"
 #include "kernels/calculate_stencil.hpp"
 #include "kernels/m2m_interactions.hpp"
 #include "taylor.hpp" //for multipole
 #include "types.hpp"
-#include "compute_factor.hpp"
+#include "compute_ilist.hpp"
 
 #include <chrono>
 
@@ -12,9 +13,6 @@ using namespace octotiger::fmm;
 
 // space_vector one_space_vector;
 // multipole one_multipole;
-
-
-taylor<4, real> factor;
 
 multipole multipole_value_generator() {
   static double counter = 0.01;
@@ -86,23 +84,9 @@ struct input_data {
 };
 
 int main(void) {
+  std::cout << "in main" << std::endl;
 
-  // initialize stencil globally
-  octotiger::fmm::m2m_interactions::stencil = calculate_stencil();
-
-  // globally initialize factors
-  compute_factor();
-
-  // for (size_t i = 0; i < one_multipole.size(); i++) {
-  //   one_multipole[i] = static_cast<double>(i) + 0.5;
-  // }
-  // for (size_t i = 0; i < one_space_vector.size(); i++) {
-  //   one_space_vector[i] = (static_cast<double>(i) + 1.0) / 5.0;
-  // }
-
-  std::vector<input_data> all_input_data(100);
-
-  // TODO: continue verify initial values != 0
+  std::vector<input_data> all_input_data(1);
 
   for (size_t input_index = 0; input_index < all_input_data.size();
        input_index++) {

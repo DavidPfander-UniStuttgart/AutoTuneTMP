@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cinttypes>
+
 #define OCTOTIGER_FORCEINLINE __attribute__((always_inline))
 #define sqr(a) (a * a)
 #define NDIM 3
@@ -14,10 +16,19 @@ constexpr real SIXTH = 1.0 / 6.0;
 
 constexpr integer INX = 8;
 constexpr integer G_NX = INX;
+constexpr integer G_DNX = G_NX * G_NX;
+constexpr integer G_DNY = G_NX;
+constexpr integer G_DNZ = 1;
+constexpr integer XDIM = 0;
+constexpr integer YDIM = 1;
+constexpr integer ZDIM = 2;
 constexpr integer PATCH_SIZE = INX * INX * INX;
 
 enum class gsolve_type { RHO, NON_RHO };
-static struct options { double theta = 0.35; } opts;
+static struct options {
+  double theta = 0.35;
+  bool ang_con = true;
+} opts;
 
 #include <Vc/Vc>
 

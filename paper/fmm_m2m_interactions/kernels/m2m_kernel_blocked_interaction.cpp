@@ -1,14 +1,10 @@
 #include "m2m_kernel.hpp"
 
+#include "../compute_factor.hpp"
 #include "../grid_flattened_indices.hpp"
 #include "helper.hpp"
 #include "m2m_taylor_set_basis.hpp"
 #include "struct_of_array_taylor.hpp"
-
-extern taylor<4, real> factor;
-
-taylor<4, m2m_vector> factor_half_v;
-taylor<4, m2m_vector> factor_sixth_v;
 
 namespace octotiger {
 namespace fmm {

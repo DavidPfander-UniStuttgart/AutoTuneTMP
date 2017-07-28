@@ -92,6 +92,9 @@ set(SOURCES_FMM_M2M_INTERACTIONS
   "paper/fmm_m2m_interactions/kernels/calculate_stencil.cpp"
   "paper/fmm_m2m_interactions/compute_factor.cpp"
   "paper/fmm_m2m_interactions/taylor.cpp"
+  "paper/fmm_m2m_interactions/compute_ilist.cpp"
+  "paper/fmm_m2m_interactions/new.cpp"
+  "paper/fmm_m2m_interactions/kernel_reference.cpp"
 )
 add_executable(fmm_m2m_interactions ${SOURCES_FMM_M2M_INTERACTIONS})
 install(TARGETS fmm_m2m_interactions DESTINATION paper)

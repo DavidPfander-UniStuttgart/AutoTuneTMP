@@ -44,7 +44,6 @@ namespace fmm {
         gsolve_type type;
 
     public:
-        static std::vector<multiindex<>> stencil;
 
         // at this point, uses the old datamembers of the grid class as input
         // and converts them to the new data structure

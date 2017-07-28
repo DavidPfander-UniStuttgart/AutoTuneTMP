@@ -7,7 +7,9 @@
 namespace octotiger {
 namespace fmm {
 
-    std::vector<multiindex<>> calculate_stencil();
+extern std::vector<multiindex<>> stencil;
 
-}    // namespace fmm
-}    // namespace octotiger
+void calculate_stencil();
+
+} // namespace fmm
+} // namespace octotiger
