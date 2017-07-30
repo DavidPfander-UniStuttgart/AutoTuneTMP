@@ -1,9 +1,24 @@
+#include "kernel_reference.hpp"
 #include "interaction_types.hpp"
 #include "taylor.hpp"
 #include "types.hpp"
 
 #include "compute_factor.hpp"
 #include "compute_ilist.hpp"
+
+namespace kernel_reference {
+
+void compute_interactions_reference(
+    std::shared_ptr<std::vector<multipole>> M_ptr,
+    std::vector<std::shared_ptr<std::vector<space_vector>>> &com_ptr,
+    gsolve_type type, const gravity_boundary_type &mpoles,
+    std::vector<expansion> &L, std::vector<space_vector> &L_c) {
+  detail::compute_interactions_inner(M_ptr, com_ptr, type, L, L_c);
+  detail::compute_boundary_interactions_multipole_multipole(
+      M_ptr, com_ptr, type, mpoles, L, L_c);
+}
+
+namespace detail {
 
 constexpr int to_ab_idx_map3[3][3] = {{4, 5, 6}, {5, 7, 8}, {6, 8, 9}};
 
@@ -21,10 +36,10 @@ constexpr int to_abc_idx_map3[3][6] = {{
                                            12, 14, 15, 17, 18, 19,
                                        }};
 
-constexpr int to_abcd_idx_map3[3]
-                              [10] = {{20, 21, 22, 23, 24, 25, 26, 27, 28, 29},
-                                      {21, 23, 24, 26, 27, 28, 30, 31, 32, 33},
-                                      {22, 24, 25, 27, 28, 29, 31, 32, 33, 34}};
+constexpr int to_abcd_idx_map3[3][10] = {
+    {20, 21, 22, 23, 24, 25, 26, 27, 28, 29},
+    {21, 23, 24, 26, 27, 28, 30, 31, 32, 33},
+    {22, 24, 25, 27, 28, 29, 31, 32, 33, 34}};
 
 constexpr int bcd_idx_map[10] = {10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
 
@@ -271,9 +286,8 @@ void compute_interactions_inner(
 void compute_boundary_interactions_multipole_multipole(
     std::shared_ptr<std::vector<multipole>> M_ptr,
     std::vector<std::shared_ptr<std::vector<space_vector>>> &com_ptr,
-    gsolve_type type, const std::vector<boundary_interaction_type> &ilist_n_bnd,
-    const gravity_boundary_type &mpoles, std::vector<expansion> &L,
-    std::vector<space_vector> &L_c) {
+    gsolve_type type, const gravity_boundary_type &mpoles,
+    std::vector<expansion> &L, std::vector<space_vector> &L_c) {
   auto &M = *M_ptr;
 
   // always reinitialized in innermost loop
@@ -285,7 +299,7 @@ void compute_boundary_interactions_multipole_multipole(
   size_t list_size = ilist_n_bnd.size();
   for (size_t si = 0; si < list_size; si++) {
     std::array<simd_vector, NDIM> X;
-    boundary_interaction_type const &bnd = ilist_n_bnd[si];
+    const boundary_interaction_type &bnd = ilist_n_bnd[si];
 
     for (size_t i = 0; i < simd_len; ++i) {
       const integer iii0 = bnd.first[0];
@@ -423,4 +437,6 @@ void compute_boundary_interactions_multipole_multipole(
       }
     }
   }
+}
+}
 }

@@ -86,7 +86,7 @@ struct input_data {
 int main(void) {
   std::cout << "in main" << std::endl;
 
-  std::vector<input_data> all_input_data(1);
+  std::vector<input_data> all_input_data(20);
 
   for (size_t input_index = 0; input_index < all_input_data.size();
        input_index++) {
