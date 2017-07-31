@@ -1,10 +1,11 @@
 #include "compute_factor.hpp"
+#include "compute_ilist.hpp"
 #include "geometry.hpp"
+#include "kernel_reference.hpp"
 #include "kernels/calculate_stencil.hpp"
 #include "kernels/m2m_interactions.hpp"
 #include "taylor.hpp" //for multipole
 #include "types.hpp"
-#include "compute_ilist.hpp"
 
 #include <chrono>
 
@@ -113,6 +114,23 @@ int main(void) {
       std::cout << "new interaction kernel  (total w/o old non-multipole "
                    "boundary, ms): "
                 << duration.count() << std::endl;
+
+      // auto start_total = std::chrono::high_resolution_clock::now();
+
+      // std::vector<multipole> L(PATCH_SIZE);
+      // std::vector<space_vector> L_c(PATCH_SIZE);
+
+      // // octotiger::fmm::m2m_interactions interactor(
+      // //     M_ptr, com_ptr, all_neighbor_interaction_data, type);
+      // kernel_reference::compute_interactions_reference(
+      //     M_ptr, com_ptr, type, all_neighbor_interaction_data, L, L_c);
+
+      // auto end_total = std::chrono::high_resolution_clock::now();
+      // std::chrono::duration<double, std::milli> duration =
+      //     end_total - start_total;
+      // std::cout << "old interaction kernel  (total w/o old non-multipole "
+      //              "boundary, ms): "
+      //           << duration.count() << std::endl;
 
       // interactor.print_local_expansions();
       // interactor.print_center_of_masses();

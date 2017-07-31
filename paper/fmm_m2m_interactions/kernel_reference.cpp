@@ -9,13 +9,16 @@
 namespace kernel_reference {
 
 void compute_interactions_reference(
-    std::shared_ptr<std::vector<multipole>> M_ptr,
+    std::vector<multipole> &M,
     std::vector<std::shared_ptr<std::vector<space_vector>>> &com_ptr,
-    gsolve_type type, const gravity_boundary_type &mpoles,
+    gsolve_type type,
+    std::vector<neighbor_gravity_type> &all_neighbor_interaction_data,
     std::vector<expansion> &L, std::vector<space_vector> &L_c) {
-  detail::compute_interactions_inner(M_ptr, com_ptr, type, L, L_c);
-  detail::compute_boundary_interactions_multipole_multipole(
-      M_ptr, com_ptr, type, mpoles, L, L_c);
+  detail::compute_interactions_inner(M, com_ptr, type, L, L_c);
+  for (neighbor_gravity_type &neighbor_data : all_neighbor_interaction_data) {
+    detail::compute_boundary_interactions_multipole_multipole(
+        neighbor_data.direction, M, com_ptr, type, neighbor_data.data, L, L_c);
+  }
 }
 
 namespace detail {
@@ -36,10 +39,10 @@ constexpr int to_abc_idx_map3[3][6] = {{
                                            12, 14, 15, 17, 18, 19,
                                        }};
 
-constexpr int to_abcd_idx_map3[3][10] = {
-    {20, 21, 22, 23, 24, 25, 26, 27, 28, 29},
-    {21, 23, 24, 26, 27, 28, 30, 31, 32, 33},
-    {22, 24, 25, 27, 28, 29, 31, 32, 33, 34}};
+constexpr int to_abcd_idx_map3[3]
+                              [10] = {{20, 21, 22, 23, 24, 25, 26, 27, 28, 29},
+                                      {21, 23, 24, 26, 27, 28, 30, 31, 32, 33},
+                                      {22, 24, 25, 27, 28, 29, 31, 32, 33, 34}};
 
 constexpr int bcd_idx_map[10] = {10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
 
@@ -50,7 +53,7 @@ constexpr int to_abc_idx_map6[6][3] = {{10, 11, 12}, {11, 13, 14},
 constexpr int ab_idx_map6[6] = {4, 5, 6, 7, 8, 9};
 
 void compute_interactions_inner(
-    std::shared_ptr<std::vector<multipole>> M_ptr,
+    std::vector<multipole> &M,
     std::vector<std::shared_ptr<std::vector<space_vector>>> &com_ptr,
     gsolve_type type, std::vector<expansion> &L,
     std::vector<space_vector> &L_c) {
@@ -86,8 +89,6 @@ void compute_interactions_inner(
 
     std::array<simd_vector, NDIM> X;
     // taylor<4, simd_vector> m1;
-
-    auto &M = *M_ptr;
 
     // TODO: only uses first 10 coefficients? ask Dominic
     // TODO: ask Dominic about padding
@@ -284,11 +285,10 @@ void compute_interactions_inner(
 }
 
 void compute_boundary_interactions_multipole_multipole(
-    std::shared_ptr<std::vector<multipole>> M_ptr,
+    geo::direction &dir, std::vector<multipole> &M,
     std::vector<std::shared_ptr<std::vector<space_vector>>> &com_ptr,
     gsolve_type type, const gravity_boundary_type &mpoles,
     std::vector<expansion> &L, std::vector<space_vector> &L_c) {
-  auto &M = *M_ptr;
 
   // always reinitialized in innermost loop
   std::array<simd_vector, NDIM> dX;
@@ -296,10 +296,10 @@ void compute_boundary_interactions_multipole_multipole(
   taylor<4, simd_vector> n0;
 
   std::vector<space_vector> const &com0 = *(com_ptr[0]);
-  size_t list_size = ilist_n_bnd.size();
+  size_t list_size = ilist_n_bnd[dir].size();
   for (size_t si = 0; si < list_size; si++) {
     std::array<simd_vector, NDIM> X;
-    const boundary_interaction_type &bnd = ilist_n_bnd[si];
+    const boundary_interaction_type &bnd = ilist_n_bnd[dir][si];
 
     for (size_t i = 0; i < simd_len; ++i) {
       const integer iii0 = bnd.first[0];

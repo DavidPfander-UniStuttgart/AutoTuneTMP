@@ -9,11 +9,12 @@
 #include <cstdio>
 #include <cstdlib>
 
-#if defined(Vc_HAVE_AVX512F)
+// #if defined(Vc_HAVE_AVX512F)
+// constexpr std::size_t alignment = 64;
+// #else
+// constexpr std::size_t alignment = 32;
+// #endif
 constexpr std::size_t alignment = 64;
-#else
-constexpr std::size_t alignment = 32;
-#endif
 
 static void *allocate(std::size_t);
 static void deallocate(void *);

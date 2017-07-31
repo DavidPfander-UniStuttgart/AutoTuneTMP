@@ -12,6 +12,6 @@ extern std::vector<interaction_type> ilist_d;
 // extern std::vector<interaction_type> ilist_r;
 // extern std::vector<std::vector<boundary_interaction_type>> ilist_d_bnd;
 extern std::vector<std::vector<boundary_interaction_type>> ilist_n_bnd;
-extern std::vector<std::vector<boundary_interaction_type>> ilist_n_bnd_new;
+// extern std::vector<std::vector<boundary_interaction_type>> ilist_n_bnd_new;
 
 void compute_ilist();

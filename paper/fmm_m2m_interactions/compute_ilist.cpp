@@ -12,8 +12,8 @@ std::vector<interaction_type> ilist_d;
 //     ilist_d_bnd(geo::direction::count());
 std::vector<std::vector<boundary_interaction_type>>
     ilist_n_bnd(geo::direction::count());
-std::vector<std::vector<boundary_interaction_type>>
-    ilist_n_bnd_new(geo::direction::count());
+// std::vector<std::vector<boundary_interaction_type>>
+//     ilist_n_bnd_new(geo::direction::count());
 
 constexpr inline integer gindex(integer i, integer j, integer k) {
   return i * G_DNX + j * G_DNY + k * G_DNZ;
@@ -239,101 +239,50 @@ void compute_ilist() {
 
   for (auto &dir : geo::direction::full_set()) { // iterate 26 neighbors
     std::cout << "dir: " << dir << std::endl;
-    // std::vector<boundary_interaction_type> &non_M2M = ilist_d_bnd[dir];
-    // std::vector<interaction_type> &non_M2M_0 = ilist_d0_bnd[dir];
     std::vector<boundary_interaction_type> &M2M = ilist_n_bnd[dir];
-    std::vector<boundary_interaction_type> &M2M_new = ilist_n_bnd_new[dir];
     std::vector<interaction_type> &M2M_0 = ilist_n0_bnd[dir];
-
-    // // add entry for every non-M2M boundary interaction
-    // for (interaction_type &interaction_0 : non_M2M_0) {
-    //   boundary_interaction_type boundary_interaction;
-    //   boundary_interaction.second.reserve(100);
-    //   boundary_interaction.first.reserve(100);
-    //   boundary_interaction.second.push_back(interaction_0.second);
-    //   boundary_interaction.x = interaction_0.x;
-    //   non_M2M.push_back(boundary_interaction);
-    // }
-    // std::cout << "after first loop" << std::endl;
-    // // fill up list of actual non-M2M boundary interactions
-    // for (interaction_type &interaction_0 : non_M2M_0) {
-    //   for (boundary_interaction_type &boundary_interaction : non_M2M) {
-    //     if (boundary_interaction.second[0] == interaction_0.second) {
-    //       boundary_interaction.first.push_back(interaction_0.first);
-    //       boundary_interaction.four.push_back(interaction_0.four);
-    //       break;
-    //     }
-    //   }
-    // }
-
-    std::cout << "after second loop" << std::endl;
 
     // add entry for every M2M boundary interaction
     for (interaction_type &interaction_0 : M2M_0) {
-      {
+      bool found = false;
+      for (boundary_interaction_type &boundary_interaction : M2M) {
+        if (boundary_interaction.second[0] == interaction_0.second) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
         boundary_interaction_type boundary_interaction;
         boundary_interaction.second.push_back(interaction_0.second);
         boundary_interaction.x = interaction_0.x;
-        // boundary_interaction.second_index.push_back(interaction_0.second_index);
         M2M.push_back(boundary_interaction);
       }
-
-      {
-        // new version
-        boundary_interaction_type boundary_interaction;
-        boundary_interaction.first.push_back(interaction_0.first);
-        boundary_interaction.x = interaction_0.x;
-        // boundary_interaction.first_index.push_back(interaction_0.first_index);
-        M2M_new.push_back(boundary_interaction);
-      }
     }
-
-    std::cout << "after third loop" << std::endl;
     // fill up list of actual M2M boundary interactions
     for (interaction_type &interaction_0 : M2M_0) {
+      bool found = false;
       for (boundary_interaction_type &boundary_interaction : M2M) {
         if (boundary_interaction.second[0] == interaction_0.second) {
           boundary_interaction.first.push_back(interaction_0.first);
-          // boundary_interaction.first_index.push_back(interaction_0.first_index);
           boundary_interaction.four.push_back(interaction_0.four);
+          found = true;
           break;
         }
       }
-
-      // new version
-      for (boundary_interaction_type &boundary_interaction : M2M_new) {
-        if (boundary_interaction.first[0] == interaction_0.first) {
-          boundary_interaction.second.push_back(interaction_0.second);
-          boundary_interaction.four.push_back(interaction_0.four);
-          // boundary_interaction.second_index.push_back(interaction_0.second_index);
-          break;
-        }
+      if (!found) {
+        std::cout << "not found" << std::endl;
       }
-      // boundary_interaction_type boundary_interaction;
-      // boundary_interaction.first.push_back(interaction_0.first);
-      // boundary_interaction.four.push_back(interaction_0.four);
-      // boundary_interaction.second.push_back(interaction_0.second);
-      // boundary_interaction.x = interaction_0.x;
-      // M2M_new.push_back(boundary_interaction);
     }
-  }
-  std::cout << "after fourth loop" << std::endl;
 
-  // {
-  //   size_t cur_index = ilist_r[0].first;
-  //   size_t cur_index_start = 0;
-  //   for (size_t li = 0; li != ilist_r.size(); ++li) {
-  //     // std::cout << ilist_r[li].first << " ?? " << cur_index << std::endl;
-  //     if (ilist_r[li].first != cur_index) {
-  //       // std::cout << "range size: " << (li - cur_index_start) << std::endl;
-  //       ilist_r[cur_index_start].inner_loop_stop = li;
-  //       cur_index = ilist_r[li].first;
-  //       cur_index_start = li;
-  //     }
-  //   }
-  //   // make sure the last element is handled correctly as well
-  //   ilist_r[cur_index_start].inner_loop_stop = ilist_r.size();
-  // }
+    // for (boundary_interaction_type &boundary_interaction : M2M) {
+    //   if (boundary_interaction.first.size() == 0) {
+    //     std::cout << "first empty" << std::endl;
+    //   }
+    //   if (boundary_interaction.second.size() == 0) {
+    //     std::cout << "second empty" << std::endl;
+    //   }
+    // }
+  }
 
   {
     size_t cur_index = ilist_n[0].first;
