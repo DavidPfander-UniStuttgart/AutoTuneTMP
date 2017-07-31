@@ -6,15 +6,10 @@
 #include "m2m_taylor_set_basis.hpp"
 #include "struct_of_array_taylor.hpp"
 
+#include "opttmp/loop/unroll_loop.hpp"
+
 namespace octotiger {
 namespace fmm {
-
-// TODO:
-// - check codegen and fix in Vc
-// - check for amount of temporaries
-// - try to replace expensive operations like sqrt
-// - remove all sqr()
-// - increase INX
 
 void m2m_kernel::blocked_interaction_rho(
     struct_of_array_data<expansion, real, 20, ENTRIES, SOA_PADDING>
@@ -31,12 +26,7 @@ void m2m_kernel::blocked_interaction_rho(
     const size_t cell_flat_index_unpadded,
     const std::vector<multiindex<>> &__restrict__ stencil,
     const size_t outer_stencil_index) {
-  // TODO: should change name to something better (not taylor, but space_vector)
-  // struct_of_array_taylor<space_vector, real, 3> X =
-  //     center_of_masses_SoA.get_view(cell_flat_index);
 
-  // struct_of_array_iterator<space_vector, real, 3> X(center_of_masses_SoA,
-  // cell_flat_index);
   for (size_t inner_stencil_index = 0;
        inner_stencil_index < STENCIL_BLOCKING &&
        outer_stencil_index + inner_stencil_index < stencil.size();
@@ -52,7 +42,6 @@ void m2m_kernel::blocked_interaction_rho(
 
     // check whether all vector elements are in empty border
     if (vector_is_empty[interaction_partner_flat_index]) {
-      std::cout << "is empty!!!!!!!!!!!1" << std::endl;
       continue;
     }
 
@@ -98,19 +87,16 @@ void m2m_kernel::blocked_interaction_rho(
     dX[0] = X[0] - Y[0];
     dX[1] = X[1] - Y[1];
     dX[2] = X[2] - Y[2];
-    // dX[0] = center_of_masses_SoA.value<0>(cell_flat_index) -
-    //     center_of_masses_SoA.value<0>(interaction_partner_flat_index);
-    // dX[1] = center_of_masses_SoA.value<1>(cell_flat_index) -
-    //     center_of_masses_SoA.value<1>(interaction_partner_flat_index);
-    // dX[2] = center_of_masses_SoA.value<2>(cell_flat_index) -
-    //     center_of_masses_SoA.value<2>(interaction_partner_flat_index);
-
-    // reset X for next iteration
-    // X.decrement(2);
 
     // TODO: does this get initialized
     // expansion_v m_partner;
     std::array<m2m_vector, 20> m_partner;
+
+    // opttmp::loop::unroll_loop<0, 20, 1>([](const size_t cur) {
+    //   m_partner[cur] =
+    //       local_expansions_SoA.value<cur>(interaction_partner_flat_index);
+    // });
+    
 
     m_partner[0] =
         local_expansions_SoA.value<0>(interaction_partner_flat_index);
