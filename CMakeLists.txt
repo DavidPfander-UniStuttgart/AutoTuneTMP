@@ -4,7 +4,7 @@ project(cppjit)
 
 include_directories(include)
 
-set(CMAKE_CXX_FLAGS "-march=native -mno-vzeroupper -ffast-math -std=c++14 -g -Wall -Wextra -Wno-unused-parameter ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-march=native -mno-vzeroupper -ffast-math -std=c++1z -g -Wall -Wextra -Wno-unused-parameter ${CMAKE_CXX_FLAGS}")
 
 include_directories(src)
 include_directories(dependencies/cppjit/include)

@@ -41,9 +41,7 @@ int main(void) {
   //   std::cout << "i: " << i << " -> " << arr[i] << std::endl;
   // }
 
-  // f<3>();
   body<std::vector<double>> b(arr);
-  // executor123(b);
   opttmp::loop::unroll_loop_template<10, 40, 2>(b);
 
   return 0;
