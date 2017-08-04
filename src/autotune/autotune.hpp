@@ -46,6 +46,8 @@ public:
 
   bool is_verbose() { return verbose; }
 
+  bool is_valid_parameter_combination();
+
   void add_parameter(const tunable_parameter &parameter) {
     parameters.push_back(parameter);
     optimal_indices.push_back(0);
@@ -177,10 +179,13 @@ public:
       cppjit::detail::function_traits<kernel_signature>::return_type,          \
       cppjit::detail::function_traits<kernel_signature>::args_type>            \
       kernel_name;                                                             \
-  } /* namespace autotune */
-
-#define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name)                  \
-  CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name)                          \
+  } /* namespace autotune */                                                   \
+  template <typename R, typename... Args>                                      \
+  template <typename builder_class>                                            \
+  std::shared_ptr<builder_class>                                               \
+  autotune::kernel<R, cppjit::detail::pack<Args...>>::get_builder_as() {       \
+    return cppjit::kernel_name.get_builder_as<builder_class>();                \
+  }                                                                            \
   template <typename R, typename... Args>                                      \
   R autotune::kernel<R, cppjit::detail::pack<Args...>>::operator()(            \
       Args... args) {                                                          \
@@ -221,12 +226,6 @@ public:
     return cppjit::kernel_name.get_builder();                                  \
   }                                                                            \
   template <typename R, typename... Args>                                      \
-  template <typename builder_class>                                            \
-  std::shared_ptr<builder_class>                                               \
-  autotune::kernel<R, cppjit::detail::pack<Args...>>::get_builder_as() {       \
-    return cppjit::kernel_name.get_builder_as<builder_class>();                \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
   void autotune::kernel<R, cppjit::detail::pack<Args...>>::clear() {           \
     cppjit::kernel_name.clear();                                               \
   }                                                                            \
@@ -249,6 +248,25 @@ public:
   autotune::kernel<R, cppjit::detail::pack<Args...>>::has_inline_source() {    \
     return cppjit::kernel_name.has_inline_source();                            \
   }                                                                            \
+  template <typename R, typename... Args>                                      \
+  bool autotune::kernel<                                                       \
+      R, cppjit::detail::pack<Args...>>::is_valid_parameter_combination() {    \
+    auto builder = autotune::kernel_name.get_builder();                        \
+    void *uncasted_function =                                                  \
+        builder->load_other_symbol("is_valid_parameter_combination");          \
+    if (uncasted_function == nullptr) {                                        \
+      return true;                                                             \
+    }                                                                          \
+    bool (*decider_pointer)() =                                                \
+        reinterpret_cast<decltype(decider_pointer)>(uncasted_function);        \
+    return decider_pointer();                                                  \
+  }
+
+// std::function<bool()> decider;
+// decider = decider_pointer;
+
+#define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name)                  \
+  CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name)                          \
   namespace autotune {                                                         \
   kernel<cppjit::detail::function_traits<kernel_signature>::return_type,       \
          cppjit::detail::function_traits<kernel_signature>::args_type>         \
