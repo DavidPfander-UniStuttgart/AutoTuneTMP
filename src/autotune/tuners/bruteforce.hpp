@@ -5,9 +5,18 @@
 
 namespace autotune {
 
-template <class F, typename... Args>
-std::vector<size_t> bruteforce(F f, const Args &... args) {
+template <class F, class test, typename... Args>
+std::vector<size_t> bruteforce(F f, test t, const Args &... args) {
   std::vector<tunable_parameter> &parameters = f->get_parameters();
+
+  if (f->is_verbose()) {
+    double total_combinations = 1.0;
+    for (size_t i = 0; i < parameters.size(); i++) {
+      total_combinations *= parameters[i].get_values().size();
+    }
+    std::cout << "total combinations to test: " << total_combinations
+              << std::endl;
+  }
 
   // brute-force tuner
   std::vector<std::string> values(parameters.size());
@@ -16,9 +25,9 @@ std::vector<size_t> bruteforce(F f, const Args &... args) {
   }
   std::vector<size_t> indices(parameters.size(), 0);
   std::vector<size_t> optimal_indices(parameters.size(), 0);
-  // evalute initial vector, always valid
+  // evaluate initial vector, always valid
   // f->print_values(values);
-  double optimal_duration = evaluate(indices, f, args...);
+  double optimal_duration = evaluate(indices, f, t, args...);
   std::copy(indices.begin(), indices.end(), optimal_indices.begin());
 
   report_verbose("new best kernel", optimal_duration, optimal_indices, f);
@@ -42,8 +51,8 @@ std::vector<size_t> bruteforce(F f, const Args &... args) {
       }
       current_index = 0;
 
-      // evalute new valid value vector
-      double duration = evaluate(indices, f, args...);
+      // evaluate new valid value vector
+      double duration = evaluate(indices, f, t, args...);
       if (duration < optimal_duration) {
         std::copy(indices.begin(), indices.end(), optimal_indices.begin());
         optimal_duration = duration;

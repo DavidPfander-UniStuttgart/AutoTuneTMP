@@ -5,8 +5,8 @@
 namespace autotune {
 
 // setup parameters, compile and measure duration of parameter combination
-template <class F, typename... Args>
-double evaluate(const std::vector<size_t> &indices, F f, Args... args) {
+template <class F, class test, typename... Args>
+double evaluate(const std::vector<size_t> &indices, F f, test t, Args... args) {
 
   if (f->is_verbose()) {
     std::cout << "------ begin eval ------" << std::endl;
@@ -17,10 +17,23 @@ double evaluate(const std::vector<size_t> &indices, F f, Args... args) {
 
   f->compile();
 
+  if (!f->is_valid_parameter_combination()) {
+    if (f->is_verbose()) {
+      std::cout << "invalid parameter combination encountered" << std::endl;
+    }
+    return std::numeric_limits<double>::max();
+  }
+
   auto start = std::chrono::high_resolution_clock::now();
 
   // call kernel, discard possibly returned values
-  (*f)(args...);
+  bool test_ok = t((*f)(args...));
+  if (!test_ok) {
+    if (f->is_verbose()) {
+      std::cout << "warning: test for combination failed!" << std::endl;
+    }
+    return std::numeric_limits<double>::max();
+  }
 
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> duration = end - start;

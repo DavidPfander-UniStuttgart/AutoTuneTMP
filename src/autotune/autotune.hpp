@@ -163,10 +163,16 @@ public:
 
   void clear();
 
-  // template <class F> F f,
   std::vector<size_t> tune(Args... args) {
+    auto t = []() { return true; };
     std::vector<size_t> optimal =
-        bruteforce(this, std::forward<Args &>(args)...);
+        bruteforce(this, t, std::forward<Args &>(args)...);
+    return optimal;
+  }
+
+  template <class test> std::vector<size_t> tune(test t, Args... args) {
+    std::vector<size_t> optimal =
+        bruteforce(this, t, std::forward<Args &>(args)...);
     return optimal;
   }
 };
