@@ -136,9 +136,50 @@ void m2m_kernel::blocked_interaction_rho(
     // expansion_v m_partner;
     std::array<m2m_vector, 20> m_partner;
 
-    init_m_partner_body_struct init_m_partner_body(
-        m_partner, local_expansions_SoA, interaction_partner_flat_index);
-    opttmp::loop::unroll_loop_template<0, 20, 1>(init_m_partner_body);
+    m_partner[0] =
+        local_expansions_SoA.value<0>(interaction_partner_flat_index);
+    m_partner[1] =
+        local_expansions_SoA.value<1>(interaction_partner_flat_index);
+    m_partner[2] =
+        local_expansions_SoA.value<2>(interaction_partner_flat_index);
+    m_partner[3] =
+        local_expansions_SoA.value<3>(interaction_partner_flat_index);
+    m_partner[4] =
+        local_expansions_SoA.value<4>(interaction_partner_flat_index);
+    m_partner[5] =
+        local_expansions_SoA.value<5>(interaction_partner_flat_index);
+    m_partner[6] =
+        local_expansions_SoA.value<6>(interaction_partner_flat_index);
+    m_partner[7] =
+        local_expansions_SoA.value<7>(interaction_partner_flat_index);
+    m_partner[8] =
+        local_expansions_SoA.value<8>(interaction_partner_flat_index);
+    m_partner[9] =
+        local_expansions_SoA.value<9>(interaction_partner_flat_index);
+    m_partner[10] =
+        local_expansions_SoA.value<10>(interaction_partner_flat_index);
+    m_partner[11] =
+        local_expansions_SoA.value<11>(interaction_partner_flat_index);
+    m_partner[12] =
+        local_expansions_SoA.value<12>(interaction_partner_flat_index);
+    m_partner[13] =
+        local_expansions_SoA.value<13>(interaction_partner_flat_index);
+    m_partner[14] =
+        local_expansions_SoA.value<14>(interaction_partner_flat_index);
+    m_partner[15] =
+        local_expansions_SoA.value<15>(interaction_partner_flat_index);
+    m_partner[16] =
+        local_expansions_SoA.value<16>(interaction_partner_flat_index);
+    m_partner[17] =
+        local_expansions_SoA.value<17>(interaction_partner_flat_index);
+    m_partner[18] =
+        local_expansions_SoA.value<18>(interaction_partner_flat_index);
+    m_partner[19] =
+        local_expansions_SoA.value<19>(interaction_partner_flat_index);
+
+    // init_m_partner_body_struct init_m_partner_body(
+    //     m_partner, local_expansions_SoA, interaction_partner_flat_index);
+    // opttmp::loop::unroll_loop_template<0, 20, 1>(init_m_partner_body);
 
     // R_i in paper is the dX in the code
     // D is taylor expansion value for a given X expansion of the gravitational
@@ -240,78 +281,78 @@ void m2m_kernel::blocked_interaction_rho(
     // };
     // test_struct test_instance;
 
-    assign_potential_expansions_body_struct assign_potential_expansions_body(
-        potential_expansions_SoA, cell_flat_index_unpadded, cur_pot, mask);
-    opttmp::loop::unroll_loop_template<0, 10, 1>(
-        assign_potential_expansions_body);
+    // assign_potential_expansions_body_struct assign_potential_expansions_body(
+    //     potential_expansions_SoA, cell_flat_index_unpadded, cur_pot, mask);
+    // opttmp::loop::unroll_loop_template<0, 10, 1>(
+    //     assign_potential_expansions_body);
 
     // struct_of_array_iterator<expansion, real, 20> current_potential_result(
     //     potential_expansions_SoA, cell_flat_index_unpadded);
 
-    // m2m_vector tmp =
-    //     potential_expansions_SoA.value<0>(cell_flat_index_unpadded) +
-    //     cur_pot[0];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<0>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    m2m_vector tmp =
+        potential_expansions_SoA.value<0>(cell_flat_index_unpadded) +
+        cur_pot[0];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<0>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
-    // tmp = potential_expansions_SoA.value<1>(cell_flat_index_unpadded) +
-    //       cur_pot[1];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<1>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    tmp = potential_expansions_SoA.value<1>(cell_flat_index_unpadded) +
+          cur_pot[1];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<1>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
-    // tmp = potential_expansions_SoA.value<2>(cell_flat_index_unpadded) +
-    //       cur_pot[2];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<2>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    tmp = potential_expansions_SoA.value<2>(cell_flat_index_unpadded) +
+          cur_pot[2];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<2>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
-    // tmp = potential_expansions_SoA.value<3>(cell_flat_index_unpadded) +
-    //       cur_pot[3];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<3>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    tmp = potential_expansions_SoA.value<3>(cell_flat_index_unpadded) +
+          cur_pot[3];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<3>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
-    // tmp = potential_expansions_SoA.value<4>(cell_flat_index_unpadded) +
-    //       cur_pot[4];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<4>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    tmp = potential_expansions_SoA.value<4>(cell_flat_index_unpadded) +
+          cur_pot[4];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<4>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
-    // tmp = potential_expansions_SoA.value<5>(cell_flat_index_unpadded) +
-    //       cur_pot[5];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<5>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    tmp = potential_expansions_SoA.value<5>(cell_flat_index_unpadded) +
+          cur_pot[5];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<5>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
-    // tmp = potential_expansions_SoA.value<6>(cell_flat_index_unpadded) +
-    //       cur_pot[6];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<6>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    tmp = potential_expansions_SoA.value<6>(cell_flat_index_unpadded) +
+          cur_pot[6];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<6>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
-    // tmp = potential_expansions_SoA.value<7>(cell_flat_index_unpadded) +
-    //       cur_pot[7];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<7>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    tmp = potential_expansions_SoA.value<7>(cell_flat_index_unpadded) +
+          cur_pot[7];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<7>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
-    // tmp = potential_expansions_SoA.value<8>(cell_flat_index_unpadded) +
-    //       cur_pot[8];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<8>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    tmp = potential_expansions_SoA.value<8>(cell_flat_index_unpadded) +
+          cur_pot[8];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<8>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
-    // tmp = potential_expansions_SoA.value<9>(cell_flat_index_unpadded) +
-    //       cur_pot[9];
-    // Vc::where(mask, tmp).memstore(
-    //     potential_expansions_SoA.pointer<9>(cell_flat_index_unpadded),
-    //     Vc::flags::element_aligned);
+    tmp = potential_expansions_SoA.value<9>(cell_flat_index_unpadded) +
+          cur_pot[9];
+    Vc::where(mask, tmp).memstore(
+        potential_expansions_SoA.pointer<9>(cell_flat_index_unpadded),
+        Vc::flags::element_aligned);
 
     // change here
 
-    m2m_vector tmp =
+    tmp =
         potential_expansions_SoA.value<10>(cell_flat_index_unpadded) +
         m_partner[0] * D_lower[10];
     Vc::where(mask, tmp).memstore(

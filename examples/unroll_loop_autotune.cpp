@@ -31,7 +31,8 @@ int main(void) {
   // autotune::unrolling_kernel.compile("examples/kernels_unroll_loop_autotune/");
 
   // tune kernel, note that arguments are reused
-  std::vector<size_t> optimal_indices = autotune::unrolling_kernel.tune(arr, N);
+  std::vector<size_t> optimal_indices =
+      autotune::unrolling_kernel.tune(autotune::tuner::bruteforce, arr, N);
 
   autotune::unrolling_kernel.print_values(optimal_indices);
   // autotune::unrolling_kernel.print_parameters();
