@@ -9,11 +9,14 @@ template <class F, class test, typename... Args>
 std::vector<size_t> bruteforce(F f, test t, const Args &... args) {
   std::vector<tunable_parameter> &parameters = f->get_parameters();
 
+  double total_combinations = 1.0;
+  for (size_t i = 0; i < parameters.size(); i++) {
+    total_combinations *= parameters[i].get_values().size();
+  }
+
+  size_t combination_counter = 1;
+
   if (f->is_verbose()) {
-    double total_combinations = 1.0;
-    for (size_t i = 0; i < parameters.size(); i++) {
-      total_combinations *= parameters[i].get_values().size();
-    }
     std::cout << "total combinations to test: " << total_combinations
               << std::endl;
   }
@@ -27,7 +30,13 @@ std::vector<size_t> bruteforce(F f, test t, const Args &... args) {
   std::vector<size_t> optimal_indices(parameters.size(), 0);
   // evaluate initial vector, always valid
   // f->print_values(values);
+  if (f->is_verbose()) {
+    std::cout << "evaluating combination " << combination_counter << " (out of "
+              << total_combinations << ")" << std::endl;
+  }
+  combination_counter += 1;
   double optimal_duration = evaluate(indices, f, t, args...);
+
   std::copy(indices.begin(), indices.end(), optimal_indices.begin());
 
   report_verbose("new best kernel", optimal_duration, optimal_indices, f);
@@ -52,6 +61,11 @@ std::vector<size_t> bruteforce(F f, test t, const Args &... args) {
       current_index = 0;
 
       // evaluate new valid value vector
+      if (f->is_verbose()) {
+        std::cout << "evaluating combination " << combination_counter
+                  << " (out of " << total_combinations << ")" << std::endl;
+      }
+      combination_counter += 1;
       double duration = evaluate(indices, f, t, args...);
       if (duration < optimal_duration) {
         std::copy(indices.begin(), indices.end(), optimal_indices.begin());

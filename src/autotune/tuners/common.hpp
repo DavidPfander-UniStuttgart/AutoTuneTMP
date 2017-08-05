@@ -22,6 +22,10 @@ double evaluate(const std::vector<size_t> &indices, F f, test t, Args... args) {
       std::cout << "invalid parameter combination encountered" << std::endl;
     }
     return std::numeric_limits<double>::max();
+  } else {
+    if (f->is_verbose()) {
+      std::cout << "parameter combination is valid" << std::endl;
+    }
   }
 
   auto start = std::chrono::high_resolution_clock::now();
@@ -33,6 +37,10 @@ double evaluate(const std::vector<size_t> &indices, F f, test t, Args... args) {
       std::cout << "warning: test for combination failed!" << std::endl;
     }
     return std::numeric_limits<double>::max();
+  } else {
+    if (f->is_verbose()) {
+      std::cout << "test for combination passed" << std::endl;
+    }
   }
 
   auto end = std::chrono::high_resolution_clock::now();

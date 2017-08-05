@@ -9,6 +9,9 @@
 
 #include "parameter.hpp"
 #include "tuners/bruteforce.hpp"
+#include "tuners/line_search.hpp"
+#include "tuners/monte_carlo.hpp"
+#include "tuners/simulated_annealing.hpp"
 
 // #define DEFINE_KERNEL(kernel_name)
 //
@@ -17,6 +20,8 @@
 // idea: use first invocation to trigger tuning, throw away results
 
 namespace autotune {
+
+enum class tuner { bruteforce, simulated_annealing, line_search, monte_carlo };
 
 // base template for the following specialization
 // required to do the pack-matching in the specialization
@@ -163,16 +168,27 @@ public:
 
   void clear();
 
-  std::vector<size_t> tune(Args... args) {
+  std::vector<size_t> tune(tuner m, Args... args) {
     auto t = []() { return true; };
     std::vector<size_t> optimal =
         bruteforce(this, t, std::forward<Args &>(args)...);
     return optimal;
   }
 
-  template <class test> std::vector<size_t> tune(test t, Args... args) {
-    std::vector<size_t> optimal =
-        bruteforce(this, t, std::forward<Args &>(args)...);
+  template <class test>
+  std::vector<size_t> tune(tuner m, test t, Args... args) {
+    std::vector<size_t> optimal;
+    if (m == tuner::bruteforce) {
+      optimal = bruteforce(this, t, std::forward<Args &>(args)...);
+    } else if (m == tuner::monte_carlo) {
+      optimal = monte_carlo(this, t, std::forward<Args &>(args)...);
+    } else if (m == tuner::simulated_annealing) {
+      optimal = simulated_annealing(this, t, std::forward<Args &>(args)...);
+    } else if (m == tuner::line_search) {
+      optimal = line_search(this, t, std::forward<Args &>(args)...);
+    } else {
+      throw;
+    }
     return optimal;
   }
 };
@@ -234,6 +250,9 @@ public:
   template <typename R, typename... Args>                                      \
   void autotune::kernel<R, cppjit::detail::pack<Args...>>::clear() {           \
     cppjit::kernel_name.clear();                                               \
+    verbose = false;                                                           \
+    parameters.clear();                                                        \
+    optimal_indices.clear();                                                   \
   }                                                                            \
   template <typename R, typename... Args>                                      \
   void autotune::kernel<R, cppjit::detail::pack<Args...>>::set_source_inline(  \
