@@ -50,6 +50,8 @@ double evaluate(const std::vector<size_t> &indices, F f, test t, Args... args) {
     std::cout << "------- end eval -------" << std::endl;
   }
 
+  f->write_measurement(indices, duration.count());
+
   return duration.count();
 }
 

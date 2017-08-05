@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -31,15 +32,62 @@ template <typename R, typename... Args>
 class kernel<R, cppjit::detail::pack<Args...>> {
 private:
   bool verbose;
+  bool measurement_enabled;
+  std::ofstream scenario_measurement_file;
+
   std::string kernel_name;
   std::vector<tunable_parameter> parameters;
   std::vector<size_t> optimal_indices;
 
 public:
   kernel(const std::string &kernel_name)
-      : verbose(false), kernel_name(kernel_name) {}
+      : verbose(false), measurement_enabled(false), kernel_name(kernel_name) {}
 
   void set_verbose(bool verbose_);
+
+  void set_write_measurement(const std::string &scenario_name) {
+    // close last scnario if there was one
+    if (measurement_enabled) {
+      if (scenario_measurement_file.is_open()) {
+        scenario_measurement_file.close();
+      }
+    }
+    measurement_enabled = true;
+    scenario_measurement_file.open(scenario_name + ".csv");
+  }
+
+  // to be called from tuner, not directly
+  void write_header() {
+    if (!measurement_enabled) {
+      return;
+    }
+    for (size_t i = 0; i < parameters.size(); i++) {
+      if (i > 0) {
+        scenario_measurement_file << ", ";
+      }
+      scenario_measurement_file << parameters[i].get_name();
+    }
+    scenario_measurement_file << ", "
+                              << "duration" << std::endl;
+  }
+
+  // to be called from tuner, not directly
+  void write_measurement(const std::vector<size_t> &indices,
+                         double duration_s) {
+    if (!measurement_enabled) {
+      return;
+    }
+    if (indices.size() != parameters.size()) {
+      throw;
+    }
+    for (size_t i = 0; i < indices.size(); i++) {
+      if (i > 0) {
+        scenario_measurement_file << ", ";
+      }
+      scenario_measurement_file << parameters[i].get_value(indices[i]);
+    }
+    scenario_measurement_file << ", " << duration_s << std::endl;
+  }
 
   void set_source_inline(const std::string &source_);
 
@@ -253,6 +301,10 @@ public:
     verbose = false;                                                           \
     parameters.clear();                                                        \
     optimal_indices.clear();                                                   \
+    if (scenario_measurement_file.is_open()) {                                 \
+      scenario_measurement_file.close();                                       \
+    }                                                                          \
+    measurement_enabled = false;                                               \
   }                                                                            \
   template <typename R, typename... Args>                                      \
   void autotune::kernel<R, cppjit::detail::pack<Args...>>::set_source_inline(  \

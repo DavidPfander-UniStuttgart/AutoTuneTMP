@@ -9,6 +9,8 @@ template <class F, class test, typename... Args>
 std::vector<size_t> bruteforce(F f, test t, const Args &... args) {
   std::vector<tunable_parameter> &parameters = f->get_parameters();
 
+  f->write_header();
+
   double total_combinations = 1.0;
   for (size_t i = 0; i < parameters.size(); i++) {
     total_combinations *= parameters[i].get_values().size();
