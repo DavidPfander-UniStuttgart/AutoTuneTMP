@@ -9,16 +9,10 @@
 #include "cppjit/function_traits.hpp"
 
 #include "parameter.hpp"
-#include "tuners/bruteforce.hpp"
-#include "tuners/line_search.hpp"
-#include "tuners/monte_carlo.hpp"
-#include "tuners/simulated_annealing.hpp"
-
-// #define DEFINE_KERNEL(kernel_name)
-//
-//
-
-// idea: use first invocation to trigger tuning, throw away results
+// #include "tuners/bruteforce.hpp"
+// #include "tuners/line_search.hpp"
+// #include "tuners/monte_carlo.hpp"
+// #include "tuners/simulated_annealing.hpp"
 
 namespace autotune {
 
@@ -216,29 +210,29 @@ public:
 
   void clear();
 
-  std::vector<size_t> tune(tuner m, Args... args) {
-    auto t = []() { return true; };
-    std::vector<size_t> optimal =
-        bruteforce(this, t, std::forward<Args &>(args)...);
-    return optimal;
-  }
+  // std::vector<size_t> tune(tuner m, Args... args) {
+  //   auto t = []() { return true; };
+  //   std::vector<size_t> optimal =
+  //       bruteforce(this, t, std::forward<Args &>(args)...);
+  //   return optimal;
+  // }
 
-  template <class test>
-  std::vector<size_t> tune(tuner m, test t, Args... args) {
-    std::vector<size_t> optimal;
-    if (m == tuner::bruteforce) {
-      optimal = bruteforce(this, t, std::forward<Args &>(args)...);
-    } else if (m == tuner::monte_carlo) {
-      optimal = monte_carlo(this, t, std::forward<Args &>(args)...);
-    } else if (m == tuner::simulated_annealing) {
-      optimal = simulated_annealing(this, t, std::forward<Args &>(args)...);
-    } else if (m == tuner::line_search) {
-      optimal = line_search(this, t, std::forward<Args &>(args)...);
-    } else {
-      throw;
-    }
-    return optimal;
-  }
+  // template <class test>
+  // std::vector<size_t> tune(tuner m, test t, Args... args) {
+  //   std::vector<size_t> optimal;
+  //   if (m == tuner::bruteforce) {
+  //     optimal = bruteforce(this, t, std::forward<Args &>(args)...);
+  //   } else if (m == tuner::monte_carlo) {
+  //     optimal = monte_carlo(this, t, std::forward<Args &>(args)...);
+  //   } else if (m == tuner::simulated_annealing) {
+  //     optimal = simulated_annealing(this, t, std::forward<Args &>(args)...);
+  //   } else if (m == tuner::line_search) {
+  //     optimal = line_search(this, t, std::forward<Args &>(args)...);
+  //   } else {
+  //     throw;
+  //   }
+  //   return optimal;
+  // }
 };
 }
 
