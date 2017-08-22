@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -8,15 +9,14 @@
 #include "cppjit/function_traits.hpp"
 
 #include "parameter.hpp"
-#include "tuners/bruteforce.hpp"
-
-// #define DEFINE_KERNEL(kernel_name)
-//
-//
-
-// idea: use first invocation to trigger tuning, throw away results
+// #include "tuners/bruteforce.hpp"
+// #include "tuners/line_search.hpp"
+// #include "tuners/monte_carlo.hpp"
+// #include "tuners/simulated_annealing.hpp"
 
 namespace autotune {
+
+enum class tuner { bruteforce, simulated_annealing, line_search, monte_carlo };
 
 // base template for the following specialization
 // required to do the pack-matching in the specialization
@@ -26,15 +26,62 @@ template <typename R, typename... Args>
 class kernel<R, cppjit::detail::pack<Args...>> {
 private:
   bool verbose;
+  bool measurement_enabled;
+  std::ofstream scenario_measurement_file;
+
   std::string kernel_name;
   std::vector<tunable_parameter> parameters;
   std::vector<size_t> optimal_indices;
 
 public:
   kernel(const std::string &kernel_name)
-      : verbose(false), kernel_name(kernel_name) {}
+      : verbose(false), measurement_enabled(false), kernel_name(kernel_name) {}
 
   void set_verbose(bool verbose_);
+
+  void set_write_measurement(const std::string &scenario_name) {
+    // close last scnario if there was one
+    if (measurement_enabled) {
+      if (scenario_measurement_file.is_open()) {
+        scenario_measurement_file.close();
+      }
+    }
+    measurement_enabled = true;
+    scenario_measurement_file.open(scenario_name + ".csv");
+  }
+
+  // to be called from tuner, not directly
+  void write_header() {
+    if (!measurement_enabled) {
+      return;
+    }
+    for (size_t i = 0; i < parameters.size(); i++) {
+      if (i > 0) {
+        scenario_measurement_file << ", ";
+      }
+      scenario_measurement_file << parameters[i].get_name();
+    }
+    scenario_measurement_file << ", "
+                              << "duration" << std::endl;
+  }
+
+  // to be called from tuner, not directly
+  void write_measurement(const std::vector<size_t> &indices,
+                         double duration_s) {
+    if (!measurement_enabled) {
+      return;
+    }
+    if (indices.size() != parameters.size()) {
+      throw;
+    }
+    for (size_t i = 0; i < indices.size(); i++) {
+      if (i > 0) {
+        scenario_measurement_file << ", ";
+      }
+      scenario_measurement_file << parameters[i].get_value(indices[i]);
+    }
+    scenario_measurement_file << ", " << duration_s << std::endl;
+  }
 
   void set_source_inline(const std::string &source_);
 
@@ -45,6 +92,8 @@ public:
   bool has_inline_source();
 
   bool is_verbose() { return verbose; }
+
+  bool is_valid_parameter_combination();
 
   void add_parameter(const tunable_parameter &parameter) {
     parameters.push_back(parameter);
@@ -161,12 +210,29 @@ public:
 
   void clear();
 
-  // template <class F> F f,
-  std::vector<size_t> tune(Args... args) {
-    std::vector<size_t> optimal =
-        bruteforce(this, std::forward<Args &>(args)...);
-    return optimal;
-  }
+  // std::vector<size_t> tune(tuner m, Args... args) {
+  //   auto t = []() { return true; };
+  //   std::vector<size_t> optimal =
+  //       bruteforce(this, t, std::forward<Args &>(args)...);
+  //   return optimal;
+  // }
+
+  // template <class test>
+  // std::vector<size_t> tune(tuner m, test t, Args... args) {
+  //   std::vector<size_t> optimal;
+  //   if (m == tuner::bruteforce) {
+  //     optimal = bruteforce(this, t, std::forward<Args &>(args)...);
+  //   } else if (m == tuner::monte_carlo) {
+  //     optimal = monte_carlo(this, t, std::forward<Args &>(args)...);
+  //   } else if (m == tuner::simulated_annealing) {
+  //     optimal = simulated_annealing(this, t, std::forward<Args &>(args)...);
+  //   } else if (m == tuner::line_search) {
+  //     optimal = line_search(this, t, std::forward<Args &>(args)...);
+  //   } else {
+  //     throw;
+  //   }
+  //   return optimal;
+  // }
 };
 }
 
@@ -177,10 +243,13 @@ public:
       cppjit::detail::function_traits<kernel_signature>::return_type,          \
       cppjit::detail::function_traits<kernel_signature>::args_type>            \
       kernel_name;                                                             \
-  } /* namespace autotune */
-
-#define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name)                  \
-  CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name)                          \
+  } /* namespace autotune */                                                   \
+  template <typename R, typename... Args>                                      \
+  template <typename builder_class>                                            \
+  std::shared_ptr<builder_class>                                               \
+  autotune::kernel<R, cppjit::detail::pack<Args...>>::get_builder_as() {       \
+    return cppjit::kernel_name.get_builder_as<builder_class>();                \
+  }                                                                            \
   template <typename R, typename... Args>                                      \
   R autotune::kernel<R, cppjit::detail::pack<Args...>>::operator()(            \
       Args... args) {                                                          \
@@ -221,14 +290,15 @@ public:
     return cppjit::kernel_name.get_builder();                                  \
   }                                                                            \
   template <typename R, typename... Args>                                      \
-  template <typename builder_class>                                            \
-  std::shared_ptr<builder_class>                                               \
-  autotune::kernel<R, cppjit::detail::pack<Args...>>::get_builder_as() {       \
-    return cppjit::kernel_name.get_builder_as<builder_class>();                \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
   void autotune::kernel<R, cppjit::detail::pack<Args...>>::clear() {           \
     cppjit::kernel_name.clear();                                               \
+    verbose = false;                                                           \
+    parameters.clear();                                                        \
+    optimal_indices.clear();                                                   \
+    if (scenario_measurement_file.is_open()) {                                 \
+      scenario_measurement_file.close();                                       \
+    }                                                                          \
+    measurement_enabled = false;                                               \
   }                                                                            \
   template <typename R, typename... Args>                                      \
   void autotune::kernel<R, cppjit::detail::pack<Args...>>::set_source_inline(  \
@@ -249,6 +319,25 @@ public:
   autotune::kernel<R, cppjit::detail::pack<Args...>>::has_inline_source() {    \
     return cppjit::kernel_name.has_inline_source();                            \
   }                                                                            \
+  template <typename R, typename... Args>                                      \
+  bool autotune::kernel<                                                       \
+      R, cppjit::detail::pack<Args...>>::is_valid_parameter_combination() {    \
+    auto builder = autotune::kernel_name.get_builder();                        \
+    void *uncasted_function =                                                  \
+        builder->load_other_symbol("is_valid_parameter_combination");          \
+    if (uncasted_function == nullptr) {                                        \
+      return true;                                                             \
+    }                                                                          \
+    bool (*decider_pointer)() =                                                \
+        reinterpret_cast<decltype(decider_pointer)>(uncasted_function);        \
+    return decider_pointer();                                                  \
+  }
+
+// std::function<bool()> decider;
+// decider = decider_pointer;
+
+#define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name)                  \
+  CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name)                          \
   namespace autotune {                                                         \
   kernel<cppjit::detail::function_traits<kernel_signature>::return_type,       \
          cppjit::detail::function_traits<kernel_signature>::args_type>         \
