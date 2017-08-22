@@ -1,48 +1,21 @@
 #include "opttmp/loop/unroll_loop.hpp"
 
-#include <algorithm>
 #include <iostream>
-#include <tuple>
-#include <vector>
 
-template <class F> void executor123(F f) {
-  f.template operator()<0>();
-  f.template operator()<1>();
-  f.template operator()<2>();
-  // template f<1>();
-  // template f<2>();
+template <size_t i> void myfunction(int &test) {
+  std::cout << "test: " << test << " i: " << i << std::endl;
+  test = 4;
 }
 
-template <typename... Ts> struct body {
-
-  std::tuple<Ts &...> vars;
-
-  body(Ts... args) : vars(args...) {}
-
-  template <size_t i> void operator()() {
-    std::cout << "i: " << i << " -> arr[" << i << "]: " << std::get<0>(vars)[i]
-              << std::endl;
-  }
-};
+// need macro, because templates can not be passed as arguments
+// defines struct myfunction_body that can be used as a loop body
+// with template index parameter
+DEFINE_LOOP_BODY(myfunction)
 
 int main(void) {
-  constexpr size_t N = 100;
-
-  std::vector<double> arr(N);
-  std::fill(arr.begin(), arr.end(), 0.0);
-
-  for (size_t i = 0; i < 3; i++) {
-    arr[i] = 3.0;
-  }
-
-  opttmp::loop::unroll_loop<10, 40, 2>([&arr](auto i) { arr[i] = 3.0; });
-
-  // for (size_t i = 0; i < N; i++) {
-  //   std::cout << "i: " << i << " -> " << arr[i] << std::endl;
-  // }
-
-  body<std::vector<double>> b(arr);
-  opttmp::loop::unroll_loop_template<10, 40, 2>(b);
-
+  int test_arg = 5;
+  std::cout << "arg before unrolled loop, test_arg: " << test_arg << std::endl;
+  opttmp::loop::unroll_loop_template<0, 10, 1>(myfunction_body(test_arg));
+  std::cout << "arg after unrolled loop, test_arg: " << test_arg << std::endl;
   return 0;
 }
