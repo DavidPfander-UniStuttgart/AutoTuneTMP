@@ -7,11 +7,48 @@ namespace autotune {
 // setup parameters, compile and measure duration of parameter combination
 // template <class F, class test, typename... Args>
 
-template <typename R, typename... Args> class abstract_tuner {
+template <typename R, typename... Args> class with_tests {
+private:
+  std::function<bool(R)> t;
+
 public:
+  void setup_tests(std::function<bool(R)> t_) { t = t_; };
+
+  bool has_test() { return t ? true : false; }
+
+  bool test(R r) { return t(r); };
+};
+
+template <typename R, typename... Args> class without_tests {};
+
+template <typename R, typename... Args>
+class abstract_tuner
+    : public std::conditional<!std::is_same<R, void>::value,
+                              with_tests<R, Args...>,
+                              without_tests<R, Args...>>::type {
+  // private:
+  //   std::function<bool(const R &)> &t;
+
+  // private:
+  //   std::function<bool(R)> &t;
+
+public:
+  abstract_tuner() = default;
+
+  // abstract_tuner(std::function<bool(R)> &t) : t(t) {}
+
+  // virtual bool test(R) { return true; };
+
+  // template <typename R_member = R>
+  // typename std::enable_if<!std::is_same<R_member, void>::value, bool>::type
+  //     test(R_member) {
+  //   static int blubb = 2;
+  //   return true;
+  // }
+
   double evaluate(const std::vector<size_t> &indices, bool &is_valid,
                   autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
-                  std::function<bool(const R &)> &t, Args &... args) {
+                  Args &... args) {
     // double evaluate(Args &... args) {
 
     is_valid = true;
@@ -40,16 +77,29 @@ public:
     auto start = std::chrono::high_resolution_clock::now();
 
     // call kernel, discard possibly returned values
-    bool test_ok = t(f(args...));
-    if (!test_ok) {
-      if (f.is_verbose()) {
-        std::cout << "warning: test for combination failed!" << std::endl;
+    if
+      constexpr(!std::is_same<R, void>::value) {
+        std::cout << "I have a test due to non-void return!" << std::endl;
+        if (this->has_test()) {
+          bool test_ok = this->test(f(args...));
+          if (!test_ok) {
+            if (f.is_verbose()) {
+              std::cout << "warning: test for combination failed!" << std::endl;
+            }
+            return std::numeric_limits<double>::max();
+          } else {
+            if (f.is_verbose()) {
+              std::cout << "test for combination passed" << std::endl;
+            }
+          }
+        } else {
+          std::cout << "NOT TESTING!" << std::endl;
+          f(args...);
+        }
       }
-      return std::numeric_limits<double>::max();
-    } else {
-      if (f.is_verbose()) {
-        std::cout << "test for combination passed" << std::endl;
-      }
+    else {
+      std::cout << "no test due to void return!" << std::endl;
+      f(args...);
     }
 
     auto end = std::chrono::high_resolution_clock::now();

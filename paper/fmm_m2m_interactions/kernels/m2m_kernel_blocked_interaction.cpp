@@ -11,23 +11,15 @@
 namespace octotiger {
 namespace fmm {
 
-// template <typename... Ts> struct init_m_partner_body_struct {
+template <size_t i>
+void init_m_partner(std::array<m2m_vector, 20> &m_partner,
+                    struct_of_array_data<expansion, real, 20, ENTRIES,
+                                         SOA_PADDING> &local_expansions_SoA,
+                    const size_t &interaction_partner_flat_index) {
+  m_partner[i] = local_expansions_SoA.value<i>(interaction_partner_flat_index);
+}
 
-//   std::tuple<Ts &...> vars;
-
-//   init_m_partner_body_struct(Ts &... args) : vars(args...) {}
-
-//   template <size_t i> void operator()() {
-//     // std::get<0> == m_partner
-//     // std::get<1> == local_expansions_SoA
-//     // std::get<2> == interaction_partner_flat_index
-
-//     // m_partner[0] =
-//     // local_expansions_SoA.value<0>(interaction_partner_flat_index);
-//     std::get<0>(vars)[i] =
-//         std::get<1>(vars).template value<i>(std::get<2>(vars));
-//   }
-// };
+DEFINE_LOOP_BODY(init_m_partner)
 
 // template <typename... Ts> struct assign_potential_expansions_body_struct {
 
@@ -136,46 +128,49 @@ void m2m_kernel::blocked_interaction_rho(
     // expansion_v m_partner;
     std::array<m2m_vector, 20> m_partner;
 
-    m_partner[0] =
-        local_expansions_SoA.value<0>(interaction_partner_flat_index);
-    m_partner[1] =
-        local_expansions_SoA.value<1>(interaction_partner_flat_index);
-    m_partner[2] =
-        local_expansions_SoA.value<2>(interaction_partner_flat_index);
-    m_partner[3] =
-        local_expansions_SoA.value<3>(interaction_partner_flat_index);
-    m_partner[4] =
-        local_expansions_SoA.value<4>(interaction_partner_flat_index);
-    m_partner[5] =
-        local_expansions_SoA.value<5>(interaction_partner_flat_index);
-    m_partner[6] =
-        local_expansions_SoA.value<6>(interaction_partner_flat_index);
-    m_partner[7] =
-        local_expansions_SoA.value<7>(interaction_partner_flat_index);
-    m_partner[8] =
-        local_expansions_SoA.value<8>(interaction_partner_flat_index);
-    m_partner[9] =
-        local_expansions_SoA.value<9>(interaction_partner_flat_index);
-    m_partner[10] =
-        local_expansions_SoA.value<10>(interaction_partner_flat_index);
-    m_partner[11] =
-        local_expansions_SoA.value<11>(interaction_partner_flat_index);
-    m_partner[12] =
-        local_expansions_SoA.value<12>(interaction_partner_flat_index);
-    m_partner[13] =
-        local_expansions_SoA.value<13>(interaction_partner_flat_index);
-    m_partner[14] =
-        local_expansions_SoA.value<14>(interaction_partner_flat_index);
-    m_partner[15] =
-        local_expansions_SoA.value<15>(interaction_partner_flat_index);
-    m_partner[16] =
-        local_expansions_SoA.value<16>(interaction_partner_flat_index);
-    m_partner[17] =
-        local_expansions_SoA.value<17>(interaction_partner_flat_index);
-    m_partner[18] =
-        local_expansions_SoA.value<18>(interaction_partner_flat_index);
-    m_partner[19] =
-        local_expansions_SoA.value<19>(interaction_partner_flat_index);
+    // m_partner[0] =
+    //     local_expansions_SoA.value<0>(interaction_partner_flat_index);
+    // m_partner[1] =
+    //     local_expansions_SoA.value<1>(interaction_partner_flat_index);
+    // m_partner[2] =
+    //     local_expansions_SoA.value<2>(interaction_partner_flat_index);
+    // m_partner[3] =
+    //     local_expansions_SoA.value<3>(interaction_partner_flat_index);
+    // m_partner[4] =
+    //     local_expansions_SoA.value<4>(interaction_partner_flat_index);
+    // m_partner[5] =
+    //     local_expansions_SoA.value<5>(interaction_partner_flat_index);
+    // m_partner[6] =
+    //     local_expansions_SoA.value<6>(interaction_partner_flat_index);
+    // m_partner[7] =
+    //     local_expansions_SoA.value<7>(interaction_partner_flat_index);
+    // m_partner[8] =
+    //     local_expansions_SoA.value<8>(interaction_partner_flat_index);
+    // m_partner[9] =
+    //     local_expansions_SoA.value<9>(interaction_partner_flat_index);
+    // m_partner[10] =
+    //     local_expansions_SoA.value<10>(interaction_partner_flat_index);
+    // m_partner[11] =
+    //     local_expansions_SoA.value<11>(interaction_partner_flat_index);
+    // m_partner[12] =
+    //     local_expansions_SoA.value<12>(interaction_partner_flat_index);
+    // m_partner[13] =
+    //     local_expansions_SoA.value<13>(interaction_partner_flat_index);
+    // m_partner[14] =
+    //     local_expansions_SoA.value<14>(interaction_partner_flat_index);
+    // m_partner[15] =
+    //     local_expansions_SoA.value<15>(interaction_partner_flat_index);
+    // m_partner[16] =
+    //     local_expansions_SoA.value<16>(interaction_partner_flat_index);
+    // m_partner[17] =
+    //     local_expansions_SoA.value<17>(interaction_partner_flat_index);
+    // m_partner[18] =
+    //     local_expansions_SoA.value<18>(interaction_partner_flat_index);
+    // m_partner[19] =
+    //     local_expansions_SoA.value<19>(interaction_partner_flat_index);
+
+    opttmp::loop::unroll_loop_template<0, 20, 1>(init_m_partner_body(
+        m_partner, local_expansions_SoA, interaction_partner_flat_index));
 
     // init_m_partner_body_struct init_m_partner_body(
     //     m_partner, local_expansions_SoA, interaction_partner_flat_index);
@@ -352,9 +347,8 @@ void m2m_kernel::blocked_interaction_rho(
 
     // change here
 
-    tmp =
-        potential_expansions_SoA.value<10>(cell_flat_index_unpadded) +
-        m_partner[0] * D_lower[10];
+    tmp = potential_expansions_SoA.value<10>(cell_flat_index_unpadded) +
+          m_partner[0] * D_lower[10];
     Vc::where(mask, tmp).memstore(
         potential_expansions_SoA.pointer<10>(cell_flat_index_unpadded),
         Vc::flags::element_aligned);

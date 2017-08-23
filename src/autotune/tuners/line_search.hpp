@@ -15,17 +15,22 @@ class line_search<autotune::kernel<R, cppjit::detail::pack<Args...>>>
     : public abstract_tuner<R, Args...> {
 private:
   autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
-  std::function<bool(const R &)> &t;
   size_t max_iterations;
   size_t restarts;
   std::vector<size_t> initial_indices_guess;
 
 public:
   line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
-              std::function<bool(const R &)> &t, size_t max_iterations,
-              size_t restarts, std::vector<size_t> &initial_indices_guess)
-      : f(f), t(t), max_iterations(max_iterations), restarts(restarts),
-        initial_indices_guess(initial_indices_guess) {}
+              size_t max_iterations, size_t restarts,
+              std::vector<size_t> &initial_indices_guess)
+      : abstract_tuner<R, Args...>(), f(f), max_iterations(max_iterations),
+        restarts(restarts), initial_indices_guess(initial_indices_guess) {}
+
+  // line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
+  //             std::function<bool(const R &)> &t, size_t max_iterations,
+  //             size_t restarts, std::vector<size_t> &initial_indices_guess)
+  //     : abstract_tuner<R, Args...>(t), f(f), max_iterations(max_iterations),
+  //       restarts(restarts), initial_indices_guess(initial_indices_guess) {}
 
   std::vector<size_t> tune(Args &... args) {
 
@@ -40,7 +45,7 @@ public:
     bool is_valid = true;
     std::vector<size_t> optimal_indices = initial_indices_guess;
     double optimal_duration =
-        this->evaluate(optimal_indices, is_valid, f, t, args...);
+        this->evaluate(optimal_indices, is_valid, f, args...);
 
     size_t counter = 0;
     size_t cur_index = 0;
@@ -64,8 +69,7 @@ public:
 
         // if a valid new index value was found, test it
 
-        double duration =
-            this->evaluate(indices_attempt, is_valid, f, t, args...);
+        double duration = this->evaluate(indices_attempt, is_valid, f, args...);
         if (is_valid && duration < optimal_duration) {
           optimal_duration = duration;
           optimal_indices = indices_attempt;

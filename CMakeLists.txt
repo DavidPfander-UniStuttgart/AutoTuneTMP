@@ -75,6 +75,11 @@ add_executable(unroll_example_autotune ${SOURCES_UNROLL_LOOP_AUTOTUNE})
 target_link_libraries(unroll_example_autotune dl)
 install(TARGETS unroll_example_autotune DESTINATION examples)
 
+set(SOURCES_UNROLL_LOOP_AUTOTUNE_RETURN_INT "examples/unroll_loop_autotune_return_int.cpp")
+add_executable(unroll_example_autotune_return_int ${SOURCES_UNROLL_LOOP_AUTOTUNE_RETURN_INT})
+target_link_libraries(unroll_example_autotune_return_int dl)
+install(TARGETS unroll_example_autotune_return_int DESTINATION examples)
+
 #################
 # end examples
 #################

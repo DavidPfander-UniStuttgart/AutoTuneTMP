@@ -1,5 +1,6 @@
 #include "autotune/autotune.hpp"
 #include "autotune/parameter.hpp"
+#include "autotune/tuners/line_search.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -10,7 +11,7 @@ AUTOTUNE_DECLARE_DEFINE_KERNEL(void(std::vector<double> &, const size_t),
                                unrolling_kernel)
 
 int main(void) {
-  constexpr size_t N = 20;
+  size_t N = 20;
 
   std::vector<double> arr(N);
   std::fill(arr.begin(), arr.end(), 0.0);
@@ -28,20 +29,11 @@ int main(void) {
   autotune::unrolling_kernel.add_parameter("DUMMY_PAR_2", {"0", "1", "2", "3"});
   autotune::unrolling_kernel.add_parameter("DUMMY_PAR_3", {"a", "b", "c", "d"});
 
-  // autotune::unrolling_kernel.compile("examples/kernels_unroll_loop_autotune/");
-
-  // tune kernel, note that arguments are reused
-  std::vector<size_t> optimal_indices =
-      autotune::unrolling_kernel.tune(autotune::tuner::bruteforce, arr, N);
+  std::vector<size_t> line_search_initial_guess = {0, 0, 0};
+  autotune::tuners::line_search<decltype(autotune::unrolling_kernel)> tuner(
+      autotune::unrolling_kernel, 50, 1, line_search_initial_guess);
+  std::vector<size_t> optimal_indices = tuner.tune(arr, N);
 
   autotune::unrolling_kernel.print_values(optimal_indices);
-  // autotune::unrolling_kernel.print_parameters();
-
-  // std::cout << "now compiling and running..." << std::endl;
-
-  // std::vector<size_t> indices = {0, 0, 0};
-  // autotune::unrolling_kernel.create_parameter_file(indices);
-  // autotune::unrolling_kernel.compile();
-  // autotune::unrolling_kernel(arr, N);
   return 0;
 }
