@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-#include "loop_nest.hpp"
+#include "../loop/loop_nest.hpp"
 #include "memory_layout_exception.hpp"
 #include "tile_iterator.hpp"
 #include "tiling_info_dim.hpp"
@@ -98,7 +98,7 @@ void tile_dim_indices(std::vector<T, U> &tiled, const std::vector<T, U> &org,
   // }
   // std::cout << std::endl;
 
-  util::loop_nest<dim>(
+  opttmp::loop::dynamic_loop_nest<dim>(
       min, max, stride,
       [&tiled, &org, &tiling_info, &tile_index,
        skipped_blocks](const std::array<size_t, dim> &inner_index) {
@@ -224,7 +224,7 @@ std::vector<T, U> undo_tiling(std::vector<T, U> &tiled,
           index_offset[d] = tile_index[d] * tiling_info[d].tile_size_dir;
         }
 
-        util::loop_nest<dim>(
+        opttmp::loop::dynamic_loop_nest<dim>(
             min, max, strides,
             [&view, &untiled, &tiling_info, &index_offset,
              &untiled_strides](const std::array<size_t, dim> &inner_index) {
