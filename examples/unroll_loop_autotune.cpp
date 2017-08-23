@@ -18,9 +18,12 @@ int main(void) {
 
   autotune::unrolling_kernel.set_verbose(true);
 
+  auto builder =
+      autotune::unrolling_kernel.get_builder_as<cppjit::builder::gcc>();
   // assuming the example is run from the repository base folder
-  autotune::unrolling_kernel.get_builder_as<cppjit::builder::gcc>()
-      ->set_include_paths("-I src");
+  builder->set_include_paths("-I src");
+  builder->set_cpp_flags("-std=c++1z -fPIC");
+  builder->set_link_flags("-std=c++1z -shared");
 
   autotune::unrolling_kernel.set_source_dir(
       "examples/kernels_unroll_loop_autotune");

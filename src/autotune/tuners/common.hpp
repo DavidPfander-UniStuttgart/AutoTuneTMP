@@ -4,9 +4,6 @@
 
 namespace autotune {
 
-// setup parameters, compile and measure duration of parameter combination
-// template <class F, class test, typename... Args>
-
 template <typename R, typename... Args> class with_tests {
 private:
   std::function<bool(R)> t;
@@ -26,30 +23,12 @@ class abstract_tuner
     : public std::conditional<!std::is_same<R, void>::value,
                               with_tests<R, Args...>,
                               without_tests<R, Args...>>::type {
-  // private:
-  //   std::function<bool(const R &)> &t;
-
-  // private:
-  //   std::function<bool(R)> &t;
-
 public:
   abstract_tuner() = default;
-
-  // abstract_tuner(std::function<bool(R)> &t) : t(t) {}
-
-  // virtual bool test(R) { return true; };
-
-  // template <typename R_member = R>
-  // typename std::enable_if<!std::is_same<R_member, void>::value, bool>::type
-  //     test(R_member) {
-  //   static int blubb = 2;
-  //   return true;
-  // }
 
   double evaluate(const std::vector<size_t> &indices, bool &is_valid,
                   autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
                   Args &... args) {
-    // double evaluate(Args &... args) {
 
     is_valid = true;
 
@@ -79,7 +58,6 @@ public:
     // call kernel, discard possibly returned values
     if
       constexpr(!std::is_same<R, void>::value) {
-        std::cout << "I have a test due to non-void return!" << std::endl;
         if (this->has_test()) {
           bool test_ok = this->test(f(args...));
           if (!test_ok) {
@@ -93,12 +71,10 @@ public:
             }
           }
         } else {
-          std::cout << "NOT TESTING!" << std::endl;
           f(args...);
         }
       }
     else {
-      std::cout << "no test due to void return!" << std::endl;
       f(args...);
     }
 
