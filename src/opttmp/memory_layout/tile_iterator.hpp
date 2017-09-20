@@ -20,7 +20,7 @@ iterate_tile_dim(std::vector<T, U> &tiled,
                  const std::vector<tiling_info_dim> &tiling_info,
                  size_t (&tile_index)[dim], F f) {
 
-  memory_layout::tile_view<2, T, U> v(tiled, tile_index, tiling_info);
+  memory_layout::tile_view<dim, T, U> v(tiled, tile_index, tiling_info);
   f(std::move(v));
 }
 
