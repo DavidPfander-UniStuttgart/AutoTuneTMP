@@ -292,7 +292,7 @@ std::vector<T, U> undo_tiling(std::vector<T, U> &tiled,
             [&view, &untiled, &tiling_info, &index_offset,
              &untiled_strides](const std::array<size_t, dim> &inner_index) {
               std::array<size_t, dim> outer_index;
-              std::cout << "outer_index ";
+              std::cout << "untiled index ";
               for (size_t d = 0; d < dim; d++) {
                 outer_index[d] = inner_index[d] + index_offset[d];
                 if (d > 0) {
