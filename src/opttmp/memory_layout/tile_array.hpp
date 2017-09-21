@@ -280,11 +280,11 @@ std::vector<T, U> undo_tiling(std::vector<T, U> &tiled,
         std::array<size_t, dim> &tile_index = view.get_tile_index();
 
         std::array<size_t, dim> index_offset;
-        std::cout << "---------next tile---------" << std::endl;
+        // std::cout << "---------next tile---------" << std::endl;
         for (size_t d = 0; d < dim; d++) {
           index_offset[d] = tile_index[d] * tiling_info[d].tile_size_dir;
-          std::cout << "index_offset[" << d << "] = " << index_offset[d]
-                    << std::endl;
+          // std::cout << "index_offset[" << d << "] = " << index_offset[d]
+          //           << std::endl;
         }
 
         opttmp::loop::dynamic_loop_nest<dim>(
@@ -292,19 +292,19 @@ std::vector<T, U> undo_tiling(std::vector<T, U> &tiled,
             [&view, &untiled, &tiling_info, &index_offset,
              &untiled_strides](const std::array<size_t, dim> &inner_index) {
               std::array<size_t, dim> outer_index;
-              std::cout << "untiled index ";
+              // std::cout << "untiled index ";
               for (size_t d = 0; d < dim; d++) {
                 outer_index[d] = inner_index[d] + index_offset[d];
-                if (d > 0) {
-                    std::cout << ", ";
-                }
-                std::cout << outer_index[d];
+                // if (d > 0) {
+                //     std::cout << ", ";
+                // }
+                // std::cout << outer_index[d];
               }
               size_t flat_outer_index =
                   flat_index(outer_index, untiled_strides);
-              std::cout << " flat_outer_index: " << flat_outer_index;
-              std::cout << " view[index_offset] = " << view[inner_index]
-                        << std::endl;
+              // std::cout << " flat_outer_index: " << flat_outer_index;
+              // std::cout << " view[index_offset] = " << view[inner_index]
+              //           << std::endl;
               untiled[flat_outer_index] = view[inner_index];
             });
 
