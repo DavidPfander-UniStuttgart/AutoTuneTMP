@@ -9,7 +9,7 @@ private:
   std::function<bool(R)> t;
 
 public:
-  void setup_tests(std::function<bool(R)> t_) { t = t_; };
+  void setup_test(std::function<bool(R)> t_) { t = t_; };
 
   bool has_test() { return t ? true : false; }
 

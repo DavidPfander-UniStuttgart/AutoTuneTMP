@@ -16,7 +16,7 @@ target_include_directories(AutoTuneTMP INTERFACE
   $<INSTALL_INTERFACE:include/>
   )
 
-install(TARGETS AutoTuneTMP EXPORT AutoTuneTMPTargets INCLUDES DESTINATION include)
+install(TARGETS AutoTuneTMP EXPORT AutoTuneTMPTargets)
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
@@ -74,25 +74,25 @@ add_executable(unroll_example ${SOURCES_UNROLL_LOOP})
 target_link_libraries(unroll_example AutoTuneTMP)
 install(TARGETS unroll_example DESTINATION examples)
 
-set(SOURCES_LOOP_NEST "examples/loop_nest_example.cpp")
-add_executable(loop_nest_example ${SOURCES_LOOP_NEST})
+add_executable(loop_nest_example "examples/loop_nest_example.cpp")
 target_link_libraries(loop_nest_example AutoTuneTMP)
 install(TARGETS loop_nest_example DESTINATION examples)
 
-set(SOURCES_UNROLL_LOOP_AUTOTUNE_INLINE "examples/unroll_loop_autotune_inline.cpp")
-add_executable(unroll_example_autotune_inline ${SOURCES_UNROLL_LOOP_AUTOTUNE_INLINE})
-target_link_libraries(unroll_example_autotune_inline dl AutoTuneTMP)
+add_executable(unroll_example_autotune_inline "examples/unroll_loop_autotune_inline.cpp")
+target_link_libraries(unroll_example_autotune_inline AutoTuneTMP)
 install(TARGETS unroll_example_autotune_inline DESTINATION examples)
 
-set(SOURCES_UNROLL_LOOP_AUTOTUNE "examples/unroll_loop_autotune.cpp")
-add_executable(unroll_example_autotune ${SOURCES_UNROLL_LOOP_AUTOTUNE})
-target_link_libraries(unroll_example_autotune dl AutoTuneTMP)
+add_executable(unroll_example_autotune "examples/unroll_loop_autotune.cpp")
+target_link_libraries(unroll_example_autotune AutoTuneTMP)
 install(TARGETS unroll_example_autotune DESTINATION examples)
 
-set(SOURCES_UNROLL_LOOP_AUTOTUNE_RETURN_INT "examples/unroll_loop_autotune_return_int.cpp")
-add_executable(unroll_example_autotune_return_int ${SOURCES_UNROLL_LOOP_AUTOTUNE_RETURN_INT})
-target_link_libraries(unroll_example_autotune_return_int dl AutoTuneTMP)
+add_executable(unroll_example_autotune_return_int "examples/unroll_loop_autotune_return_int.cpp")
+target_link_libraries(unroll_example_autotune_return_int AutoTuneTMP)
 install(TARGETS unroll_example_autotune_return_int DESTINATION examples)
+
+add_executable(minimal_example "examples/minimal_example.cpp")
+target_link_libraries(minimal_example AutoTuneTMP)
+install(TARGETS minimal_example DESTINATION examples)
 
 #################
 # end examples

@@ -36,7 +36,7 @@ int main(void) {
   autotune::tuners::line_search<decltype(autotune::unrolling_kernel)> tuner(
       autotune::unrolling_kernel, 50, 1, line_search_initial_guess);
 
-  tuner.setup_tests([](int r) { return r == 5 ? true : false; });
+  tuner.setup_test([](int r) { return r == 5 ? true : false; });
 
   std::vector<size_t> optimal_indices = tuner.tune(arr, N);
 
