@@ -6,4 +6,6 @@ if [ ! -d "cppjit" ]; then
     git clone git@github.com:DavidPfander-UniStuttgart/cppjit.git
 fi
 
-./cppjit/build-all.sh
+cd cppjit
+./build-all.sh
+cd ..
