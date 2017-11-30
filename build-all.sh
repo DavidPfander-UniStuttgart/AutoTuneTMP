@@ -3,7 +3,7 @@ set -x
 set -e
 
 # dependencies first
-./scripts/build-cppjit.sh
+./scripts/build-cppjit.sh $1
 
 # need this, otherwise have to push arguments to called scripts
 source source-me.sh

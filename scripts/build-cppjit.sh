@@ -7,5 +7,5 @@ if [ ! -d "cppjit" ]; then
 fi
 
 cd cppjit
-./build-all.sh
+./build-all.sh $1
 cd ..
