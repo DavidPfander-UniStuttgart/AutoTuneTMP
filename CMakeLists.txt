@@ -6,7 +6,10 @@ set(AutoTuneTMP_VERSION 0.1.0)
 add_library(AutoTuneTMP INTERFACE)
 
 find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_ROOT})
-target_include_directories(AutoTuneTMP INTERFACE ${Vc_INCLUDE_DIR})
+# target_include_directories(AutoTuneTMP INTERFACE ${Vc_INCLUDE_DIR})
+target_include_directories(AutoTuneTMP INTERFACE
+  $<BUILD_INTERFACE:${Vc_INCLUDE_DIR}>
+  )
 
 find_package(cppjit NO_MODULE REQUIRED PATHS ${CPPJIT_ROOT})
 target_link_libraries(AutoTuneTMP INTERFACE cppjit::cppjit)
