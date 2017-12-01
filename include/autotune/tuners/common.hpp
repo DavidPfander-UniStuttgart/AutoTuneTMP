@@ -26,7 +26,7 @@ class abstract_tuner
 public:
   abstract_tuner() = default;
 
-  double evaluate(const std::vector<size_t> &indices, bool &is_valid,
+  double evaluate(bool &is_valid,
                   autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
                   Args &... args) {
 
@@ -34,10 +34,10 @@ public:
 
     if (f.is_verbose()) {
       std::cout << "------ begin eval ------" << std::endl;
-      f.print_values(indices);
+      f.print_values();
     }
 
-    f.create_parameter_file(indices);
+    f.create_parameter_file();
 
     f.compile();
 
@@ -86,32 +86,31 @@ public:
       std::cout << "------- end eval -------" << std::endl;
     }
 
-    f.write_measurement(indices, duration.count());
+    f.write_measurement(duration.count());
 
     return duration.count();
   }
 
   void report(const std::string &message, double duration,
-              std::vector<size_t> &indices,
               typename autotune::kernel<R, cppjit::detail::pack<Args...>> &f) {
-    std::vector<tunable_parameter> &parameters = f.get_parameters();
+    parameter_set &parameters = f.get_parameters();
     std::cout << message << "; duration: " << duration;
     std::cout << "; values: ";
     for (size_t i = 0; i < parameters.size(); i++) {
       if (i > 0) {
         std::cout << ", ";
       }
-      std::cout << parameters[i].get_value(indices[i]);
+      std::cout << parameters[i]->get_value();
     }
     std::cout << std::endl;
   }
 
   // template <class F>
   void report_verbose(
-      const std::string &message, double duration, std::vector<size_t> &indices,
+      const std::string &message, double duration,
       typename autotune::kernel<R, cppjit::detail::pack<Args...>> &f) {
     if (f.is_verbose()) {
-      report(message, duration, indices, f);
+      report(message, duration, f);
     }
   }
 };

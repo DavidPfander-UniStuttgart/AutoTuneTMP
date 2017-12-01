@@ -25,7 +25,7 @@ public:
       : f(f), t(t) {}
 
   std::vector<size_t> tune(Args &... args) {
-    std::vector<tunable_parameter> &parameters = f.get_parameters();
+    std::vector<fixed_set_parameter> &parameters = f.get_parameters();
     bool is_valid = true;
 
     f.write_header();
