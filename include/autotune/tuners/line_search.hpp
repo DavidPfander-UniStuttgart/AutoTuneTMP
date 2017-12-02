@@ -54,14 +54,19 @@ public:
     bool is_valid = true;
     parameter_set optimal_parameters = parameters.clone();
 
+    if (f.is_verbose()) {
+      std::cout << "evaluating initial parameter combination" << std::endl;
+      std::cout << "initial values:" << std::endl;
+      f.print_values();
+    }
     double optimal_duration = this->evaluate(is_valid, f, args...);
 
     size_t counter = 0;
     size_t cur_index = 0;
     while (counter < max_iterations) {
       if (f.is_verbose()) {
-        std::cout << "cur_index:" << cur_index << std::endl;
-        std::cout << "current best indices:" << std::endl;
+        std::cout << "cur_index: " << cur_index << std::endl;
+        std::cout << "current values:" << std::endl;
         f.print_values();
       }
 
@@ -83,8 +88,8 @@ public:
 
         double duration = this->evaluate(is_valid, f, args...);
         if (is_valid && duration < optimal_duration) {
+          optimal_parameters = f.get_parameters().clone();
           optimal_duration = duration;
-          optimal_parameters = f.get_parameters();
           if (f.is_verbose()) {
             this->report_verbose("new best kernel", optimal_duration, f);
           }

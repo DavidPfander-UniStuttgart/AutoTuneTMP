@@ -97,31 +97,39 @@ public:
 
   void add_parameter(const std::shared_ptr<abstract_parameter> &parameter) {
     parameters.push_back(parameter);
-    optimal_indices.push_back(0);
+    // optimal_indices.push_back(0);
   }
 
   parameter_set &get_parameters() { return parameters; }
 
-  template <class T>
-  void add_parameter(const std::string &name, const T &values) {
-    parameters.emplace_back(name, values);
-  }
+  // template <class T>
+  // void add_parameter(const std::string &name, const T &values) {
+  //   parameters.emplace_back(name, values);
+  // }
 
-  const std::vector<size_t> &get_optimal_indices() { return optimal_indices; }
+  // const std::vector<size_t> &get_optimal_indices() { return optimal_indices;
+  // }
 
-  void set_optimal_indices(const std::vector<size_t> &new_optimal_indices) {
-    optimal_indices = new_optimal_indices;
-  }
+  // void set_optimal_indices(const std::vector<size_t> &new_optimal_indices) {
+  //   optimal_indices = new_optimal_indices;
+  // }
 
   // template <class T>
   void add_parameter(const std::string &name,
                      const std::vector<std::string> &values) {
     auto p = std::make_shared<fixed_set_parameter>(name, values);
-    parameters.push_back(std::dynamic_pointer_cast<abstract_parameter>(p));
+    if (!p) {
+      std::cout << "pointer p is empty!" << std::endl;
+    }
+    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
+    if (!q) {
+      std::cout << "pointer q is empty!" << std::endl;
+    }
+    parameters.push_back(q);
   }
 
   void replace_parameters(parameter_set &new_parameters) {
-      parameters = new_parameters;
+    parameters = new_parameters;
   }
 
   void print_parameters() {
@@ -148,38 +156,38 @@ public:
     //   padding[i] = std::max(parameters[i]->get_name().size(),
     //                         parameters[i]->get_value(indices[i]).size());
     // }
-    // std::cout << "parameter name  | ";
-    // for (size_t i = 0; i < parameters.size(); i++) {
-    //   if (i > 0) {
-    //     std::cout << ", ";
-    //   }
-    //   const std::string &name = parameters[i]->get_name();
-    //   std::cout << name;
-    //   // add padding
-    //   size_t cur_padding = padding[i] - name.size();
+    std::cout << "parameter name  | ";
+    for (size_t i = 0; i < parameters.size(); i++) {
+      if (i > 0) {
+        std::cout << ", ";
+      }
+      const std::string &name = parameters[i]->get_name();
+      std::cout << name;
+      //   // add padding
+      //   size_t cur_padding = padding[i] - name.size();
 
-    //   std::stringstream ss;
-    //   for (size_t j = 0; j < cur_padding; j++) {
-    //     ss << " ";
-    //   }
-    //   std::cout << ss.str();
-    // }
-    // std::cout << std::endl;
-    // std::cout << "parameter value | ";
-    // for (size_t i = 0; i < parameters.size(); i++) {
-    //   if (i > 0) {
-    //     std::cout << ", ";
-    //   }
-    //   const std::string &value = parameters[i]->get_value(indices[i]);
-    //   std::cout << value;
-    //   // add padding
-    //   size_t cur_padding = padding[i] - value.size();
-    //   std::stringstream ss;
-    //   for (size_t j = 0; j < cur_padding; j++) {
-    //     ss << " ";
-    //   }
-    //   std::cout << ss.str();
-    // }
+      //   std::stringstream ss;
+      //   for (size_t j = 0; j < cur_padding; j++) {
+      //     ss << " ";
+      //   }
+      //   std::cout << ss.str();
+    }
+    std::cout << std::endl;
+    std::cout << "parameter value | ";
+    for (size_t i = 0; i < parameters.size(); i++) {
+      if (i > 0) {
+        std::cout << ", ";
+      }
+      const std::string &value = parameters[i]->get_value();
+      std::cout << value;
+      // // add padding
+      // size_t cur_padding = padding[i] - value.size();
+      // std::stringstream ss;
+      // for (size_t j = 0; j < cur_padding; j++) {
+      //   ss << " ";
+      // }
+      // std::cout << ss.str();
+    }
     std::cout << std::endl;
   }
 
@@ -218,30 +226,6 @@ public:
   std::shared_ptr<builder_class> get_builder_as();
 
   void clear();
-
-  // std::vector<size_t> tune(tuner m, Args... args) {
-  //   auto t = []() { return true; };
-  //   std::vector<size_t> optimal =
-  //       bruteforce(this, t, std::forward<Args &>(args)...);
-  //   return optimal;
-  // }
-
-  // template <class test>
-  // std::vector<size_t> tune(tuner m, test t, Args... args) {
-  //   std::vector<size_t> optimal;
-  //   if (m == tuner::bruteforce) {
-  //     optimal = bruteforce(this, t, std::forward<Args &>(args)...);
-  //   } else if (m == tuner::monte_carlo) {
-  //     optimal = monte_carlo(this, t, std::forward<Args &>(args)...);
-  //   } else if (m == tuner::simulated_annealing) {
-  //     optimal = simulated_annealing(this, t, std::forward<Args &>(args)...);
-  //   } else if (m == tuner::line_search) {
-  //     optimal = line_search(this, t, std::forward<Args &>(args)...);
-  //   } else {
-  //     throw;
-  //   }
-  //   return optimal;
-  // }
 };
 }
 

@@ -32,7 +32,7 @@ private:
 public:
   fixed_set_parameter(const std::string &name,
                       const std::vector<std::string> &values)
-      : values(values), abstract_parameter(name) {}
+      : abstract_parameter(name), cur_index(0), values(values) {}
 
   const std::vector<std::string> &get_values() const { return this->values; }
 
@@ -62,12 +62,22 @@ public:
     return "#define " + name + " " + values[index] + "\n";
   }
 
-  virtual std::shared_ptr<abstract_parameter> clone() override{};
+  virtual std::shared_ptr<abstract_parameter> clone() override {
+    std::shared_ptr<fixed_set_parameter> new_instance =
+        std::make_shared<fixed_set_parameter>(this->name, this->values);
+    return std::dynamic_pointer_cast<abstract_parameter>(new_instance);
+  };
 };
 
 // using parameter_set = std::vector<std::shared_ptr<abstract_parameter>>;
 class parameter_set : public std::vector<std::shared_ptr<abstract_parameter>> {
 public:
+  // void operator=(parameter_set const &other) {
+  //   for (size_t i = 0; i < other.size(); i++) {
+  //     this->push_back(other[i]);
+  //   }
+  // }
+
   parameter_set clone() {
     parameter_set new_instance;
     for (size_t i = 0; i < this->size(); i++) {

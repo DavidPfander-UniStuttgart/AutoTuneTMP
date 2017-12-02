@@ -66,7 +66,7 @@ INSTALL (
 
 # set(CMAKE_CXX_FLAGS "-march=native -mno-vzeroupper -ffast-math -std=c++17 -g -Wall -Wextra -Wno-unused-parameter ${CMAKE_CXX_FLAGS}")
 
-target_compile_options(AutoTuneTMP INTERFACE -std=c++17 ${CMAKE_CXX_FLAGS})
+target_compile_options(AutoTuneTMP INTERFACE -std=c++17 -Wall -Wextra ${CMAKE_CXX_FLAGS})
 
 #################
 # build examples

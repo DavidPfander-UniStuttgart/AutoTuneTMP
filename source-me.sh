@@ -16,7 +16,7 @@ if [[ -z "$CONFIGURATION_DONE" ]]; then
 
     export CC=gcc
     export CXX=g++
-    export CXX_FLAGS="-march=native -mtune=native"
+    export CXX_FLAGS="-Wall -Wextra -march=native -mtune=native"
     export CONFIGURATION_DONE=true
 else
     echo "AutoTuneTMP: configuration already done, skipping..."
