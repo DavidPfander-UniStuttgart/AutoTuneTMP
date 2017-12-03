@@ -17,7 +17,7 @@ protected:
 
 public:
   const std::string &get_name() const { return this->name; }
-  virtual const std::string &get_value() const = 0;
+  virtual const std::string get_value() const = 0;
   virtual std::string to_parameter_source_line() = 0;
   virtual size_t count_values() const = 0;
   virtual void reset() = 0;
@@ -42,7 +42,7 @@ public:
     return this->values[index];
   }
 
-  virtual const std::string &get_value() const override {
+  virtual const std::string get_value() const override {
     return this->values[cur_index];
   }
 
@@ -58,13 +58,46 @@ public:
   }
 
   // TODO: remove this overload?
-  std::string to_parameter_source_line(size_t index) {
-    return "#define " + name + " " + values[index] + "\n";
-  }
+  // std::string to_parameter_source_line(size_t index) {
+  //   return "#define " + name + " " + values[index] + "\n";
+  // }
 
   virtual std::shared_ptr<abstract_parameter> clone() override {
     std::shared_ptr<fixed_set_parameter> new_instance =
         std::make_shared<fixed_set_parameter>(this->name, this->values);
+    new_instance->cur_index = this->cur_index;
+    return std::dynamic_pointer_cast<abstract_parameter>(new_instance);
+  };
+};
+
+class continuous_parameter : public abstract_parameter {
+private:
+  double current;
+  double initial;
+
+public:
+  continuous_parameter(const std::string &name, double initial)
+      : abstract_parameter(name), current(initial), initial(initial) {}
+
+  virtual const std::string get_value() const override {
+    return std::to_string(current);
+  }
+
+  virtual size_t count_values() const override { throw; }
+
+  virtual void reset() override {
+    // TODO: should be extended, so that an initial guess can be supplied
+    current = initial;
+  }
+
+  virtual std::string to_parameter_source_line() override {
+    return "#define " + name + " " + std::to_string(current) + "\n";
+  }
+
+  virtual std::shared_ptr<abstract_parameter> clone() override {
+    std::shared_ptr<continuous_parameter> new_instance =
+        std::make_shared<continuous_parameter>(this->name, initial);
+    new_instance->current = this->current;
     return std::dynamic_pointer_cast<abstract_parameter>(new_instance);
   };
 };
