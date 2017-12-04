@@ -9,8 +9,9 @@
 #include "cppjit/function_traits.hpp"
 
 #include "abstract_parameter.hpp"
-#include "parameter_set.hpp"
+#include "continuous_parameter.hpp"
 #include "fixed_set_parameter.hpp"
+#include "parameter_set.hpp"
 
 namespace autotune {
 
@@ -116,13 +117,34 @@ public:
   void add_parameter(const std::string &name,
                      const std::vector<std::string> &values) {
     auto p = std::make_shared<fixed_set_parameter>(name, values);
-    if (!p) {
-      std::cout << "pointer p is empty!" << std::endl;
-    }
     auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-    if (!q) {
-      std::cout << "pointer q is empty!" << std::endl;
-    }
+    parameters.push_back(q);
+  }
+
+  void add_parameter(const std::string &name, const double initial,
+                     const double min, const double max, const double step) {
+    auto p = factory::make_continuous_parameter(name, initial, min, max, step);
+    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
+    parameters.push_back(q);
+  }
+
+  void add_parameter(const std::string &name, const double initial,
+                     const double step) {
+    auto p = factory::make_continuous_parameter(name, initial, step);
+    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
+    parameters.push_back(q);
+  }
+
+  void add_parameter(const std::string &name, const double initial) {
+    auto p = factory::make_continuous_parameter(name, initial);
+    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
+    parameters.push_back(q);
+  }
+
+  void add_parameter(const std::string &name, const double initial,
+                     const double min, const double max) {
+    auto p = factory::make_continuous_parameter(name, initial, min, max);
+    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
     parameters.push_back(q);
   }
 
@@ -149,11 +171,10 @@ public:
   }
 
   void print_values() {
-    // std::vector<size_t> padding(indices.size());
-    // for (size_t i = 0; i < parameters.size(); i++) {
-    //   padding[i] = std::max(parameters[i]->get_name().size(),
-    //                         parameters[i]->get_value(indices[i]).size());
-    // }
+    std::vector<size_t> padding(parameters.size());
+    for (size_t i = 0; i < parameters.size(); i++) {
+      padding[i] = parameters[i]->get_name().size();
+    }
     std::cout << "parameter name  | ";
     for (size_t i = 0; i < parameters.size(); i++) {
       if (i > 0) {
@@ -161,14 +182,14 @@ public:
       }
       const std::string &name = parameters[i]->get_name();
       std::cout << name;
-      //   // add padding
-      //   size_t cur_padding = padding[i] - name.size();
+      // add padding
+      size_t cur_padding = padding[i] - name.size();
 
-      //   std::stringstream ss;
-      //   for (size_t j = 0; j < cur_padding; j++) {
-      //     ss << " ";
-      //   }
-      //   std::cout << ss.str();
+      std::stringstream ss;
+      for (size_t j = 0; j < cur_padding; j++) {
+        ss << " ";
+      }
+      std::cout << ss.str();
     }
     std::cout << std::endl;
     std::cout << "parameter value | ";
@@ -178,13 +199,13 @@ public:
       }
       const std::string &value = parameters[i]->get_value();
       std::cout << value;
-      // // add padding
-      // size_t cur_padding = padding[i] - value.size();
-      // std::stringstream ss;
-      // for (size_t j = 0; j < cur_padding; j++) {
-      //   ss << " ";
-      // }
-      // std::cout << ss.str();
+      // add padding
+      size_t cur_padding = padding[i] - value.size();
+      std::stringstream ss;
+      for (size_t j = 0; j < cur_padding; j++) {
+        ss << " ";
+      }
+      std::cout << ss.str();
     }
     std::cout << std::endl;
   }

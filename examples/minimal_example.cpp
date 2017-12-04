@@ -5,6 +5,8 @@
 #include "autotune/autotune.hpp"
 #include "autotune/tuners/line_search.hpp"
 
+#include "autotune/continuous_parameter.hpp"
+
 // defines kernel, put in single compilation unit
 AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), add_one)
 

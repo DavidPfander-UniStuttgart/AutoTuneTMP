@@ -1,6 +1,18 @@
 #pragma once
 
+#include <iomanip>
+
 namespace autotune {
+
+class stepper {
+private:
+  double step;
+
+public:
+  stepper(double step) : step(step) {}
+
+  double operator()(double current) { return current + step; }
+};
 
 class continuous_parameter : public step_parameter {
 private:
@@ -18,7 +30,7 @@ private:
 
 public:
   continuous_parameter(const std::string &name, double initial)
-      : abstract_parameter(name), current(initial), initial(initial) {}
+      : step_parameter(name), current(initial), initial(initial) {}
 
   virtual const std::string get_value() const override {
     return std::to_string(current);
@@ -29,7 +41,7 @@ public:
   }
 
   virtual bool next() override {
-    double temp = this->next(current);
+    double temp = this->next_function(current);
     if (valid_function) {
       if (valid_function(temp)) {
         current = temp;
@@ -48,7 +60,7 @@ public:
   }
 
   virtual bool prev() override {
-    double temp = this->prev(current);
+    double temp = this->prev_function(current);
     if (valid_function) {
       if (valid_function(temp)) {
         current = temp;
@@ -84,4 +96,65 @@ public:
     return std::dynamic_pointer_cast<abstract_parameter>(new_instance);
   };
 };
+
+namespace factory {
+
+std::shared_ptr<continuous_parameter>
+make_continuous_parameter(const std::string &name, double initial, double min,
+                          double max, double step) {
+  std::shared_ptr<continuous_parameter> p =
+      std::make_shared<continuous_parameter>(name, initial);
+  p->set_next_function(stepper(step));
+  p->set_prev_function(stepper(-1.0 * step));
+  p->set_valid_function([=](double value) {
+    if (value >= min && value <= max) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+
+  return p;
 }
+
+std::shared_ptr<continuous_parameter>
+make_continuous_parameter(const std::string &name, double initial,
+                          double step) {
+  std::shared_ptr<continuous_parameter> p =
+      std::make_shared<continuous_parameter>(name, initial);
+  p->set_next_function(stepper(step));
+  p->set_prev_function(stepper(-1.0 * step));
+
+  return p;
+}
+
+std::shared_ptr<continuous_parameter>
+make_continuous_parameter(const std::string &name, double initial) {
+  std::shared_ptr<continuous_parameter> p =
+      std::make_shared<continuous_parameter>(name, initial);
+  p->set_next_function(stepper(1.0));
+  p->set_prev_function(stepper(-1.0));
+
+  return p;
+}
+
+std::shared_ptr<continuous_parameter>
+make_continuous_parameter(const std::string &name, double initial, double min,
+                          double max) {
+  std::shared_ptr<continuous_parameter> p =
+      std::make_shared<continuous_parameter>(name, initial);
+  p->set_next_function(stepper(1.0));
+  p->set_prev_function(stepper(-1.0));
+  p->set_valid_function([=](double value) {
+    if (value >= min && value <= max) {
+      return true;
+    } else {
+      return false;
+    }
+  });
+
+  return p;
+}
+
+} // namespace factory
+} // namespace autotune

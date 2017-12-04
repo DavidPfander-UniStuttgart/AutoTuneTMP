@@ -17,6 +17,7 @@ private:
   size_t max_iterations;
   size_t restarts;
   // std::vector<size_t> initial_indices_guess;
+  bool verbose;
 
 public:
   line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
@@ -24,7 +25,8 @@ public:
               // , std::vector<size_t> &initial_indices_guess
               )
       : abstract_tuner<R, Args...>(), f(f), max_iterations(max_iterations),
-        restarts(restarts) //, initial_indices_guess(initial_indices_guess)
+        restarts(restarts),
+        verbose(false) //, initial_indices_guess(initial_indices_guess)
   {}
 
   // line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
@@ -65,19 +67,16 @@ public:
     size_t counter = 0;
     size_t cur_index = 0;
     while (counter < max_iterations) {
-      if (f.is_verbose()) {
-        std::cout << "cur_index: " << cur_index << std::endl;
-        std::cout << "current values:" << std::endl;
-        f.print_values();
+      if (verbose) {
+        std::cout << "current parameter index: " << cur_index << std::endl;
       }
 
-      auto p =
-          std::dynamic_pointer_cast<step_parameter>(parameters[cur_index]);
+      auto p = std::dynamic_pointer_cast<step_parameter>(parameters[cur_index]);
       // p->set_index(0);
       p->reset();
       while (true) {
 
-        if (f.is_verbose()) {
+        if (verbose) {
           std::cout << "current attempt:" << std::endl;
           f.print_values();
         }
@@ -88,7 +87,7 @@ public:
           first = false;
           optimal_parameters = f.get_parameters().clone();
           optimal_duration = duration;
-          if (f.is_verbose()) {
+          if (verbose) {
             this->report_verbose("new best kernel", optimal_duration, f);
           }
         }
@@ -102,7 +101,7 @@ public:
       // do not evaluate resetted value
       while (p->prev()) {
 
-        if (f.is_verbose()) {
+        if (verbose) {
           std::cout << "current attempt:" << std::endl;
           f.print_values();
         }
@@ -113,7 +112,7 @@ public:
           first = false;
           optimal_parameters = f.get_parameters().clone();
           optimal_duration = duration;
-          if (f.is_verbose()) {
+          if (verbose) {
             this->report_verbose("new best kernel", optimal_duration, f);
           }
         }
@@ -126,6 +125,8 @@ public:
 
     return optimal_parameters;
   }
+
+  void set_verbose(bool verbose) { this->verbose = verbose; }
 };
 
 } // namespace tuners
