@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../parameter.hpp"
 #include "common.hpp"
 
 #include <random>
@@ -54,12 +53,14 @@ public:
     bool is_valid = true;
     parameter_set optimal_parameters = parameters.clone();
 
-    if (f.is_verbose()) {
-      std::cout << "evaluating initial parameter combination" << std::endl;
-      std::cout << "initial values:" << std::endl;
-      f.print_values();
-    }
-    double optimal_duration = this->evaluate(is_valid, f, args...);
+    // if (f.is_verbose()) {
+    //   std::cout << "evaluating initial parameter combination" << std::endl;
+    //   std::cout << "initial values:" << std::endl;
+    //   f.print_values();
+    // }
+    // double optimal_duration = this->evaluate(is_valid, f, args...);
+    double optimal_duration;
+    bool first = true;
 
     size_t counter = 0;
     size_t cur_index = 0;
@@ -70,14 +71,11 @@ public:
         f.print_values();
       }
 
-      for (size_t inner_index = 0;
-           inner_index < parameters[cur_index]->count_values(); inner_index++) {
-
-        // std::vector<size_t> indices_attempt(optimal_indices);
-        // indices_attempt[cur_index] = inner_index;
-        auto p = std::dynamic_pointer_cast<fixed_set_parameter>(
-            parameters[cur_index]);
-        p->set_index(inner_index);
+      auto p =
+          std::dynamic_pointer_cast<step_parameter>(parameters[cur_index]);
+      // p->set_index(0);
+      p->reset();
+      while (true) {
 
         if (f.is_verbose()) {
           std::cout << "current attempt:" << std::endl;
@@ -85,9 +83,34 @@ public:
         }
 
         // if a valid new index value was found, test it
-
         double duration = this->evaluate(is_valid, f, args...);
-        if (is_valid && duration < optimal_duration) {
+        if (is_valid && first && duration < optimal_duration) {
+          first = false;
+          optimal_parameters = f.get_parameters().clone();
+          optimal_duration = duration;
+          if (f.is_verbose()) {
+            this->report_verbose("new best kernel", optimal_duration, f);
+          }
+        }
+        if (!p->next()) {
+          break;
+        }
+      }
+
+      // in case reset does not lead to index set to zero
+      p->reset();
+      // do not evaluate resetted value
+      while (p->prev()) {
+
+        if (f.is_verbose()) {
+          std::cout << "current attempt:" << std::endl;
+          f.print_values();
+        }
+
+        // if a valid new index value was found, test it
+        double duration = this->evaluate(is_valid, f, args...);
+        if (is_valid && first && duration < optimal_duration) {
+          first = false;
           optimal_parameters = f.get_parameters().clone();
           optimal_duration = duration;
           if (f.is_verbose()) {

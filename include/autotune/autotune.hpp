@@ -8,11 +8,9 @@
 #include "cppjit/cppjit.hpp"
 #include "cppjit/function_traits.hpp"
 
-#include "parameter.hpp"
-// #include "tuners/bruteforce.hpp"
-// #include "tuners/line_search.hpp"
-// #include "tuners/monte_carlo.hpp"
-// #include "tuners/simulated_annealing.hpp"
+#include "abstract_parameter.hpp"
+#include "parameter_set.hpp"
+#include "fixed_set_parameter.hpp"
 
 namespace autotune {
 

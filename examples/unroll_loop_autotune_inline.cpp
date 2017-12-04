@@ -1,5 +1,4 @@
 #include "autotune/autotune.hpp"
-#include "autotune/parameter.hpp"
 #include "opttmp/loop/unroll_loop.hpp"
 
 #include <algorithm>

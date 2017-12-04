@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "autotune/autotune.hpp"
-#include "autotune/parameter.hpp"
 #include "autotune/tuners/line_search.hpp"
 
 // defines kernel, put in single compilation unit

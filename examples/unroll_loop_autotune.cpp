@@ -1,5 +1,4 @@
 #include "autotune/autotune.hpp"
-#include "autotune/parameter.hpp"
 #include "autotune/tuners/line_search.hpp"
 
 #include <algorithm>
