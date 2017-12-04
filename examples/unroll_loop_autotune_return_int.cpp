@@ -38,7 +38,7 @@ int main(void) {
   tuner.setup_test([](int r) { return r == 5 ? true : false; });
 
   autotune::parameter_set optimal_indices = tuner.tune(arr, N);
-  autotune::unrolling_kernel.replace_parameters(optimal_indices);
+  autotune::unrolling_kernel.set_parameters(optimal_indices);
 
   //TODO: move print_values outside kernel?
   autotune::unrolling_kernel.print_values();

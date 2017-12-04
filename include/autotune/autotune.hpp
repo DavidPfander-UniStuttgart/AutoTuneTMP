@@ -128,7 +128,7 @@ public:
     parameters.push_back(q);
   }
 
-  void replace_parameters(parameter_set &new_parameters) {
+  void set_parameters(parameter_set &new_parameters) {
     parameters = new_parameters;
   }
 

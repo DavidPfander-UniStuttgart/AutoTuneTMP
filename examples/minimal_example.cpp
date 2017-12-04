@@ -28,7 +28,7 @@ int main(void) {
       autotune::add_one, line_search_iterations, 1);
   tuner.setup_test(test_result);
   autotune::parameter_set optimal_parameter_indices = tuner.tune(a);
-  autotune::add_one.replace_parameters(optimal_parameter_indices);
+  autotune::add_one.set_parameters(optimal_parameter_indices);
 
   // // std::cout << "-------- final compilation ---------" << std::endl;
   // // std::vector<size_t> optimal_parameter_indices = {0};

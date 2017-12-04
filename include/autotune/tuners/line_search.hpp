@@ -99,7 +99,7 @@ public:
       counter += 1;
     }
 
-    f.replace_parameters(original_parameters);
+    f.set_parameters(original_parameters);
 
     return optimal_parameters;
   }
