@@ -121,32 +121,32 @@ public:
     parameters.push_back(q);
   }
 
-  void add_parameter(const std::string &name, const double initial,
-                     const double min, const double max, const double step) {
-    auto p = factory::make_continuous_parameter(name, initial, min, max, step);
-    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-    parameters.push_back(q);
-  }
+  // void add_parameter(const std::string &name, const double initial,
+  //                    const double min, const double max, const double step) {
+  //   auto p = factory::make_continuous_parameter(name, initial, min, max, step);
+  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
+  //   parameters.push_back(q);
+  // }
 
-  void add_parameter(const std::string &name, const double initial,
-                     const double step) {
-    auto p = factory::make_continuous_parameter(name, initial, step);
-    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-    parameters.push_back(q);
-  }
+  // void add_parameter(const std::string &name, const double initial,
+  //                    const double step) {
+  //   auto p = factory::make_continuous_parameter(name, initial, step);
+  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
+  //   parameters.push_back(q);
+  // }
 
-  void add_parameter(const std::string &name, const double initial) {
-    auto p = factory::make_continuous_parameter(name, initial);
-    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-    parameters.push_back(q);
-  }
+  // void add_parameter(const std::string &name, const double initial) {
+  //   auto p = factory::make_continuous_parameter(name, initial);
+  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
+  //   parameters.push_back(q);
+  // }
 
-  void add_parameter(const std::string &name, const double initial,
-                     const double min, const double max) {
-    auto p = factory::make_continuous_parameter(name, initial, min, max);
-    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-    parameters.push_back(q);
-  }
+  // void add_parameter(const std::string &name, const double initial,
+  //                    const double min, const double max) {
+  //   auto p = factory::make_continuous_parameter(name, initial, min, max);
+  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
+  //   parameters.push_back(q);
+  // }
 
   void set_parameters(parameter_set &new_parameters) {
     parameters = new_parameters;
