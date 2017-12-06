@@ -13,6 +13,10 @@ public:
   //   }
   // }
 
+  template <typename T> std::shared_ptr<T> get_as(size_t i) {
+    return std::dynamic_pointer_cast<T>(this->operator[](i));
+  }
+
   parameter_set clone() {
     parameter_set new_instance;
     for (size_t i = 0; i < this->size(); i++) {

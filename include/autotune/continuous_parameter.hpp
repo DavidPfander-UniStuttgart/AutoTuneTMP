@@ -14,10 +14,41 @@ public:
   double operator()(double current) { return current + step; }
 };
 
-class continuous_parameter : public step_parameter {
-private:
+class continuous_parameter : public virtual abstract_parameter {
+protected:
   double current;
   double initial;
+
+public:
+  continuous_parameter(const std::string &name, double initial)
+      : abstract_parameter(name), current(initial), initial(initial) {}
+
+  // TODO: probably need a set_value method
+
+  virtual const std::string get_value() const override {
+    return std::to_string(current);
+  }
+
+  virtual void reset() override {
+    // TODO: should be extended, so that an initial guess can be supplied
+    current = initial;
+  }
+
+  virtual std::string to_parameter_source_line() override {
+    return "#define " + name + " " + std::to_string(current) + "\n";
+  }
+
+  virtual std::shared_ptr<abstract_parameter> clone() override {
+    std::shared_ptr<continuous_parameter> new_instance =
+        std::make_shared<continuous_parameter>(this->name, initial);
+    new_instance->current = this->current;
+    return std::dynamic_pointer_cast<abstract_parameter>(new_instance);
+  }
+};
+
+class stepable_continuous_parameter : public continuous_parameter,
+                                      public step_parameter {
+private:
   // modifies the current value to a next value
   // this depends on the parameter, could be adding a increment, double
   // something more complex
@@ -29,12 +60,8 @@ private:
   std::function<bool(double)> valid_function;
 
 public:
-  continuous_parameter(const std::string &name, double initial)
-      : step_parameter(name), current(initial), initial(initial) {}
-
-  virtual const std::string get_value() const override {
-    return std::to_string(current);
-  }
+  stepable_continuous_parameter(const std::string &name, double initial)
+      : abstract_parameter(name), continuous_parameter(name, initial) {}
 
   void set_next_function(std::function<double(double)> next_function) {
     this->next_function = next_function;
@@ -77,33 +104,49 @@ public:
   void set_valid_function(std::function<double(double)> valid_function) {
     this->valid_function = valid_function;
   }
+};
 
-  // virtual size_t count_values() const override { throw; }
-
-  virtual void reset() override {
-    // TODO: should be extended, so that an initial guess can be supplied
-    current = initial;
+class countable_continuous_parameter : public stepable_continuous_parameter,
+                                       public countable_parameter {
+public:
+  countable_continuous_parameter(const std::string &name, double initial)
+      : abstract_parameter(name), stepable_continuous_parameter(name, initial) {
   }
 
-  virtual std::string to_parameter_source_line() override {
-    return "#define " + name + " " + std::to_string(current) + "\n";
+  virtual size_t count_values() const override {
+    // TODO: implement
+    return 0;
   }
-
-  virtual std::shared_ptr<abstract_parameter> clone() override {
-    std::shared_ptr<continuous_parameter> new_instance =
-        std::make_shared<continuous_parameter>(this->name, initial);
-    new_instance->current = this->current;
-    return std::dynamic_pointer_cast<abstract_parameter>(new_instance);
-  };
 };
 
 namespace factory {
 
 std::shared_ptr<continuous_parameter>
+make_continuous_parameter(const std::string &name, double initial,
+                          double step) {
+  std::shared_ptr<stepable_continuous_parameter> p =
+      std::make_shared<stepable_continuous_parameter>(name, initial);
+  p->set_next_function(stepper(step));
+  p->set_prev_function(stepper(-1.0 * step));
+
+  return p;
+}
+
+std::shared_ptr<continuous_parameter>
+make_continuous_parameter(const std::string &name, double initial) {
+  std::shared_ptr<stepable_continuous_parameter> p =
+      std::make_shared<stepable_continuous_parameter>(name, initial);
+  p->set_next_function(stepper(1.0));
+  p->set_prev_function(stepper(-1.0));
+
+  return p;
+}
+
+std::shared_ptr<continuous_parameter>
 make_continuous_parameter(const std::string &name, double initial, double min,
                           double max, double step) {
-  std::shared_ptr<continuous_parameter> p =
-      std::make_shared<continuous_parameter>(name, initial);
+  std::shared_ptr<countable_continuous_parameter> p =
+      std::make_shared<countable_continuous_parameter>(name, initial);
   p->set_next_function(stepper(step));
   p->set_prev_function(stepper(-1.0 * step));
   p->set_valid_function([=](double value) {
@@ -118,31 +161,10 @@ make_continuous_parameter(const std::string &name, double initial, double min,
 }
 
 std::shared_ptr<continuous_parameter>
-make_continuous_parameter(const std::string &name, double initial,
-                          double step) {
-  std::shared_ptr<continuous_parameter> p =
-      std::make_shared<continuous_parameter>(name, initial);
-  p->set_next_function(stepper(step));
-  p->set_prev_function(stepper(-1.0 * step));
-
-  return p;
-}
-
-std::shared_ptr<continuous_parameter>
-make_continuous_parameter(const std::string &name, double initial) {
-  std::shared_ptr<continuous_parameter> p =
-      std::make_shared<continuous_parameter>(name, initial);
-  p->set_next_function(stepper(1.0));
-  p->set_prev_function(stepper(-1.0));
-
-  return p;
-}
-
-std::shared_ptr<continuous_parameter>
 make_continuous_parameter(const std::string &name, double initial, double min,
                           double max) {
-  std::shared_ptr<continuous_parameter> p =
-      std::make_shared<continuous_parameter>(name, initial);
+  std::shared_ptr<countable_continuous_parameter> p =
+      std::make_shared<countable_continuous_parameter>(name, initial);
   p->set_next_function(stepper(1.0));
   p->set_prev_function(stepper(-1.0));
   p->set_valid_function([=](double value) {

@@ -101,6 +101,10 @@ add_executable(continuous_parameter_example "examples/continuous_parameter_examp
 target_link_libraries(continuous_parameter_example AutoTuneTMP)
 install(TARGETS continuous_parameter_example DESTINATION examples)
 
+add_executable(bruteforce_search_example "examples/bruteforce_search_example.cpp")
+target_link_libraries(bruteforce_search_example AutoTuneTMP)
+install(TARGETS bruteforce_search_example DESTINATION examples)
+
 #################
 # end examples
 #################

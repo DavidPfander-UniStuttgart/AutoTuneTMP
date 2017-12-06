@@ -10,61 +10,58 @@ template <class... T> class kernel;
 
 namespace tuners {
 
-template <class... Args> class bruteforce;
+template <class... Args> class neighborhood_search;
 
 template <typename R, typename... Args>
-class bruteforce<autotune::kernel<R, cppjit::detail::pack<Args...>>>
+class neighborhood_search<autotune::kernel<R, cppjit::detail::pack<Args...>>>
     : public abstract_tuner<R, Args...> {
 private:
   autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
-  bool verbose;
+  std::function<bool(const R &)> &t;
 
 public:
-  bruteforce(autotune::kernel<R, cppjit::detail::pack<Args...>> &f) : f(f) {}
+  neighborhood_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
+                      std::function<bool(const R &)> &t)
+      : f(f), t(t) {}
 
-  parameter_set tune(Args &... args) {
-    parameter_set &parameters = f.get_parameters();
+  std::vector<size_t> tune(Args &... args) {
+    std::vector<fixed_set_parameter> &parameters = f.get_parameters();
     bool is_valid = true;
 
     f.write_header();
 
     double total_combinations = 1.0;
     for (size_t i = 0; i < parameters.size(); i++) {
-      total_combinations *=
-          parameters.get_as<fixed_set_parameter>(i)->get_values().size();
+      total_combinations *= parameters[i].get_values().size();
     }
 
-    if (verbose) {
+    size_t combination_counter = 1;
+
+    if (f.is_verbose()) {
       std::cout << "total combinations to test: " << total_combinations
                 << std::endl;
     }
 
-    parameter_set original_parameters = parameters.clone();
-
     // brute-force tuner
+    std::vector<std::string> values(parameters.size());
     for (size_t i = 0; i < parameters.size(); i++) {
-      parameters.get_as<fixed_set_parameter>(i)->set_index(0);
+      values[i] = parameters[i].get_value(0);
     }
-
+    std::vector<size_t> indices(parameters.size(), 0);
+    std::vector<size_t> optimal_indices(parameters.size(), 0);
     // evaluate initial vector, always valid
     // f.print_values(values);
-    size_t combination_counter = 1;
-    if (verbose) {
+    if (f.is_verbose()) {
       std::cout << "evaluating combination " << combination_counter
                 << " (out of " << total_combinations << ")" << std::endl;
-      std::cout << "current attempt:" << std::endl;
-      f.print_values();
     }
     combination_counter += 1;
-    bool first = true;
+    double optimal_duration = this->evaluate(indices, is_valid, f, t, args...);
 
-    double optimal_duration = this->evaluate(is_valid, f, args...);
-    parameter_set optimal_parameters;
-    if (is_valid) {
-      first = false;
-      optimal_parameters = parameters.clone();
-      this->report_verbose("new best kernel", optimal_duration, f);
-    }
+    std::copy(indices.begin(), indices.end(), optimal_indices.begin());
+
+    this->report_verbose("new best kernel", optimal_duration, optimal_indices,
+                         f);
 
     size_t current_index = 0;
     while (true) {
@@ -74,28 +71,30 @@ public:
       }
 
       // the is another value for the current parameter
-      if (parameters.get_as<fixed_set_parameter>(current_index)->next()) {
+      if (indices[current_index] + 1 < parameters[current_index].size()) {
+        values[current_index] =
+            parameters[current_index].get_value(indices[current_index] + 1);
+        indices[current_index] += 1;
         // reset the parameters "below" and start with the first parameter
         // again
         for (size_t i = 0; i < current_index; i++) {
-          parameters.get_as<fixed_set_parameter>(i)->set_index(0);
+          values[i] = parameters[i].get_value(0);
+          indices[i] = 0;
         }
         current_index = 0;
 
         // evaluate new valid value vector
-        if (verbose) {
+        if (f.is_verbose()) {
           std::cout << "evaluating combination " << combination_counter
                     << " (out of " << total_combinations << ")" << std::endl;
-          std::cout << "current attempt:" << std::endl;
-          f.print_values();
         }
         combination_counter += 1;
-        double duration = this->evaluate(is_valid, f, args...);
-        if (is_valid && (first || duration < optimal_duration)) {
-          first = false;
+        double duration = this->evaluate(indices, is_valid, f, t, args...);
+        if (is_valid && duration < optimal_duration) {
+          std::copy(indices.begin(), indices.end(), optimal_indices.begin());
           optimal_duration = duration;
-          optimal_parameters = parameters.clone();
-          this->report_verbose("new best kernel", optimal_duration, f);
+          this->report_verbose("new best kernel", optimal_duration,
+                               optimal_indices, f);
         }
 
       } else {
@@ -103,12 +102,8 @@ public:
         current_index += 1;
       }
     }
-
-    f.set_parameters(original_parameters);
-    return optimal_parameters;
+    return optimal_indices;
   }
-
-  void set_verbose(bool verbose) { this->verbose = verbose; }
 };
 } // namespace tuners
 } // namespace autotune

@@ -16,7 +16,7 @@ private:
 public:
   fixed_set_parameter(const std::string &name,
                       const std::vector<std::string> &values)
-      : step_parameter(name), cur_index(0), values(values) {}
+      : abstract_parameter(name), cur_index(0), values(values) {}
 
   const std::vector<std::string> &get_values() const { return this->values; }
 

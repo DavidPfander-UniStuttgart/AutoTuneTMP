@@ -108,7 +108,7 @@ public:
 
         // if a valid new index value was found, test it
         double duration = this->evaluate(is_valid, f, args...);
-        if (is_valid && first && duration < optimal_duration) {
+        if (is_valid && (first || duration < optimal_duration)) {
           first = false;
           optimal_parameters = f.get_parameters().clone();
           optimal_duration = duration;
