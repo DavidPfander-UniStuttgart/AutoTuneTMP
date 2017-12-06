@@ -14,7 +14,7 @@ public:
   double operator()(double current) { return current + step; }
 };
 
-class continuous_parameter : public virtual abstract_parameter {
+class continuous_parameter : public abstract_parameter {
 protected:
   double current;
   double initial;
@@ -46,8 +46,7 @@ public:
   }
 };
 
-class stepable_continuous_parameter : public continuous_parameter,
-                                      public step_parameter {
+class stepable_continuous_parameter : public continuous_parameter {
 private:
   // modifies the current value to a next value
   // this depends on the parameter, could be adding a increment, double
@@ -61,13 +60,13 @@ private:
 
 public:
   stepable_continuous_parameter(const std::string &name, double initial)
-      : abstract_parameter(name), continuous_parameter(name, initial) {}
+      : continuous_parameter(name, initial) {}
 
   void set_next_function(std::function<double(double)> next_function) {
     this->next_function = next_function;
   }
 
-  virtual bool next() override {
+  bool next() {
     double temp = this->next_function(current);
     if (valid_function) {
       if (valid_function(temp)) {
@@ -86,7 +85,7 @@ public:
     this->prev_function = prev_function;
   }
 
-  virtual bool prev() override {
+  bool prev() {
     double temp = this->prev_function(current);
     if (valid_function) {
       if (valid_function(temp)) {
@@ -106,14 +105,12 @@ public:
   }
 };
 
-class countable_continuous_parameter : public stepable_continuous_parameter,
-                                       public countable_parameter {
+class countable_continuous_parameter : public stepable_continuous_parameter {
 public:
   countable_continuous_parameter(const std::string &name, double initial)
-      : abstract_parameter(name), stepable_continuous_parameter(name, initial) {
-  }
+      : stepable_continuous_parameter(name, initial) {}
 
-  virtual size_t count_values() const override {
+  size_t count_values() const {
     // TODO: implement
     return 0;
   }

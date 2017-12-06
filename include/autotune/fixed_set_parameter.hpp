@@ -8,7 +8,7 @@
 
 namespace autotune {
 
-class fixed_set_parameter : public step_parameter {
+class fixed_set_parameter : public abstract_parameter {
 private:
   size_t cur_index;
   std::vector<std::string> values;
@@ -32,7 +32,7 @@ public:
 
   // virtual size_t count_values() const override { return values.size(); }
 
-  virtual bool next() override {
+  bool next() {
     if (cur_index + 1 < values.size()) {
       cur_index += 1;
       return true;
@@ -41,7 +41,7 @@ public:
     }
   }
 
-  virtual bool prev() override {
+  bool prev() {
     if (cur_index > 0) {
       cur_index -= 1;
       return true;

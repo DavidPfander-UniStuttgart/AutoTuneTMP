@@ -71,7 +71,7 @@ public:
         std::cout << "current parameter index: " << cur_index << std::endl;
       }
 
-      auto p = std::dynamic_pointer_cast<step_parameter>(parameters[cur_index]);
+      auto p = std::dynamic_pointer_cast<fixed_set_parameter>(parameters[cur_index]);
       // p->set_index(0);
       p->reset();
       while (true) {
