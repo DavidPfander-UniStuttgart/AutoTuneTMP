@@ -105,6 +105,10 @@ add_executable(bruteforce_search_example "examples/bruteforce_search_example.cpp
 target_link_libraries(bruteforce_search_example AutoTuneTMP)
 install(TARGETS bruteforce_search_example DESTINATION examples)
 
+add_executable(countable_set_example "examples/countable_set_example.cpp")
+target_link_libraries(countable_set_example AutoTuneTMP)
+install(TARGETS countable_set_example DESTINATION examples)
+
 #################
 # end examples
 #################

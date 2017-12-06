@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 // an abstract parameter should never get instantiated
 // only occurs as part of construction of the individual parameter types
 

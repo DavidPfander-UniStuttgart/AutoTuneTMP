@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iomanip>
+#include <functional>
 
 namespace autotune {
 
