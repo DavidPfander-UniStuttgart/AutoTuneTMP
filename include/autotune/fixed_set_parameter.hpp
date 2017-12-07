@@ -30,7 +30,7 @@ public:
     return this->values[cur_index];
   }
 
-  // virtual size_t count_values() const override { return values.size(); }
+  size_t count_values() const { return values.size(); }
 
   bool next() {
     if (cur_index + 1 < values.size()) {
@@ -50,25 +50,27 @@ public:
     }
   }
 
-  virtual void reset() override {
+  void set_min() { cur_index = 0; };
+
+  virtual void set_initial() override {
     // TODO: should be extended, so that an initial guess can be supplied
     cur_index = 0;
   }
 
-  virtual std::string to_parameter_source_line() override {
-    return "#define " + name + " " + values[cur_index] + "\n";
-  }
+  // virtual std::string to_parameter_source_line() override {
+  //   return "#define " + name + " " + values[cur_index] + "\n";
+  // }
 
   // TODO: remove this overload?
   // std::string to_parameter_source_line(size_t index) {
   //   return "#define " + name + " " + values[index] + "\n";
   // }
 
-  virtual std::shared_ptr<abstract_parameter> clone() override {
-    std::shared_ptr<fixed_set_parameter> new_instance =
-        std::make_shared<fixed_set_parameter>(this->name, this->values);
-    new_instance->cur_index = this->cur_index;
-    return std::dynamic_pointer_cast<abstract_parameter>(new_instance);
-  };
+  // virtual std::shared_ptr<fixed_set_parameter> clone() override {
+  //   std::shared_ptr<fixed_set_parameter> new_instance =
+  //       std::make_shared<fixed_set_parameter>(this->name, this->values);
+  //   new_instance->cur_index = this->cur_index;
+  //   return new_instance;
+  // };
 };
 }

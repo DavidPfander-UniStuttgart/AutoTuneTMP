@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "countable_set.hpp"
 
 #include <random>
 
@@ -18,15 +19,14 @@ private:
   size_t restarts;
   // std::vector<size_t> initial_indices_guess;
   bool verbose;
+  countable_set &parameters;
 
 public:
   line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
-              size_t max_iterations, size_t restarts
-              // , std::vector<size_t> &initial_indices_guess
-              )
+              size_t max_iterations, size_t restarts, countable_set &parameters)
       : abstract_tuner<R, Args...>(), f(f), max_iterations(max_iterations),
-        restarts(restarts),
-        verbose(false) //, initial_indices_guess(initial_indices_guess)
+        restarts(restarts), verbose(false),
+        parameters(parameters) //, initial_indices_guess(initial_indices_guess)
   {}
 
   // line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
@@ -35,13 +35,14 @@ public:
   //     : abstract_tuner<R, Args...>(t), f(f), max_iterations(max_iterations),
   //       restarts(restarts), initial_indices_guess(initial_indices_guess) {}
 
-  parameter_set tune(Args &... args) {
+  countable_set tune(Args &... args) {
 
     f.write_header();
-    parameter_set &parameters = f.get_parameters();
+    // parameter_set &parameters = f.get_parameters();
+    // auto parameters = parameters_set.get();
     // set to initial guess (or whatever the parameter type is doing)
     for (size_t i = 0; i < parameters.size(); i++) {
-      parameters[i]->reset();
+      parameters[i]->set_min();
     }
 
     // if (initial_indices_guess.size() != parameters.size()) {
@@ -49,11 +50,11 @@ public:
     // }
 
     // memorize original parameters
-    parameter_set original_parameters = parameters.clone();
+    parameter_value_set original_values = f.get_parameter_values();
 
     // evaluate initial guess
     bool is_valid = true;
-    parameter_set optimal_parameters = parameters.clone();
+    countable_set optimal_parameters = parameters.clone();
 
     // if (f.is_verbose()) {
     //   std::cout << "evaluating initial parameter combination" << std::endl;
@@ -71,9 +72,9 @@ public:
         std::cout << "current parameter index: " << cur_index << std::endl;
       }
 
-      auto p = std::dynamic_pointer_cast<fixed_set_parameter>(parameters[cur_index]);
+      auto &p = parameters[cur_index];
       // p->set_index(0);
-      p->reset();
+      p->set_initial();
       while (true) {
 
         if (verbose) {
@@ -82,10 +83,11 @@ public:
         }
 
         // if a valid new index value was found, test it
+        f.set_parameter_values(parameters);
         double duration = this->evaluate(is_valid, f, args...);
-        if (is_valid && first && duration < optimal_duration) {
+        if (is_valid && (first || duration < optimal_duration)) {
           first = false;
-          optimal_parameters = f.get_parameters().clone();
+          optimal_parameters = parameters.clone();
           optimal_duration = duration;
           if (verbose) {
             this->report_verbose("new best kernel", optimal_duration, f);
@@ -97,7 +99,7 @@ public:
       }
 
       // in case reset does not lead to index set to zero
-      p->reset();
+      p->set_initial();
       // do not evaluate resetted value
       while (p->prev()) {
 
@@ -107,10 +109,11 @@ public:
         }
 
         // if a valid new index value was found, test it
+        f.set_parameter_values(parameters);
         double duration = this->evaluate(is_valid, f, args...);
         if (is_valid && (first || duration < optimal_duration)) {
           first = false;
-          optimal_parameters = f.get_parameters().clone();
+          optimal_parameters = parameters.clone();
           optimal_duration = duration;
           if (verbose) {
             this->report_verbose("new best kernel", optimal_duration, f);
@@ -121,7 +124,7 @@ public:
       counter += 1;
     }
 
-    f.set_parameters(original_parameters);
+    f.set_parameter_values(original_values);
 
     return optimal_parameters;
   }

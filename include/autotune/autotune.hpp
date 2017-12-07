@@ -29,7 +29,8 @@ private:
   std::ofstream scenario_measurement_file;
 
   std::string kernel_name;
-  parameter_set parameters;
+  // parameter_set parameters;
+  parameter_value_set parameter_values;
   std::vector<size_t> optimal_indices;
 
 public:
@@ -54,11 +55,14 @@ public:
     if (!measurement_enabled) {
       return;
     }
-    for (size_t i = 0; i < parameters.size(); i++) {
-      if (i > 0) {
+    bool first = true;
+    for (auto &p : parameter_values) {
+      if (!first) {
         scenario_measurement_file << ", ";
+      } else {
+        first = false;
       }
-      scenario_measurement_file << parameters[i]->get_name();
+      scenario_measurement_file << p.first;
     }
     scenario_measurement_file << ", "
                               << "duration" << std::endl;
@@ -73,11 +77,14 @@ public:
     // if (indices.size() != parameters.size()) {
     //   throw;
     // }
-    for (size_t i = 0; i < parameters.size(); i++) {
-      if (i > 0) {
+    bool first = true;
+    for (auto &p : parameter_values) {
+      if (!first) {
         scenario_measurement_file << ", ";
+      } else {
+        first = false;
       }
-      scenario_measurement_file << parameters[i]->get_value();
+      scenario_measurement_file << p.second;
     }
     scenario_measurement_file << ", " << duration_s << std::endl;
   }
@@ -94,36 +101,38 @@ public:
 
   bool is_valid_parameter_combination();
 
-  void add_parameter(const std::shared_ptr<abstract_parameter> &parameter) {
-    parameters.push_back(parameter);
-    // optimal_indices.push_back(0);
-  }
+  // void add_parameter(const std::shared_ptr<abstract_parameter> &parameter) {
+  //   parameters.push_back(parameter);
+  // }
 
-  parameter_set &get_parameters() { return parameters; }
+  // parameter_set &get_parameters() { return parameters; }
 
   // template <class T>
   // void add_parameter(const std::string &name, const T &values) {
   //   parameters.emplace_back(name, values);
   // }
 
-  // const std::vector<size_t> &get_optimal_indices() { return optimal_indices;
+  // const std::vector<size_t> &get_optimal_indices() { return
+  // optimal_indices;
   // }
 
-  // void set_optimal_indices(const std::vector<size_t> &new_optimal_indices) {
+  // void set_optimal_indices(const std::vector<size_t> &new_optimal_indices)
+  // {
   //   optimal_indices = new_optimal_indices;
   // }
 
-  // template <class T>
-  void add_parameter(const std::string &name,
-                     const std::vector<std::string> &values) {
-    auto p = std::make_shared<fixed_set_parameter>(name, values);
-    auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-    parameters.push_back(q);
-  }
+  // void add_parameter(const std::string &name,
+  //                    const std::vector<std::string> &values) {
+  //   auto p = std::make_shared<fixed_set_parameter>(name, values);
+  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
+  //   parameters.push_back(q);
+  // }
 
   // void add_parameter(const std::string &name, const double initial,
-  //                    const double min, const double max, const double step) {
-  //   auto p = factory::make_continuous_parameter(name, initial, min, max, step);
+  //                    const double min, const double max, const double step)
+  //                    {
+  //   auto p = factory::make_continuous_parameter(name, initial, min, max,
+  //   step);
   //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
   //   parameters.push_back(q);
   // }
@@ -148,64 +157,99 @@ public:
   //   parameters.push_back(q);
   // }
 
-  void set_parameters(parameter_set &new_parameters) {
-    parameters = new_parameters;
-  }
+  // void set_parameters(parameter_set &new_parameters) {
+  //   parameters = new_parameters;
+  // }
 
-  void print_parameters() {
-    std::cout << "kernel_name: " << kernel_name << std::endl;
-    for (const std::shared_ptr<abstract_parameter> &p : parameters) {
-      std::cout << "name: " << p->get_name() << " values: ";
-      if (auto p_fixed_set =
-              std::dynamic_pointer_cast<fixed_set_parameter>(p)) {
-        auto values = p_fixed_set->get_values();
-        for (size_t i = 0; i < values.size(); i++) {
-          if (i > 0) {
-            std::cout << ", ";
-          }
-          std::cout << values[i];
-        }
-      }
-      std::cout << std::endl;
+  void set_parameter_values(parameter_value_set &new_parameter_values) {
+    parameter_values.clear();
+    for (auto &p : new_parameter_values) {
+      parameter_values[p.first] = p.second;
     }
   }
+
+  template <typename parameter_interface_set>
+  void set_parameter_values(parameter_interface_set &parameters) {
+    parameter_values.clear();
+    for (size_t i = 0; i < parameters.size(); i++) {
+      auto &p = parameters[i];
+      // std::cout << "p name: " << p->get_name() << " value: " <<
+      // p->get_value()
+      // << std::endl;
+      parameter_values[p->get_name()] = p->get_value();
+    }
+  }
+
+  parameter_value_set get_parameter_values() { return parameter_values; }
+
+  // void print_parameter_values() {
+  //   std::cout << "kernel_name: " << kernel_name << std::endl;
+  //   // for (const std::shared_ptr<abstract_parameter> &p : parameters) {
+  //   for (auto &p: parameter_values) {
+  //     std::cout << "name: " << p.first << " values: ";
+  //     if (auto p_fixed_set =
+  //             std::dynamic_pointer_cast<fixed_set_parameter>(p)) {
+  //       auto values = p_fixed_set->get_values();
+  //       for (size_t i = 0; i < values.size(); i++) {
+  //         if (i > 0) {
+  //           std::cout << ", ";
+  //         }
+  //         std::cout << values[i];
+  //       }
+  //     }
+  //     std::cout << std::endl;
+  //   }
+  // }
 
   void print_values() {
-    std::vector<size_t> padding(parameters.size());
-    for (size_t i = 0; i < parameters.size(); i++) {
-      padding[i] = parameters[i]->get_name().size();
-    }
+    // std::vector<size_t> padding(parameter_values.size());
+    // for (auto &p : parameter_values) {
+    //   padding.push_back(p.first.size());
+    // }
     std::cout << "parameter name  | ";
-    for (size_t i = 0; i < parameters.size(); i++) {
-      if (i > 0) {
+    // for (size_t i = 0; i < parameters.size(); i++) {
+    bool first = true;
+    // size_t index = 0;
+    for (auto &p : parameter_values) {
+      if (!first) {
         std::cout << ", ";
+      } else {
+        first = false;
       }
-      const std::string &name = parameters[i]->get_name();
-      std::cout << name;
-      // add padding
-      size_t cur_padding = padding[i] - name.size();
+      std::cout << p.first;
+      // // add padding
+      // size_t cur_padding = padding[index] - p.first.size();
+      // std::cout << std::endl << "padding:" << padding[index] << std::endl;
+      // std::cout << "p.first.size():" << p.first.size() << std::endl;
+      // std::cout << "cur_padding:" << cur_padding << std::endl;
 
-      std::stringstream ss;
-      for (size_t j = 0; j < cur_padding; j++) {
-        ss << " ";
-      }
-      std::cout << ss.str();
+      // std::stringstream ss;
+      // for (size_t j = 0; j < cur_padding; j++) {
+      //   ss << " ";
+      // }
+      // std::cout << ss.str();
+      // index += 1;
     }
     std::cout << std::endl;
     std::cout << "parameter value | ";
-    for (size_t i = 0; i < parameters.size(); i++) {
-      if (i > 0) {
+    // for (size_t i = 0; i < parameters.size(); i++) {
+    first = true;
+    // index = 0;
+    for (auto &p : parameter_values) {
+      if (!first) {
         std::cout << ", ";
+      } else {
+        first = false;
       }
-      const std::string &value = parameters[i]->get_value();
-      std::cout << value;
-      // add padding
-      size_t cur_padding = padding[i] - value.size();
-      std::stringstream ss;
-      for (size_t j = 0; j < cur_padding; j++) {
-        ss << " ";
-      }
-      std::cout << ss.str();
+      std::cout << p.second;
+      // // add padding
+      // size_t cur_padding = padding[index] - p.second.size();
+      // std::stringstream ss;
+      // for (size_t j = 0; j < cur_padding; j++) {
+      //   ss << " ";
+      // }
+      // std::cout << ss.str();
+      // index += 1;
     }
     std::cout << std::endl;
   }
@@ -231,8 +275,9 @@ public:
     const std::string &source_dir = builder->get_source_dir();
     std::ofstream parameter_file(source_dir + "parameters.hpp");
     parameter_file << "#pragma once" << std::endl;
-    for (size_t i = 0; i < parameters.size(); i++) {
-      parameter_file << parameters[i]->to_parameter_source_line();
+    for (auto &p : parameter_values) {
+      parameter_file << "#define " << p.first << " " << p.second << "\n";
+      // parameter_file << parameters[i]->to_parameter_source_line();
     }
     parameter_file.close();
   }
@@ -305,7 +350,6 @@ public:
   void autotune::kernel<R, cppjit::detail::pack<Args...>>::clear() {           \
     cppjit::kernel_name.clear();                                               \
     verbose = false;                                                           \
-    parameters.clear();                                                        \
     optimal_indices.clear();                                                   \
     if (scenario_measurement_file.is_open()) {                                 \
       scenario_measurement_file.close();                                       \

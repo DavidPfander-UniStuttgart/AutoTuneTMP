@@ -14,7 +14,7 @@ int main(void) {
   autotune::add_one.set_source_dir("examples/kernel_minimal");
 
   // register parameters
-  autotune::add_one.add_parameter("ADD_ONE", {"0", "1"});
+  // autotune::add_one.add_parameter("ADD_ONE", {"0", "1"});
   // autotune::add_one.add_parameter("PAR_TWO", {"0", "1", "2"});
   // autotune::add_one.add_parameter("PAR_THREE", {"0", "1", "2"});
 
@@ -40,11 +40,11 @@ int main(void) {
 
   int a = 5;
 
-  autotune::tuners::bruteforce<decltype(autotune::add_one)> tuner(
-      autotune::add_one);
-  tuner.setup_test(test_result);
-  tuner.set_verbose(true);
-  autotune::parameter_set optimal_parameters = tuner.tune(a);
-  autotune::add_one.set_parameters(optimal_parameters);
+  // autotune::tuners::bruteforce<decltype(autotune::add_one)> tuner(
+  //     autotune::add_one);
+  // tuner.setup_test(test_result);
+  // tuner.set_verbose(true);
+  // autotune::parameter_set optimal_parameters = tuner.tune(a);
+  // autotune::add_one.set_parameters(optimal_parameters);
   return 0;
 }

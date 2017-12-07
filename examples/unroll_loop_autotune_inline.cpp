@@ -19,8 +19,8 @@ int main(void) {
   builder->set_verbose(true);
   builder->set_include_paths("-I src");
 
-  autotune::unrolling_kernel.add_parameter(
-      "UNROLL_LOOP", std::vector<std::string>({"0", "1"}));
+  // autotune::unrolling_kernel.add_parameter(
+  //     "UNROLL_LOOP", std::vector<std::string>({"0", "1"}));
 
   autotune::unrolling_kernel.compile_inline(
       "#include \"opttmp/loop/unroll_loop.hpp\"\n"
@@ -34,7 +34,7 @@ int main(void) {
       "  }\n"
       "}\n");
 
-  autotune::unrolling_kernel.print_parameters();
+  // autotune::unrolling_kernel.print_parameters();
 
   autotune::unrolling_kernel(arr, N);
 

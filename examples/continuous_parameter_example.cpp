@@ -14,7 +14,7 @@ int main(void) {
   autotune::add_one.set_source_dir("examples/kernel_minimal");
 
   // register parameters
-  autotune::add_one.add_parameter("ADD_ONE", {"0", "1"});
+  // autotune::add_one.add_parameter("ADD_ONE", {"0", "1"});
 
   // derive type submitted initial value
   // double-style parameter
@@ -37,12 +37,12 @@ int main(void) {
 
   int a = 5;
 
-  size_t line_search_iterations = 5;
-  autotune::tuners::line_search<decltype(autotune::add_one)> tuner(
-      autotune::add_one, line_search_iterations, 1);
-  tuner.setup_test(test_result);
-  tuner.set_verbose(true);
-  autotune::parameter_set optimal_parameters = tuner.tune(a);
-  autotune::add_one.set_parameters(optimal_parameters);
+  // size_t line_search_iterations = 5;
+  // autotune::tuners::line_search<decltype(autotune::add_one)> tuner(
+  //     autotune::add_one, line_search_iterations, 1);
+  // tuner.setup_test(test_result);
+  // tuner.set_verbose(true);
+  // autotune::parameter_set optimal_parameters = tuner.tune(a);
+  // autotune::add_one.set_parameters(optimal_parameters);
   return 0;
 }

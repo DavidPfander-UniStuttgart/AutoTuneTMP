@@ -17,9 +17,9 @@ protected:
 public:
   const std::string &get_name() const { return this->name; }
   virtual const std::string get_value() const = 0;
-  virtual std::string to_parameter_source_line() = 0;
-  virtual void reset() = 0;
-  virtual std::shared_ptr<abstract_parameter> clone() = 0;
+  // virtual std::string to_parameter_source_line() = 0;
+  virtual void set_initial() = 0;
+  // virtual std::shared_ptr<abstract_parameter> clone() = 0;
 };
 
 // class step_parameter : public virtual abstract_parameter {

@@ -27,15 +27,15 @@ int main(void) {
   autotune::unrolling_kernel.set_source_dir(
       "examples/kernels_unroll_loop_autotune");
 
-  autotune::unrolling_kernel.add_parameter("UNROLL_LOOP", {"0", "1"});
-  autotune::unrolling_kernel.add_parameter("DUMMY_PAR_2", {"0", "1", "2", "3"});
-  autotune::unrolling_kernel.add_parameter("DUMMY_PAR_3", {"a", "b", "c", "d"});
+  // autotune::unrolling_kernel.add_parameter("UNROLL_LOOP", {"0", "1"});
+  // autotune::unrolling_kernel.add_parameter("DUMMY_PAR_2", {"0", "1", "2", "3"});
+  // autotune::unrolling_kernel.add_parameter("DUMMY_PAR_3", {"a", "b", "c", "d"});
 
-  autotune::tuners::line_search<decltype(autotune::unrolling_kernel)> tuner(
-      autotune::unrolling_kernel, 50, 1);
-  autotune::parameter_set optimal_indices = tuner.tune(arr, N);
-  autotune::unrolling_kernel.set_parameters(optimal_indices);
+  // autotune::tuners::line_search<decltype(autotune::unrolling_kernel)> tuner(
+  //     autotune::unrolling_kernel, 50, 1);
+  // autotune::parameter_set optimal_indices = tuner.tune(arr, N);
+  // autotune::unrolling_kernel.set_parameters(optimal_indices);
 
-  autotune::unrolling_kernel.print_values();
+  // autotune::unrolling_kernel.print_values();
   return 0;
 }

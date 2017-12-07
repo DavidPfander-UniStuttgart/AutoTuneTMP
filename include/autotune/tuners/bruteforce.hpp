@@ -3,6 +3,7 @@
 #include "../autotune.hpp"
 #include "../parameter.hpp"
 #include "common.hpp"
+#include "countable_set.hpp"
 
 namespace autotune {
 
@@ -18,20 +19,22 @@ class bruteforce<autotune::kernel<R, cppjit::detail::pack<Args...>>>
 private:
   autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
   bool verbose;
+  countable_set &parameters;
 
 public:
-  bruteforce(autotune::kernel<R, cppjit::detail::pack<Args...>> &f) : f(f) {}
+  bruteforce(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
+             countable_set &parameters)
+      : f(f), verbose(false), parameters(parameters) {}
 
-  parameter_set tune(Args &... args) {
-    parameter_set &parameters = f.get_parameters();
+  countable_set tune(Args &... args) {
+    // parameter_set &parameters = f.get_parameters();
     bool is_valid = true;
 
     f.write_header();
 
     double total_combinations = 1.0;
     for (size_t i = 0; i < parameters.size(); i++) {
-      total_combinations *=
-          parameters.get_as<fixed_set_parameter>(i)->get_values().size();
+      total_combinations *= parameters[i]->count_values();
     }
 
     if (verbose) {
@@ -39,15 +42,16 @@ public:
                 << std::endl;
     }
 
-    parameter_set original_parameters = parameters.clone();
+    parameter_value_set original_values = f.get_parameter_values();
 
     // brute-force tuner
     for (size_t i = 0; i < parameters.size(); i++) {
-      parameters.get_as<fixed_set_parameter>(i)->set_index(0);
+      parameters[i]->set_min();
     }
 
     // evaluate initial vector, always valid
     // f.print_values(values);
+    f.set_parameter_values(parameters);
     size_t combination_counter = 1;
     if (verbose) {
       std::cout << "evaluating combination " << combination_counter
@@ -59,7 +63,7 @@ public:
     bool first = true;
 
     double optimal_duration = this->evaluate(is_valid, f, args...);
-    parameter_set optimal_parameters;
+    countable_set optimal_parameters;
     if (is_valid) {
       first = false;
       optimal_parameters = parameters.clone();
@@ -74,15 +78,16 @@ public:
       }
 
       // the is another value for the current parameter
-      if (parameters.get_as<fixed_set_parameter>(current_index)->next()) {
+      if (parameters[current_index]->next()) {
         // reset the parameters "below" and start with the first parameter
         // again
         for (size_t i = 0; i < current_index; i++) {
-          parameters.get_as<fixed_set_parameter>(i)->set_index(0);
+          parameters[i]->set_min();
         }
         current_index = 0;
 
         // evaluate new valid value vector
+        f.set_parameter_values(parameters);
         if (verbose) {
           std::cout << "evaluating combination " << combination_counter
                     << " (out of " << total_combinations << ")" << std::endl;
@@ -104,7 +109,7 @@ public:
       }
     }
 
-    f.set_parameters(original_parameters);
+    f.set_parameter_values(original_values);
     return optimal_parameters;
   }
 

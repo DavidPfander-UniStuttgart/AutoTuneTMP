@@ -93,16 +93,17 @@ public:
 
   void report(const std::string &message, double duration,
               typename autotune::kernel<R, cppjit::detail::pack<Args...>> &f) {
-    parameter_set &parameters = f.get_parameters();
-    std::cout << message << "; duration: " << duration;
-    std::cout << "; values: ";
-    for (size_t i = 0; i < parameters.size(); i++) {
-      if (i > 0) {
-        std::cout << ", ";
-      }
-      std::cout << parameters[i]->get_value();
-    }
-    std::cout << std::endl;
+    // parameter_set &parameters = f.get_parameters();
+    // std::cout << message << "; duration: " << duration;
+    // std::cout << "; values: ";
+    // for (size_t i = 0; i < parameters.size(); i++) {
+    //   if (i > 0) {
+    //     std::cout << ", ";
+    //   }
+    //   std::cout << parameters[i]->get_value();
+    // }
+    // std::cout << std::endl;
+    f.print_values();
   }
 
   // template <class F>
