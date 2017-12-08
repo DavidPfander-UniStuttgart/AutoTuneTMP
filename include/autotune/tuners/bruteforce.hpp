@@ -18,13 +18,12 @@ class bruteforce<autotune::kernel<R, cppjit::detail::pack<Args...>>>
     : public abstract_tuner<countable_set, R, Args...> {
 private:
   autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
-  bool verbose;
   countable_set &parameters;
 
 public:
   bruteforce(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
              countable_set &parameters)
-      : f(f), verbose(false), parameters(parameters) {}
+      : f(f), parameters(parameters) {}
 
   countable_set tune(Args &... args) {
     bool is_valid = true;
@@ -36,7 +35,7 @@ public:
       total_combinations *= parameters[i]->count_values();
     }
 
-    if (verbose) {
+    if (this->verbose) {
       std::cout << "total combinations to test: " << total_combinations
                 << std::endl;
     }
@@ -50,11 +49,9 @@ public:
 
     // evaluate initial vector, always valid
     size_t combination_counter = 1;
-    if (verbose) {
+    if (this->verbose) {
       std::cout << "evaluating combination " << combination_counter
                 << " (out of " << total_combinations << ")" << std::endl;
-      std::cout << "current attempt:" << std::endl;
-      f.print_values();
     }
     combination_counter += 1;
     bool first = true;
@@ -64,7 +61,7 @@ public:
     if (is_valid) {
       first = false;
       optimal_parameters = parameters.clone();
-      this->report_verbose("new best kernel", optimal_duration, f);
+      this->report_verbose("new best kernel", optimal_duration, parameters);
     }
 
     size_t current_index = 0;
@@ -84,11 +81,9 @@ public:
         current_index = 0;
 
         // evaluate new valid value vector
-        if (verbose) {
+        if (this->verbose) {
           std::cout << "evaluating combination " << combination_counter
                     << " (out of " << total_combinations << ")" << std::endl;
-          std::cout << "current attempt:" << std::endl;
-          f.print_values();
         }
         combination_counter += 1;
         double duration = this->evaluate(is_valid, parameters, f, args...);
@@ -96,7 +91,7 @@ public:
           first = false;
           optimal_duration = duration;
           optimal_parameters = parameters.clone();
-          this->report_verbose("new best kernel", optimal_duration, f);
+          this->report_verbose("new best kernel", optimal_duration, parameters);
         }
 
       } else {
@@ -108,8 +103,6 @@ public:
     f.set_parameter_values(original_values);
     return optimal_parameters;
   }
-
-  void set_verbose(bool verbose) { this->verbose = verbose; }
 };
 } // namespace tuners
 } // namespace autotune

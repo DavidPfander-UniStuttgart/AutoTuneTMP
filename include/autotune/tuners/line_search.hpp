@@ -17,17 +17,14 @@ private:
   autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
   size_t max_iterations;
   size_t restarts;
-  // std::vector<size_t> initial_indices_guess;
-  bool verbose;
   countable_set &parameters;
 
 public:
   line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
               size_t max_iterations, size_t restarts, countable_set &parameters)
-      : abstract_tuner<countable_set, R, Args...>(), f(f), max_iterations(max_iterations),
-        restarts(restarts), verbose(false),
-        parameters(parameters) //, initial_indices_guess(initial_indices_guess)
-  {}
+      : abstract_tuner<countable_set, R, Args...>(), f(f),
+        max_iterations(max_iterations), restarts(restarts),
+        parameters(parameters) {}
 
   countable_set tune(Args &... args) {
 
@@ -51,7 +48,7 @@ public:
     size_t counter = 0;
     size_t cur_index = 0;
     while (counter < max_iterations) {
-      if (verbose) {
+      if (this->verbose) {
         std::cout << "current parameter index: " << cur_index << std::endl;
       }
 
@@ -60,19 +57,15 @@ public:
       p->set_initial();
       while (true) {
 
-        if (verbose) {
-          std::cout << "current attempt:" << std::endl;
-          f.print_values();
-        }
-
         // if a valid new index value was found, test it
         double duration = this->evaluate(is_valid, parameters, f, args...);
         if (is_valid && (first || duration < optimal_duration)) {
           first = false;
           optimal_parameters = parameters.clone();
           optimal_duration = duration;
-          if (verbose) {
-            this->report_verbose("new best kernel", optimal_duration, f);
+          if (this->verbose) {
+            this->report_verbose("new best kernel", optimal_duration,
+                                 parameters);
           }
         }
         if (!p->next()) {
@@ -80,15 +73,9 @@ public:
         }
       }
 
-      // in case reset does not lead to index set to zero
       p->set_initial();
       // do not evaluate resetted value
       while (p->prev()) {
-
-        if (verbose) {
-          std::cout << "current attempt:" << std::endl;
-          f.print_values();
-        }
 
         // if a valid new index value was found, test it
         double duration = this->evaluate(is_valid, parameters, f, args...);
@@ -96,21 +83,21 @@ public:
           first = false;
           optimal_parameters = parameters.clone();
           optimal_duration = duration;
-          if (verbose) {
-            this->report_verbose("new best kernel", optimal_duration, f);
+          if (this->verbose) {
+            this->report_verbose("new best kernel", optimal_duration,
+                                 parameters);
           }
         }
       }
       cur_index = (cur_index + 1) % parameters.size();
       counter += 1;
+      parameters = optimal_parameters;
     }
 
     f.set_parameter_values(original_values);
 
     return optimal_parameters;
   }
-
-  void set_verbose(bool verbose) { this->verbose = verbose; }
 };
 
 } // namespace tuners

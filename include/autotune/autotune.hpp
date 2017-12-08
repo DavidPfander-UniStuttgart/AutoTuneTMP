@@ -9,6 +9,7 @@
 #include "cppjit/function_traits.hpp"
 
 #include "abstract_parameter.hpp"
+#include "autotune_exception.hpp"
 #include "continuous_parameter.hpp"
 #include "fixed_set_parameter.hpp"
 #include "parameter_set.hpp"
@@ -221,59 +222,6 @@ public:
   //   }
   // }
 
-  void print_values() {
-    // std::vector<size_t> padding(parameter_values.size());
-    // for (auto &p : parameter_values) {
-    //   padding.push_back(p.first.size());
-    // }
-    std::cout << "parameter name  | ";
-    // for (size_t i = 0; i < parameters.size(); i++) {
-    bool first = true;
-    // size_t index = 0;
-    for (auto &p : parameter_values) {
-      if (!first) {
-        std::cout << ", ";
-      } else {
-        first = false;
-      }
-      std::cout << p.first;
-      // // add padding
-      // size_t cur_padding = padding[index] - p.first.size();
-      // std::cout << std::endl << "padding:" << padding[index] << std::endl;
-      // std::cout << "p.first.size():" << p.first.size() << std::endl;
-      // std::cout << "cur_padding:" << cur_padding << std::endl;
-
-      // std::stringstream ss;
-      // for (size_t j = 0; j < cur_padding; j++) {
-      //   ss << " ";
-      // }
-      // std::cout << ss.str();
-      // index += 1;
-    }
-    std::cout << std::endl;
-    std::cout << "parameter value | ";
-    // for (size_t i = 0; i < parameters.size(); i++) {
-    first = true;
-    // index = 0;
-    for (auto &p : parameter_values) {
-      if (!first) {
-        std::cout << ", ";
-      } else {
-        first = false;
-      }
-      std::cout << p.second;
-      // // add padding
-      // size_t cur_padding = padding[index] - p.second.size();
-      // std::stringstream ss;
-      // for (size_t j = 0; j < cur_padding; j++) {
-      //   ss << " ";
-      // }
-      // std::cout << ss.str();
-      // index += 1;
-    }
-    std::cout << std::endl;
-  }
-
   R operator()(Args... args) {
     return internal_kernel(std::forward<Args>(args)...);
   }
@@ -295,7 +243,7 @@ public:
   // TODO: add parameter_set argument?
   void create_parameter_file() {
     if (!has_source() || has_inline_source()) {
-      throw;
+        throw autotune_exception("no source available");
     }
     std::shared_ptr<cppjit::builder::builder> builder = get_builder();
     const std::string &source_dir = builder->get_source_dir();

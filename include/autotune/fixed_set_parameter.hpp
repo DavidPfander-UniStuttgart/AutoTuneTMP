@@ -22,12 +22,12 @@ public:
 
   void set_index(size_t new_index) { cur_index = new_index; };
 
-  const std::string &get_value(size_t index) const {
-    return this->values[index];
-  }
+  // const std::string &get_value(size_t index) const {
+  //   return this->values[index];
+  // }
 
   virtual const std::string get_value() const override {
-    return this->values[cur_index];
+    return std::string("\"") + this->values[cur_index] + std::string("\"");
   }
 
   size_t count_values() const { return values.size(); }

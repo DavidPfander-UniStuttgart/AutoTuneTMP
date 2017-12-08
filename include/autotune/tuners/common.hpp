@@ -23,8 +23,11 @@ class abstract_tuner
     : public std::conditional<!std::is_same<R, void>::value,
                               with_tests<R, Args...>,
                               without_tests<R, Args...>>::type {
+protected:
+  bool verbose;
+
 public:
-  abstract_tuner() = default;
+  abstract_tuner() : verbose(false) {}
 
   double evaluate(bool &is_valid, parameter_interface &parameters,
                   autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
@@ -34,9 +37,9 @@ public:
 
     is_valid = true;
 
-    if (f.is_verbose()) {
+    if (verbose) {
       std::cout << "------ begin eval ------" << std::endl;
-      f.print_values();
+      parameters.print_values();
     }
 
     f.create_parameter_file();
@@ -44,13 +47,13 @@ public:
     f.compile();
 
     if (!f.is_valid_parameter_combination()) {
-      if (f.is_verbose()) {
+      if (verbose) {
         std::cout << "invalid parameter combination encountered" << std::endl;
       }
       is_valid = false;
       return std::numeric_limits<double>::max();
     } else {
-      if (f.is_verbose()) {
+      if (verbose) {
         std::cout << "parameter combination is valid" << std::endl;
       }
     }
@@ -63,12 +66,12 @@ public:
         if (this->has_test()) {
           bool test_ok = this->test(f(args...));
           if (!test_ok) {
-            if (f.is_verbose()) {
+            if (verbose) {
               std::cout << "warning: test for combination failed!" << std::endl;
             }
             return std::numeric_limits<double>::max();
           } else {
-            if (f.is_verbose()) {
+            if (verbose) {
               std::cout << "test for combination passed" << std::endl;
             }
           }
@@ -83,7 +86,7 @@ public:
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
 
-    if (f.is_verbose()) {
+    if (verbose) {
       std::cout << "duration: " << duration.count() << "s" << std::endl;
       std::cout << "------- end eval -------" << std::endl;
     }
@@ -94,17 +97,17 @@ public:
   }
 
   void report(const std::string &message, double duration,
-              typename autotune::kernel<R, cppjit::detail::pack<Args...>> &f) {
-    std::cout << message << "; duration: " << duration;
-    f.print_values();
+              parameter_interface &parameters) {
+    std::cout << message << "; duration: " << duration << std::endl;
+    parameters.print_values();
   }
 
-  // template <class F>
-  void report_verbose(
-      const std::string &message, double duration,
-      typename autotune::kernel<R, cppjit::detail::pack<Args...>> &f) {
-    if (f.is_verbose()) {
-      report(message, duration, f);
+  void set_verbose(bool verbose) { this->verbose = verbose; }
+
+  void report_verbose(const std::string &message, double duration,
+                      parameter_interface &parameters) {
+    if (verbose) {
+      report(message, duration, parameters);
     }
   }
 };
