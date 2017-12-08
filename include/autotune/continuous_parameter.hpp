@@ -31,7 +31,7 @@ public:
     return std::to_string(current);
   }
 
-  virtual void set_initial() override {
+  virtual void set_initial() {
     // TODO: should be extended, so that an initial guess can be supplied
     current = initial;
   }

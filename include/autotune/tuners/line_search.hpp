@@ -12,7 +12,7 @@ template <class... Args> class line_search;
 
 template <typename R, typename... Args>
 class line_search<autotune::kernel<R, cppjit::detail::pack<Args...>>>
-    : public abstract_tuner<R, Args...> {
+    : public abstract_tuner<countable_set, R, Args...> {
 private:
   autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
   size_t max_iterations;
@@ -24,30 +24,19 @@ private:
 public:
   line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
               size_t max_iterations, size_t restarts, countable_set &parameters)
-      : abstract_tuner<R, Args...>(), f(f), max_iterations(max_iterations),
+      : abstract_tuner<countable_set, R, Args...>(), f(f), max_iterations(max_iterations),
         restarts(restarts), verbose(false),
         parameters(parameters) //, initial_indices_guess(initial_indices_guess)
   {}
 
-  // line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
-  //             std::function<bool(const R &)> &t, size_t max_iterations,
-  //             size_t restarts, std::vector<size_t> &initial_indices_guess)
-  //     : abstract_tuner<R, Args...>(t), f(f), max_iterations(max_iterations),
-  //       restarts(restarts), initial_indices_guess(initial_indices_guess) {}
-
   countable_set tune(Args &... args) {
 
     f.write_header();
-    // parameter_set &parameters = f.get_parameters();
-    // auto parameters = parameters_set.get();
+
     // set to initial guess (or whatever the parameter type is doing)
     for (size_t i = 0; i < parameters.size(); i++) {
       parameters[i]->set_min();
     }
-
-    // if (initial_indices_guess.size() != parameters.size()) {
-    //   throw;
-    // }
 
     // memorize original parameters
     parameter_value_set original_values = f.get_parameter_values();
@@ -56,12 +45,6 @@ public:
     bool is_valid = true;
     countable_set optimal_parameters = parameters.clone();
 
-    // if (f.is_verbose()) {
-    //   std::cout << "evaluating initial parameter combination" << std::endl;
-    //   std::cout << "initial values:" << std::endl;
-    //   f.print_values();
-    // }
-    // double optimal_duration = this->evaluate(is_valid, f, args...);
     double optimal_duration;
     bool first = true;
 
@@ -83,8 +66,7 @@ public:
         }
 
         // if a valid new index value was found, test it
-        f.set_parameter_values(parameters);
-        double duration = this->evaluate(is_valid, f, args...);
+        double duration = this->evaluate(is_valid, parameters, f, args...);
         if (is_valid && (first || duration < optimal_duration)) {
           first = false;
           optimal_parameters = parameters.clone();
@@ -109,8 +91,7 @@ public:
         }
 
         // if a valid new index value was found, test it
-        f.set_parameter_values(parameters);
-        double duration = this->evaluate(is_valid, f, args...);
+        double duration = this->evaluate(is_valid, parameters, f, args...);
         if (is_valid && (first || duration < optimal_duration)) {
           first = false;
           optimal_parameters = parameters.clone();

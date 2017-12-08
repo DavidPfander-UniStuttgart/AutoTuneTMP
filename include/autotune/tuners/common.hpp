@@ -18,7 +18,7 @@ public:
 
 template <typename R, typename... Args> class without_tests {};
 
-template <typename R, typename... Args>
+template <typename parameter_interface, typename R, typename... Args>
 class abstract_tuner
     : public std::conditional<!std::is_same<R, void>::value,
                               with_tests<R, Args...>,
@@ -26,9 +26,11 @@ class abstract_tuner
 public:
   abstract_tuner() = default;
 
-  double evaluate(bool &is_valid,
+  double evaluate(bool &is_valid, parameter_interface &parameters,
                   autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
                   Args &... args) {
+
+    f.set_parameter_values(parameters);
 
     is_valid = true;
 
@@ -93,16 +95,7 @@ public:
 
   void report(const std::string &message, double duration,
               typename autotune::kernel<R, cppjit::detail::pack<Args...>> &f) {
-    // parameter_set &parameters = f.get_parameters();
-    // std::cout << message << "; duration: " << duration;
-    // std::cout << "; values: ";
-    // for (size_t i = 0; i < parameters.size(); i++) {
-    //   if (i > 0) {
-    //     std::cout << ", ";
-    //   }
-    //   std::cout << parameters[i]->get_value();
-    // }
-    // std::cout << std::endl;
+    std::cout << message << "; duration: " << duration;
     f.print_values();
   }
 

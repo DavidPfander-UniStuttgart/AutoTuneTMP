@@ -4,6 +4,12 @@
 
 namespace autotune {
 
+// class basic_parameter {
+// public:
+//   virtual const std::string &get_name() const = 0;
+//   virtual const std::string get_value() const = 0;
+// };
+
 class countable_parameter {
 public:
   virtual bool next() = 0;
@@ -50,9 +56,24 @@ public:
 
 class countable_set : public std::vector<std::shared_ptr<countable_parameter>> {
 
-  // countable_parameters;
-
 public:
+  countable_set() : std::vector<std::shared_ptr<countable_parameter>>() {}
+
+  countable_set(const countable_set &other)
+      : std::vector<std::shared_ptr<countable_parameter>>() {
+    for (size_t i = 0; i < other.size(); i++) {
+      this->push_back(other[i]->clone_wrapper());
+    }
+  }
+
+  countable_set &operator=(const countable_set &other) {
+    this->clear();
+    for (size_t i = 0; i < other.size(); i++) {
+      this->push_back(other[i]->clone_wrapper());
+    }
+    return *this;
+  }
+
   template <typename T> void add_parameter(T &p) {
     std::shared_ptr<countable_parameter_wrapper<T>> cloned =
         std::make_shared<countable_parameter_wrapper<T>>(p);
@@ -62,16 +83,9 @@ public:
   countable_set clone() {
     countable_set new_instance;
     for (size_t i = 0; i < this->size(); i++) {
-      // std::shared_ptr<countable_parameter_wrapper<T>> cloned =
-      //     std::make_shared<countable_parameter_wrapper<T>>(this->operator[](i));
       new_instance.push_back(this->operator[](i)->clone_wrapper());
-      // new_instance.push_back(this->operator[](i)->clone());
     }
     return new_instance;
   }
-
-  // std::vector<std::shared_ptr<countable_parameter>> get() {
-  //   return countable_parameters;
-  // }
 };
 }

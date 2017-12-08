@@ -6,6 +6,9 @@ set(AutoTuneTMP_VERSION 0.1.0)
 add_library(AutoTuneTMP INTERFACE)
 
 find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_ROOT})
+
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
 # target_include_directories(AutoTuneTMP INTERFACE ${Vc_INCLUDE_DIR})
 target_include_directories(AutoTuneTMP INTERFACE
   $<BUILD_INTERFACE:${Vc_INCLUDE_DIR}>
@@ -108,6 +111,9 @@ install(TARGETS bruteforce_search_example DESTINATION examples)
 add_executable(countable_set_example "examples/countable_set_example.cpp")
 target_link_libraries(countable_set_example AutoTuneTMP)
 install(TARGETS countable_set_example DESTINATION examples)
+
+add_executable(boost_tests "tests/boost_tests.cpp")
+target_link_libraries(boost_tests PUBLIC AutoTuneTMP Boost::boost Boost::unit_test_framework)
 
 #################
 # end examples

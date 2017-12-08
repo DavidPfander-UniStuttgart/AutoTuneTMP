@@ -52,7 +52,7 @@ public:
 
   void set_min() { cur_index = 0; };
 
-  virtual void set_initial() override {
+  virtual void set_initial() {
     // TODO: should be extended, so that an initial guess can be supplied
     cur_index = 0;
   }

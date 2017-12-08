@@ -15,7 +15,7 @@ template <class... Args> class bruteforce;
 
 template <typename R, typename... Args>
 class bruteforce<autotune::kernel<R, cppjit::detail::pack<Args...>>>
-    : public abstract_tuner<R, Args...> {
+    : public abstract_tuner<countable_set, R, Args...> {
 private:
   autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
   bool verbose;
@@ -27,7 +27,6 @@ public:
       : f(f), verbose(false), parameters(parameters) {}
 
   countable_set tune(Args &... args) {
-    // parameter_set &parameters = f.get_parameters();
     bool is_valid = true;
 
     f.write_header();
@@ -50,8 +49,6 @@ public:
     }
 
     // evaluate initial vector, always valid
-    // f.print_values(values);
-    f.set_parameter_values(parameters);
     size_t combination_counter = 1;
     if (verbose) {
       std::cout << "evaluating combination " << combination_counter
@@ -62,7 +59,7 @@ public:
     combination_counter += 1;
     bool first = true;
 
-    double optimal_duration = this->evaluate(is_valid, f, args...);
+    double optimal_duration = this->evaluate(is_valid, parameters, f, args...);
     countable_set optimal_parameters;
     if (is_valid) {
       first = false;
@@ -87,7 +84,6 @@ public:
         current_index = 0;
 
         // evaluate new valid value vector
-        f.set_parameter_values(parameters);
         if (verbose) {
           std::cout << "evaluating combination " << combination_counter
                     << " (out of " << total_combinations << ")" << std::endl;
@@ -95,7 +91,7 @@ public:
           f.print_values();
         }
         combination_counter += 1;
-        double duration = this->evaluate(is_valid, f, args...);
+        double duration = this->evaluate(is_valid, parameters, f, args...);
         if (is_valid && (first || duration < optimal_duration)) {
           first = false;
           optimal_duration = duration;

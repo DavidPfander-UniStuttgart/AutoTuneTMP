@@ -17,3 +17,6 @@ compile:
     override:
         - ./build-all.sh circle
 
+test:
+    override:
+        - ./build/boost_tests --log_level=test_suite

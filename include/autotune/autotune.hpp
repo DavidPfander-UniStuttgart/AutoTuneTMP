@@ -29,15 +29,21 @@ private:
   std::ofstream scenario_measurement_file;
 
   std::string kernel_name;
+  cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel;
   // parameter_set parameters;
   parameter_value_set parameter_values;
   std::vector<size_t> optimal_indices;
 
 public:
-  kernel(const std::string &kernel_name)
-      : verbose(false), measurement_enabled(false), kernel_name(kernel_name) {}
+  kernel(const std::string &kernel_name,
+         cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel)
+      : verbose(false), measurement_enabled(false), kernel_name(kernel_name),
+        internal_kernel(internal_kernel) {}
 
-  void set_verbose(bool verbose_);
+  void set_verbose(bool verbose_) {
+    verbose = verbose_;
+    internal_kernel.get_builder()->set_verbose(verbose_);
+  }
 
   void set_write_measurement(const std::string &scenario_name) {
     // close last scnario if there was one
@@ -89,17 +95,31 @@ public:
     scenario_measurement_file << ", " << duration_s << std::endl;
   }
 
-  void set_source_inline(const std::string &source_);
+  void set_source_inline(const std::string &source_) {
+    internal_kernel.set_source_inline(source_);
+  }
 
-  void set_source_dir(const std::string &source_dir_);
+  void set_source_dir(const std::string &source_dir_) {
+    internal_kernel.set_source_dir(source_dir_);
+  }
 
-  bool has_source();
+  bool has_source() { return internal_kernel.has_source(); }
 
-  bool has_inline_source();
+  bool has_inline_source() { return internal_kernel.has_inline_source(); }
 
   bool is_verbose() { return verbose; }
 
-  bool is_valid_parameter_combination();
+  bool is_valid_parameter_combination() {
+    auto builder = internal_kernel.get_builder();
+    void *uncasted_function =
+        builder->load_other_symbol("is_valid_parameter_combination");
+    if (uncasted_function == nullptr) {
+      return true;
+    }
+    bool (*decider_pointer)() =
+        reinterpret_cast<decltype(decider_pointer)>(uncasted_function);
+    return decider_pointer();
+  }
 
   // void add_parameter(const std::shared_ptr<abstract_parameter> &parameter) {
   //   parameters.push_back(parameter);
@@ -254,17 +274,23 @@ public:
     std::cout << std::endl;
   }
 
-  R operator()(Args... args);
+  R operator()(Args... args) {
+    return internal_kernel(std::forward<Args>(args)...);
+  }
 
   // very useful overload for the kernel tuners, so that they don't have to
   // track source-related arguments
-  void compile();
+  void compile(const std::string &source_dir) {
+    internal_kernel.compile(source_dir);
+  }
 
-  void compile(const std::string &source_dir);
+  void compile_inline(const std::string &source) {
+    internal_kernel.compile_inline(source);
+  }
 
-  void compile_inline(const std::string &source);
+  void compile() { internal_kernel.compile(); }
 
-  bool is_compiled();
+  bool is_compiled() { return internal_kernel.is_compiled(); }
 
   // TODO: add parameter_set argument?
   void create_parameter_file() {
@@ -282,14 +308,28 @@ public:
     parameter_file.close();
   }
 
-  void set_builder(std::shared_ptr<cppjit::builder::builder> builder_);
+  void set_builder(std::shared_ptr<cppjit::builder::builder> builder_) {
+    internal_kernel.set_builder(builder_);
+  }
 
-  std::shared_ptr<cppjit::builder::builder> get_builder();
+  std::shared_ptr<cppjit::builder::builder> get_builder() {
+    return internal_kernel.get_builder();
+  }
 
-  template <class builder_class>
-  std::shared_ptr<builder_class> get_builder_as();
+  template <typename builder_class>
+  std::shared_ptr<builder_class> get_builder_as() {
+    return internal_kernel.template get_builder_as<builder_class>();
+  }
 
-  void clear();
+  void clear() {
+    internal_kernel.clear();
+    verbose = false;
+    optimal_indices.clear();
+    if (scenario_measurement_file.is_open()) {
+      scenario_measurement_file.close();
+    }
+    measurement_enabled = false;
+  }
 };
 }
 
@@ -300,104 +340,14 @@ public:
       cppjit::detail::function_traits<kernel_signature>::return_type,          \
       cppjit::detail::function_traits<kernel_signature>::args_type>            \
       kernel_name;                                                             \
-  } /* namespace autotune */                                                   \
-  template <typename R, typename... Args>                                      \
-  template <typename builder_class>                                            \
-  std::shared_ptr<builder_class>                                               \
-  autotune::kernel<R, cppjit::detail::pack<Args...>>::get_builder_as() {       \
-    return cppjit::kernel_name.get_builder_as<builder_class>();                \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  R autotune::kernel<R, cppjit::detail::pack<Args...>>::operator()(            \
-      Args... args) {                                                          \
-    return cppjit::kernel_name(std::forward<Args>(args)...);                   \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  void autotune::kernel<R, cppjit::detail::pack<Args...>>::set_verbose(        \
-      bool verbose_) {                                                         \
-    verbose = verbose_;                                                        \
-    cppjit::kernel_name.get_builder()->set_verbose(verbose_);                  \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  void autotune::kernel<R, cppjit::detail::pack<Args...>>::compile(            \
-      const std::string &source_dir) {                                         \
-    cppjit::kernel_name.compile(source_dir);                                   \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  void autotune::kernel<R, cppjit::detail::pack<Args...>>::compile_inline(     \
-      const std::string &source) {                                             \
-    cppjit::kernel_name.compile_inline(source);                                \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  void autotune::kernel<R, cppjit::detail::pack<Args...>>::compile() {         \
-    cppjit::kernel_name.compile();                                             \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  bool autotune::kernel<R, cppjit::detail::pack<Args...>>::is_compiled() {     \
-    return cppjit::kernel_name.is_compiled();                                  \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  void autotune::kernel<R, cppjit::detail::pack<Args...>>::set_builder(        \
-      std::shared_ptr<cppjit::builder::builder> builder_) {                    \
-    cppjit::kernel_name.set_builder(builder_);                                 \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  std::shared_ptr<cppjit::builder::builder>                                    \
-  autotune::kernel<R, cppjit::detail::pack<Args...>>::get_builder() {          \
-    return cppjit::kernel_name.get_builder();                                  \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  void autotune::kernel<R, cppjit::detail::pack<Args...>>::clear() {           \
-    cppjit::kernel_name.clear();                                               \
-    verbose = false;                                                           \
-    optimal_indices.clear();                                                   \
-    if (scenario_measurement_file.is_open()) {                                 \
-      scenario_measurement_file.close();                                       \
-    }                                                                          \
-    measurement_enabled = false;                                               \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  void autotune::kernel<R, cppjit::detail::pack<Args...>>::set_source_inline(  \
-      const std::string &source_) {                                            \
-    cppjit::kernel_name.set_source_inline(source_);                            \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  void autotune::kernel<R, cppjit::detail::pack<Args...>>::set_source_dir(     \
-      const std::string &source_dir_) {                                        \
-    cppjit::kernel_name.set_source_dir(source_dir_);                           \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  bool autotune::kernel<R, cppjit::detail::pack<Args...>>::has_source() {      \
-    return cppjit::kernel_name.has_source();                                   \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  bool                                                                         \
-  autotune::kernel<R, cppjit::detail::pack<Args...>>::has_inline_source() {    \
-    return cppjit::kernel_name.has_inline_source();                            \
-  }                                                                            \
-  template <typename R, typename... Args>                                      \
-  bool autotune::kernel<                                                       \
-      R, cppjit::detail::pack<Args...>>::is_valid_parameter_combination() {    \
-    auto builder = autotune::kernel_name.get_builder();                        \
-    void *uncasted_function =                                                  \
-        builder->load_other_symbol("is_valid_parameter_combination");          \
-    if (uncasted_function == nullptr) {                                        \
-      return true;                                                             \
-    }                                                                          \
-    bool (*decider_pointer)() =                                                \
-        reinterpret_cast<decltype(decider_pointer)>(uncasted_function);        \
-    return decider_pointer();                                                  \
-  }
-
-// std::function<bool()> decider;
-// decider = decider_pointer;
+  } /* namespace autotune */
 
 #define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name)                  \
   CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name)                          \
   namespace autotune {                                                         \
   kernel<cppjit::detail::function_traits<kernel_signature>::return_type,       \
          cppjit::detail::function_traits<kernel_signature>::args_type>         \
-      kernel_name(#kernel_name);                                               \
+      kernel_name(#kernel_name, cppjit::kernel_name);                          \
   } /* namespace autotune */
 
 #define AUTOTUNE_DECLARE_DEFINE_KERNEL(signature, kernel_name)                 \
