@@ -36,7 +36,6 @@ public:
   virtual const std::string &get_name() const override { return p.get_name(); }
   virtual const std::string get_value() const override { return p.get_value(); }
   virtual bool set_value(double new_value) override {
-    std::cout << "new value: " << new_value << std::endl;
     return p.set_value(new_value);
   }
   virtual void set_initial() override { p.set_initial(); };

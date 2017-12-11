@@ -52,22 +52,17 @@ public:
         auto &p = current_parameters[parameter_index];
 
         if (p->is_integer_parameter()) {
-          std::cout << "min: " << p->get_min() << std::endl;
-          std::cout << "max: " << p->get_max() << std::endl;
-          std::default_random_engine generator;
-          std::uniform_int_distribution<size_t> distibution(
-              static_cast<size_t>(p->get_min()),
-              static_cast<size_t>(p->get_max()));
-          if (!p->set_value(distibution(generator))) {
-            throw;
-          }
+	  std::uniform_int_distribution<size_t> distribution(static_cast<size_t>(p->get_min()),
+							     static_cast<size_t>(p->get_max()));
+	  std::random_device rd;
+	  std::default_random_engine generator(rd());
+          p->set_value(distribution(generator));
         } else {
-          std::default_random_engine generator;
-          std::uniform_real_distribution<double> distribution(p->get_min(),
-                                                              p->get_max());
-          if (!p->set_value(distribution(generator))) {
-            throw;
-          }
+	  std::uniform_real_distribution<double> distribution(p->get_min(),
+					     		      p->get_max());
+	  std::random_device rd;
+	  std::default_random_engine generator(rd());
+          p->set_value(distribution(generator));
         }
       }
 

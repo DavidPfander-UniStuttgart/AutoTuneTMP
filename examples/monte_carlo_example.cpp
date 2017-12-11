@@ -7,16 +7,16 @@
 #include "autotune/tuners/monte_carlo.hpp"
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), add_one)
+AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), smooth_cost_function)
 
 int main(void) {
-  autotune::add_one.set_source_dir("examples/kernel_minimal");
+  autotune::smooth_cost_function.set_source_dir("examples/kernel_smooth_cost_function");
 
   autotune::limited_set parameters;
   autotune::limited_continuous_parameter p1("PAR_1", 1.0, 1.0, 5.0, true);
   parameters.add_parameter(p1);
 
-  autotune::limited_continuous_parameter p2("PAR_2", 1.0, 1.0, 5.0, true);
+  autotune::limited_continuous_parameter p2("PAR_2", 1.0, 1.0, 5.0, false);
   parameters.add_parameter(p2);
 
   std::function<bool(int)> test_result = [](int) -> bool {
@@ -26,12 +26,12 @@ int main(void) {
 
   int a = 5;
 
-  autotune::tuners::monte_carlo<decltype(autotune::add_one)> tuner(
-      autotune::add_one, parameters, 10);
+  autotune::tuners::monte_carlo<decltype(autotune::smooth_cost_function)> tuner(
+      autotune::smooth_cost_function, parameters, 10);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::limited_set optimal_parameters = tuner.tune(a);
-  autotune::add_one.set_parameter_values(optimal_parameters);
+  autotune::smooth_cost_function.set_parameter_values(optimal_parameters);
   optimal_parameters.print_values();
 
   return 0;
