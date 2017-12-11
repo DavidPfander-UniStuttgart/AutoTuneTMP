@@ -7,6 +7,7 @@
 #include "autotune/tuners/countable_set.hpp"
 #include "autotune/tuners/line_search.hpp"
 #include "autotune/tuners/neighborhood_search.hpp"
+#include "autotune/tuners/monte_carlo.hpp"
 
 AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_kernel)
 
@@ -15,6 +16,8 @@ AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_bruteforce_kernel)
 AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_line_search_kernel)
 
 AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_neighborhood_search_kernel)
+
+AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_monte_carlo_kernel)
 
 BOOST_AUTO_TEST_SUITE(basic_api)
 
@@ -123,6 +126,41 @@ BOOST_AUTO_TEST_CASE(run_neighborhood_search) {
   bool check1 = optimal_parameters[0]->get_value().compare("2.000000") == 0;
   BOOST_CHECK(check1);
   bool check2 = optimal_parameters[1]->get_value().compare("3.000000") == 0;
+  BOOST_CHECK(check2);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(monte_carlo_search)
+
+BOOST_AUTO_TEST_CASE(run_monte_carlo) {
+  autotune::run_monte_carlo_kernel.set_source_dir(
+      "tests/kernel_run_monte_carlo_kernel");
+  autotune::run_line_search_kernel.set_verbose(true);
+  auto builder = autotune::run_monte_carlo_kernel
+                     .get_builder_as<cppjit::builder::gcc>();
+  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
+
+  autotune::limited_set parameters;
+  autotune::limited_continuous_parameter p1("PAR_1", 1.0, 1.0, 5.0, true);
+  parameters.add_parameter(p1);
+  autotune::limited_continuous_parameter p2("PAR_2", 1.0, 1.0, 5.0, false);
+  parameters.add_parameter(p2);
+
+  std::function<bool(int)> test_result = [](int) -> bool { return true; };
+
+  int a = 5;
+
+  autotune::tuners::monte_carlo<decltype(
+      autotune::run_monte_carlo_kernel)>
+      tuner(autotune::run_monte_carlo_kernel, parameters, 10);
+  tuner.setup_test(test_result);
+  tuner.set_verbose(true);
+  autotune::limited_set optimal_parameters = tuner.tune(a);
+  optimal_parameters.print_values();
+  bool check1 = optimal_parameters[0]->get_value().compare("1.000000") != 0;
+  BOOST_CHECK(check1);
+  bool check2 = optimal_parameters[1]->get_value().compare("1.000000") != 0;
   BOOST_CHECK(check2);
 }
 
