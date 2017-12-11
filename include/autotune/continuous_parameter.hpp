@@ -1,20 +1,10 @@
 #pragma once
 
+#include <cmath>
 #include <functional>
 #include <iomanip>
-#include <cmath>
 
 namespace autotune {
-
-class stepper {
-private:
-  double step;
-
-public:
-  stepper(double step) : step(step) {}
-
-  double operator()(double current) { return current + step; }
-};
 
 class continuous_parameter : public abstract_parameter {
 protected:
@@ -158,10 +148,49 @@ public:
 
   void set_max() { current = max; }
 
+  double get_min() const { return min; }
+
+  double get_max() const { return min; }
+
   size_t count_values() const {
     // TODO: implement
     return std::floor((max - min) / step) + 1;
   }
+};
+
+class limited_continuous_parameter : public continuous_parameter {
+private:
+  double min;
+  double max;
+  bool integer_parameter;
+
+public:
+  limited_continuous_parameter(const std::string &name, double initial,
+                               double min, double max,
+                               bool integer_parameter = false)
+      : continuous_parameter(name, initial), min(min), max(max),
+        integer_parameter(integer_parameter) {}
+
+  void set_min() { current = min; }
+
+  void set_max() { current = max; }
+
+  double get_min() const { return min; }
+
+  double get_max() const { return max; }
+
+  bool set_value(double new_value) {
+    if (new_value < min || new_value > max) {
+      return false;
+    }
+    if (integer_parameter && (new_value != std::trunc(new_value))) {
+      return false;
+    }
+    current = new_value;
+    return true;
+  }
+
+  bool is_integer_parameter() const { return integer_parameter; }
 };
 
 } // namespace autotune

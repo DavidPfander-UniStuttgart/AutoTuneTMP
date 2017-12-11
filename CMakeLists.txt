@@ -116,6 +116,10 @@ add_executable(neighborhood_search_example "examples/neighborhood_search_example
 target_link_libraries(neighborhood_search_example AutoTuneTMP)
 install(TARGETS neighborhood_search_example DESTINATION examples)
 
+add_executable(monte_carlo_example "examples/monte_carlo_example.cpp")
+target_link_libraries(monte_carlo_example AutoTuneTMP)
+install(TARGETS monte_carlo_example DESTINATION examples)
+
 add_executable(boost_tests "tests/boost_tests.cpp")
 target_link_libraries(boost_tests PUBLIC AutoTuneTMP Boost::boost Boost::unit_test_framework)
 
