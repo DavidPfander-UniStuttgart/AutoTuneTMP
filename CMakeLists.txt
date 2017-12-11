@@ -112,6 +112,10 @@ add_executable(countable_set_example "examples/countable_set_example.cpp")
 target_link_libraries(countable_set_example AutoTuneTMP)
 install(TARGETS countable_set_example DESTINATION examples)
 
+add_executable(neighborhood_search_example "examples/neighborhood_search_example.cpp")
+target_link_libraries(neighborhood_search_example AutoTuneTMP)
+install(TARGETS neighborhood_search_example DESTINATION examples)
+
 add_executable(boost_tests "tests/boost_tests.cpp")
 target_link_libraries(boost_tests PUBLIC AutoTuneTMP Boost::boost Boost::unit_test_framework)
 
