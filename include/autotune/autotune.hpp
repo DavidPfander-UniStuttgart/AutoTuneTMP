@@ -16,8 +16,6 @@
 
 namespace autotune {
 
-enum class tuner { bruteforce, simulated_annealing, line_search, monte_carlo };
-
 // base template for the following specialization
 // required to do the pack-matching in the specialization
 template <typename... Args> struct kernel;
@@ -121,67 +119,6 @@ public:
         reinterpret_cast<decltype(decider_pointer)>(uncasted_function);
     return decider_pointer();
   }
-
-  // void add_parameter(const std::shared_ptr<abstract_parameter> &parameter) {
-  //   parameters.push_back(parameter);
-  // }
-
-  // parameter_set &get_parameters() { return parameters; }
-
-  // template <class T>
-  // void add_parameter(const std::string &name, const T &values) {
-  //   parameters.emplace_back(name, values);
-  // }
-
-  // const std::vector<size_t> &get_optimal_indices() { return
-  // optimal_indices;
-  // }
-
-  // void set_optimal_indices(const std::vector<size_t> &new_optimal_indices)
-  // {
-  //   optimal_indices = new_optimal_indices;
-  // }
-
-  // void add_parameter(const std::string &name,
-  //                    const std::vector<std::string> &values) {
-  //   auto p = std::make_shared<fixed_set_parameter>(name, values);
-  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-  //   parameters.push_back(q);
-  // }
-
-  // void add_parameter(const std::string &name, const double initial,
-  //                    const double min, const double max, const double step)
-  //                    {
-  //   auto p = factory::make_continuous_parameter(name, initial, min, max,
-  //   step);
-  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-  //   parameters.push_back(q);
-  // }
-
-  // void add_parameter(const std::string &name, const double initial,
-  //                    const double step) {
-  //   auto p = factory::make_continuous_parameter(name, initial, step);
-  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-  //   parameters.push_back(q);
-  // }
-
-  // void add_parameter(const std::string &name, const double initial) {
-  //   auto p = factory::make_continuous_parameter(name, initial);
-  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-  //   parameters.push_back(q);
-  // }
-
-  // void add_parameter(const std::string &name, const double initial,
-  //                    const double min, const double max) {
-  //   auto p = factory::make_continuous_parameter(name, initial, min, max);
-  //   auto q = std::dynamic_pointer_cast<abstract_parameter>(p);
-  //   parameters.push_back(q);
-  // }
-
-  // void set_parameters(parameter_set &new_parameters) {
-  //   parameters = new_parameters;
-  // }
-
   void set_parameter_values(parameter_value_set &new_parameter_values) {
     parameter_values.clear();
     for (auto &p : new_parameter_values) {
@@ -202,25 +139,6 @@ public:
   }
 
   parameter_value_set get_parameter_values() { return parameter_values; }
-
-  // void print_parameter_values() {
-  //   std::cout << "kernel_name: " << kernel_name << std::endl;
-  //   // for (const std::shared_ptr<abstract_parameter> &p : parameters) {
-  //   for (auto &p: parameter_values) {
-  //     std::cout << "name: " << p.first << " values: ";
-  //     if (auto p_fixed_set =
-  //             std::dynamic_pointer_cast<fixed_set_parameter>(p)) {
-  //       auto values = p_fixed_set->get_values();
-  //       for (size_t i = 0; i < values.size(); i++) {
-  //         if (i > 0) {
-  //           std::cout << ", ";
-  //         }
-  //         std::cout << values[i];
-  //       }
-  //     }
-  //     std::cout << std::endl;
-  //   }
-  // }
 
   R operator()(Args... args) {
     return internal_kernel(std::forward<Args>(args)...);
