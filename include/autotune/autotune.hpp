@@ -1,13 +1,13 @@
 #pragma once
 
 #include <fstream>
-#include <fstream>
 #include <iostream>
 #include <vector>
 
 #include "cppjit/cppjit.hpp"
 #include "cppjit/function_traits.hpp"
 
+#include "abstract_kernel.hpp"
 #include "abstract_parameter.hpp"
 #include "autotune_exception.hpp"
 #include "continuous_parameter.hpp"
@@ -20,6 +20,8 @@ namespace autotune {
 // required to do the pack-matching in the specialization
 template <typename... Args> struct kernel;
 
+  //: public abstract_kernel<R, cppjit::detail::pack<Args...>>
+  
 template <typename R, typename... Args>
 class kernel<R, cppjit::detail::pack<Args...>> {
 private:
@@ -31,7 +33,6 @@ private:
   cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel;
   // parameter_set parameters;
   parameter_value_set parameter_values;
-  std::vector<size_t> optimal_indices;
 
 public:
   kernel(const std::string &kernel_name,
@@ -74,14 +75,10 @@ public:
   }
 
   // to be called from tuner, not directly
-  void write_measurement( // const std::vector<size_t> &indices,
-      double duration_s) {
+  void write_measurement(double duration_s) {
     if (!measurement_enabled) {
       return;
     }
-    // if (indices.size() != parameters.size()) {
-    //   throw;
-    // }
     bool first = true;
     for (auto &p : parameter_values) {
       if (!first) {
@@ -161,7 +158,7 @@ public:
   // TODO: add parameter_set argument?
   void create_parameter_file() {
     if (!has_source() || has_inline_source()) {
-        throw autotune_exception("no source available");
+      throw autotune_exception("no source available");
     }
     std::shared_ptr<cppjit::builder::builder> builder = get_builder();
     const std::string &source_dir = builder->get_source_dir();
@@ -190,7 +187,6 @@ public:
   void clear() {
     internal_kernel.clear();
     verbose = false;
-    optimal_indices.clear();
     if (scenario_measurement_file.is_open()) {
       scenario_measurement_file.close();
     }

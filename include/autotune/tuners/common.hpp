@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../abstract_kernel.hpp"
+
 #include <chrono>
 
 namespace autotune {
