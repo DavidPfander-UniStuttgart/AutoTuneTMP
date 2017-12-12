@@ -14,14 +14,14 @@ namespace tuners {
 template <class... Args> class bruteforce;
 
 template <typename R, typename... Args>
-class bruteforce<autotune::kernel<R, cppjit::detail::pack<Args...>>>
+class bruteforce<autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>>>
     : public abstract_tuner<countable_set, R, Args...> {
 private:
-  autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
+  autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f;
   countable_set &parameters;
 
 public:
-  bruteforce(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
+  bruteforce(autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
              countable_set &parameters)
       : f(f), parameters(parameters) {}
 

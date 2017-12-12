@@ -9,22 +9,22 @@
 
 namespace autotune {
 
-template <class... T> class kernel;
+template <class... T> class cppjit_kernel;
 
 namespace tuners {
 
 template <class... Args> class monte_carlo;
 
 template <typename R, typename... Args>
-class monte_carlo<autotune::kernel<R, cppjit::detail::pack<Args...>>>
+class monte_carlo<autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>>>
     : public abstract_tuner<limited_set, R, Args...> {
 private:
-  autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
+  autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f;
   limited_set &parameters;
   size_t iterations;
 
 public:
-  monte_carlo(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
+  monte_carlo(autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
               limited_set &parameters, size_t iterations)
       : f(f), parameters(parameters), iterations(iterations) {}
 

@@ -14,15 +14,15 @@ namespace tuners {
 template <class... Args> class neighborhood_search;
 
 template <typename R, typename... Args>
-class neighborhood_search<autotune::kernel<R, cppjit::detail::pack<Args...>>>
+class neighborhood_search<autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>>>
     : public abstract_tuner<countable_set, R, Args...> {
 private:
-  autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
+  autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f;
   countable_set &parameters;
   size_t iterations;
 
 public:
-  neighborhood_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
+  neighborhood_search(autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
                       countable_set &parameters, size_t iterations)
       : f(f), parameters(parameters), iterations(iterations) {}
 

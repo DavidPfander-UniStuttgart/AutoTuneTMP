@@ -11,16 +11,16 @@ namespace tuners {
 template <class... Args> class line_search;
 
 template <typename R, typename... Args>
-class line_search<autotune::kernel<R, cppjit::detail::pack<Args...>>>
+class line_search<autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>>>
     : public abstract_tuner<countable_set, R, Args...> {
 private:
-  autotune::kernel<R, cppjit::detail::pack<Args...>> &f;
+  autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f;
   size_t max_iterations;
   size_t restarts;
   countable_set &parameters;
 
 public:
-  line_search(autotune::kernel<R, cppjit::detail::pack<Args...>> &f,
+  line_search(autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
               size_t max_iterations, size_t restarts, countable_set &parameters)
       : abstract_tuner<countable_set, R, Args...>(), f(f),
         max_iterations(max_iterations), restarts(restarts),

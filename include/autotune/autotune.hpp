@@ -18,12 +18,12 @@ namespace autotune {
 
 // base template for the following specialization
 // required to do the pack-matching in the specialization
-template <typename... Args> struct kernel;
+template <typename... Args> struct cppjit_kernel;
 
 //
 
 template <typename R, typename... Args>
-class kernel<R, cppjit::detail::pack<Args...>>
+class cppjit_kernel<R, cppjit::detail::pack<Args...>>
     : public abstract_kernel<R, cppjit::detail::pack<Args...>> {
 private:
   bool verbose;
@@ -36,7 +36,7 @@ private:
   parameter_value_set parameter_values;
 
 public:
-  kernel(const std::string &kernel_name,
+  cppjit_kernel(const std::string &kernel_name,
          cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
         verbose(false), measurement_enabled(false), kernel_name(kernel_name),
@@ -200,7 +200,7 @@ public:
 #define AUTOTUNE_DECLARE_KERNEL(kernel_signature, kernel_name)                 \
   CPPJIT_DECLARE_KERNEL(kernel_signature, kernel_name)                         \
   namespace autotune {                                                         \
-  extern kernel<                                                               \
+  extern cppjit_kernel<                                                               \
       cppjit::detail::function_traits<kernel_signature>::return_type,          \
       cppjit::detail::function_traits<kernel_signature>::args_type>            \
       kernel_name;                                                             \
@@ -209,7 +209,7 @@ public:
 #define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name)                  \
   CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name)                          \
   namespace autotune {                                                         \
-  kernel<cppjit::detail::function_traits<kernel_signature>::return_type,       \
+  cppjit_kernel<cppjit::detail::function_traits<kernel_signature>::return_type,       \
          cppjit::detail::function_traits<kernel_signature>::args_type>         \
       kernel_name(#kernel_name, cppjit::kernel_name);                          \
   } /* namespace autotune */
