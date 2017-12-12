@@ -4,7 +4,10 @@
 
 namespace autotune {
 
-template <typename R, typename... Args> class abstract_kernel {
+template <typename R, typename... Args> class abstract_kernel;
+
+template <typename R, typename... Args>
+class abstract_kernel<R, cppjit::detail::pack<Args...>> {
 private:
   bool verbose;
   bool measurement_enabled;

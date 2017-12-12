@@ -20,10 +20,11 @@ namespace autotune {
 // required to do the pack-matching in the specialization
 template <typename... Args> struct kernel;
 
-  //: public abstract_kernel<R, cppjit::detail::pack<Args...>>
-  
+//
+
 template <typename R, typename... Args>
-class kernel<R, cppjit::detail::pack<Args...>> {
+class kernel<R, cppjit::detail::pack<Args...>>
+    : public abstract_kernel<R, cppjit::detail::pack<Args...>> {
 private:
   bool verbose;
   bool measurement_enabled;
@@ -37,7 +38,8 @@ private:
 public:
   kernel(const std::string &kernel_name,
          cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel)
-      : verbose(false), measurement_enabled(false), kernel_name(kernel_name),
+      : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
+        verbose(false), measurement_enabled(false), kernel_name(kernel_name),
         internal_kernel(internal_kernel) {}
 
   void set_verbose(bool verbose_) {
@@ -105,7 +107,7 @@ public:
 
   bool is_verbose() { return verbose; }
 
-  bool is_valid_parameter_combination() {
+  virtual bool is_valid_parameter_combination() override {
     auto builder = internal_kernel.get_builder();
     void *uncasted_function =
         builder->load_other_symbol("is_valid_parameter_combination");
@@ -137,7 +139,7 @@ public:
 
   parameter_value_set get_parameter_values() { return parameter_values; }
 
-  R operator()(Args... args) {
+  virtual R operator()(Args... args) override {
     return internal_kernel(std::forward<Args>(args)...);
   }
 
@@ -151,12 +153,12 @@ public:
     internal_kernel.compile_inline(source);
   }
 
-  void compile() { internal_kernel.compile(); }
+  virtual void compile() override { internal_kernel.compile(); }
 
-  bool is_compiled() { return internal_kernel.is_compiled(); }
+  virtual bool is_compiled() override { return internal_kernel.is_compiled(); }
 
   // TODO: add parameter_set argument?
-  void create_parameter_file() {
+  virtual void create_parameter_file() override {
     if (!has_source() || has_inline_source()) {
       throw autotune_exception("no source available");
     }
