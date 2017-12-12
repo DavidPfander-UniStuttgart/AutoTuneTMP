@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../autotune.hpp"
+#include "../abstract_kernel.hpp"
 #include "../parameter.hpp"
 #include "common.hpp"
 #include "countable_set.hpp"
@@ -11,17 +11,14 @@ template <class... T> class kernel;
 
 namespace tuners {
 
-template <class... Args> class bruteforce;
-
 template <typename R, typename... Args>
-class bruteforce<autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>>>
-    : public abstract_tuner<countable_set, R, Args...> {
+class bruteforce : public abstract_tuner<countable_set, R, Args...> {
 private:
-  autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f;
+  autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
   countable_set &parameters;
 
 public:
-  bruteforce(autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
+  bruteforce(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
              countable_set &parameters)
       : f(f), parameters(parameters) {}
 

@@ -36,8 +36,9 @@ private:
   parameter_value_set parameter_values;
 
 public:
-  cppjit_kernel(const std::string &kernel_name,
-         cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel)
+  cppjit_kernel(
+      const std::string &kernel_name,
+      cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
         verbose(false), measurement_enabled(false), kernel_name(kernel_name),
         internal_kernel(internal_kernel) {}
@@ -200,7 +201,7 @@ public:
 #define AUTOTUNE_DECLARE_KERNEL(kernel_signature, kernel_name)                 \
   CPPJIT_DECLARE_KERNEL(kernel_signature, kernel_name)                         \
   namespace autotune {                                                         \
-  extern cppjit_kernel<                                                               \
+  extern cppjit_kernel<                                                        \
       cppjit::detail::function_traits<kernel_signature>::return_type,          \
       cppjit::detail::function_traits<kernel_signature>::args_type>            \
       kernel_name;                                                             \
@@ -209,8 +210,9 @@ public:
 #define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name)                  \
   CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name)                          \
   namespace autotune {                                                         \
-  cppjit_kernel<cppjit::detail::function_traits<kernel_signature>::return_type,       \
-         cppjit::detail::function_traits<kernel_signature>::args_type>         \
+  cppjit_kernel<                                                               \
+      cppjit::detail::function_traits<kernel_signature>::return_type,          \
+      cppjit::detail::function_traits<kernel_signature>::args_type>            \
       kernel_name(#kernel_name, cppjit::kernel_name);                          \
   } /* namespace autotune */
 

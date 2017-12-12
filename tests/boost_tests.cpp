@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(run_bruteforce) {
 
   int a = 5;
 
-  autotune::tuners::bruteforce<decltype(autotune::run_bruteforce_kernel)> tuner(
+  autotune::tuners::bruteforce tuner(
       autotune::run_bruteforce_kernel, parameters);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);

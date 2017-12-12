@@ -2,6 +2,10 @@
 
 #include "parameter_set.hpp"
 
+#include "cppjit/function_traits.hpp"
+
+#include <fstream>
+
 namespace autotune {
 
 template <typename R, typename... Args> class abstract_kernel;

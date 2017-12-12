@@ -32,7 +32,7 @@ public:
   abstract_tuner() : verbose(false) {}
 
   double evaluate(bool &is_valid, parameter_interface &parameters,
-                  autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
+                  autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                   Args &... args) {
 
     f.set_parameter_values(parameters);

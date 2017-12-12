@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 
+#include "autotune/autotune.hpp"
 #include "autotune/parameter.hpp"
 #include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/countable_set.hpp"
@@ -27,7 +28,7 @@ int main(void) {
 
   int a = 5;
 
-  autotune::tuners::bruteforce<decltype(autotune::add_one)> tuner(
+  autotune::tuners::bruteforce tuner(
       autotune::add_one, parameters);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
