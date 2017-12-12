@@ -30,7 +30,7 @@ public:
 
     f.write_header();
 
-    double total_combinations = 1.0;
+    size_t total_combinations = 1.0;
     for (size_t i = 0; i < parameters.size(); i++) {
       total_combinations *= parameters[i]->count_values();
     }

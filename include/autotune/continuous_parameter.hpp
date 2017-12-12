@@ -154,7 +154,7 @@ public:
 
   size_t count_values() const {
     // TODO: implement
-    return std::floor((max - min) / step) + 1;
+    return static_cast<size_t>(std::floor((max - min) / step)) + 1;
   }
 };
 
