@@ -18,9 +18,8 @@ namespace autotune {
 
 // base template for the following specialization
 // required to do the pack-matching in the specialization
+// (required for forwardings the "Args" argument)
 template <typename... Args> struct cppjit_kernel;
-
-//
 
 template <typename R, typename... Args>
 class cppjit_kernel<R, cppjit::detail::pack<Args...>>
