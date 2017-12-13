@@ -26,73 +26,14 @@ template <typename R, typename... Args>
 class cppjit_kernel<R, cppjit::detail::pack<Args...>>
     : public abstract_kernel<R, cppjit::detail::pack<Args...>> {
 private:
-  bool verbose;
-  bool measurement_enabled;
-  std::ofstream scenario_measurement_file;
-
-  std::string kernel_name;
   cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel;
-  // parameter_set parameters;
-  parameter_value_set parameter_values;
 
 public:
   cppjit_kernel(
       const std::string &kernel_name,
       cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
-        verbose(false), measurement_enabled(false), kernel_name(kernel_name),
         internal_kernel(internal_kernel) {}
-
-  void set_verbose(bool verbose_) {
-    verbose = verbose_;
-    internal_kernel.get_builder()->set_verbose(verbose_);
-  }
-
-  void set_write_measurement(const std::string &scenario_name) {
-    // close last scnario if there was one
-    if (measurement_enabled) {
-      if (scenario_measurement_file.is_open()) {
-        scenario_measurement_file.close();
-      }
-    }
-    measurement_enabled = true;
-    scenario_measurement_file.open(scenario_name + ".csv");
-  }
-
-  // to be called from tuner, not directly
-  void write_header() {
-    if (!measurement_enabled) {
-      return;
-    }
-    bool first = true;
-    for (auto &p : parameter_values) {
-      if (!first) {
-        scenario_measurement_file << ", ";
-      } else {
-        first = false;
-      }
-      scenario_measurement_file << p.first;
-    }
-    scenario_measurement_file << ", "
-                              << "duration" << std::endl;
-  }
-
-  // to be called from tuner, not directly
-  void write_measurement(double duration_s) {
-    if (!measurement_enabled) {
-      return;
-    }
-    bool first = true;
-    for (auto &p : parameter_values) {
-      if (!first) {
-        scenario_measurement_file << ", ";
-      } else {
-        first = false;
-      }
-      scenario_measurement_file << p.second;
-    }
-    scenario_measurement_file << ", " << duration_s << std::endl;
-  }
 
   void set_source_inline(const std::string &source_) {
     internal_kernel.set_source_inline(source_);
@@ -106,8 +47,6 @@ public:
 
   bool has_inline_source() { return internal_kernel.has_inline_source(); }
 
-  bool is_verbose() { return verbose; }
-
   virtual bool is_valid_parameter_combination() override {
     auto builder = internal_kernel.get_builder();
     void *uncasted_function =
@@ -119,26 +58,6 @@ public:
         reinterpret_cast<decltype(decider_pointer)>(uncasted_function);
     return decider_pointer();
   }
-  void set_parameter_values(parameter_value_set &new_parameter_values) {
-    parameter_values.clear();
-    for (auto &p : new_parameter_values) {
-      parameter_values[p.first] = p.second;
-    }
-  }
-
-  template <typename parameter_interface_set>
-  void set_parameter_values(parameter_interface_set &parameters) {
-    parameter_values.clear();
-    for (size_t i = 0; i < parameters.size(); i++) {
-      auto &p = parameters[i];
-      // std::cout << "p name: " << p->get_name() << " value: " <<
-      // p->get_value()
-      // << std::endl;
-      parameter_values[p->get_name()] = p->get_value();
-    }
-  }
-
-  parameter_value_set get_parameter_values() { return parameter_values; }
 
   virtual R operator()(Args... args) override {
     return internal_kernel(std::forward<Args>(args)...);
@@ -167,7 +86,7 @@ public:
     const std::string &source_dir = builder->get_source_dir();
     std::ofstream parameter_file(source_dir + "parameters.hpp");
     parameter_file << "#pragma once" << std::endl;
-    for (auto &p : parameter_values) {
+    for (auto &p : this->parameter_values) {
       parameter_file << "#define " << p.first << " " << p.second << "\n";
       // parameter_file << parameters[i]->to_parameter_source_line();
     }
@@ -189,11 +108,11 @@ public:
 
   void clear() {
     internal_kernel.clear();
-    verbose = false;
-    if (scenario_measurement_file.is_open()) {
-      scenario_measurement_file.close();
+    this->verbose = false;
+    if (this->scenario_measurement_file.is_open()) {
+      this->scenario_measurement_file.close();
     }
-    measurement_enabled = false;
+    this->measurement_enabled = false;
   }
 };
 }

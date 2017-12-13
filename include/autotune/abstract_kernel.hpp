@@ -12,7 +12,7 @@ template <typename R, typename... Args> class abstract_kernel;
 
 template <typename R, typename... Args>
 class abstract_kernel<R, cppjit::detail::pack<Args...>> {
-private:
+protected:
   bool verbose;
   bool measurement_enabled;
   std::ofstream scenario_measurement_file;
@@ -95,17 +95,10 @@ public:
 
   virtual R operator()(Args... args) = 0;
 
-  // // very useful overload for the kernel tuners, so that they don't have to
-  // // track source-related arguments
-  // virtual void compile(const std::string &source_dir) = 0;
-
-  // virtual void compile_inline(const std::string &source) = 0;
-
   virtual void compile() = 0;
 
   virtual bool is_compiled() = 0;
 
-  // TODO: add parameter_set argument?
   virtual void create_parameter_file() = 0;
 };
 }

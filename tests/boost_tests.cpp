@@ -6,8 +6,8 @@
 #include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/countable_set.hpp"
 #include "autotune/tuners/line_search.hpp"
-#include "autotune/tuners/neighborhood_search.hpp"
 #include "autotune/tuners/monte_carlo.hpp"
+#include "autotune/tuners/neighborhood_search.hpp"
 
 AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_kernel)
 
@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_SUITE(bruteforce)
 BOOST_AUTO_TEST_CASE(run_bruteforce) {
   autotune::run_bruteforce_kernel.set_source_dir(
       "tests/kernel_run_bruteforce_kernel");
-  // autotune::run_bruteforce_kernel.set_verbose(true);
+  autotune::run_bruteforce_kernel.set_verbose(true);
   auto builder =
       autotune::run_bruteforce_kernel.get_builder_as<cppjit::builder::gcc>();
   builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
@@ -50,8 +50,8 @@ BOOST_AUTO_TEST_CASE(run_bruteforce) {
 
   int a = 5;
 
-  autotune::tuners::bruteforce tuner(
-      autotune::run_bruteforce_kernel, parameters);
+  autotune::tuners::bruteforce tuner(autotune::run_bruteforce_kernel,
+                                     parameters);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);
@@ -83,8 +83,8 @@ BOOST_AUTO_TEST_CASE(run_line_search) {
 
   int a = 5;
 
-  autotune::tuners::line_search<decltype(autotune::run_line_search_kernel)>
-      tuner(autotune::run_line_search_kernel, 5, 1, parameters);
+  autotune::tuners::line_search tuner(autotune::run_line_search_kernel,
+                                      parameters, 5, 1);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);
@@ -116,9 +116,8 @@ BOOST_AUTO_TEST_CASE(run_neighborhood_search) {
 
   int a = 5;
 
-  autotune::tuners::neighborhood_search<decltype(
-      autotune::run_neighborhood_search_kernel)>
-      tuner(autotune::run_neighborhood_search_kernel, parameters, 5);
+  autotune::tuners::neighborhood_search tuner(
+      autotune::run_neighborhood_search_kernel, parameters, 5);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);
@@ -137,8 +136,8 @@ BOOST_AUTO_TEST_CASE(run_monte_carlo) {
   autotune::run_monte_carlo_kernel.set_source_dir(
       "tests/kernel_run_monte_carlo_kernel");
   autotune::run_line_search_kernel.set_verbose(true);
-  auto builder = autotune::run_monte_carlo_kernel
-                     .get_builder_as<cppjit::builder::gcc>();
+  auto builder =
+      autotune::run_monte_carlo_kernel.get_builder_as<cppjit::builder::gcc>();
   builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::limited_set parameters;
@@ -151,9 +150,8 @@ BOOST_AUTO_TEST_CASE(run_monte_carlo) {
 
   int a = 5;
 
-  autotune::tuners::monte_carlo<decltype(
-      autotune::run_monte_carlo_kernel)>
-      tuner(autotune::run_monte_carlo_kernel, parameters, 10);
+  autotune::tuners::monte_carlo tuner(autotune::run_monte_carlo_kernel,
+                                      parameters, 10);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::limited_set optimal_parameters = tuner.tune(a);

@@ -10,7 +10,8 @@
 AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), smooth_cost_function)
 
 int main(void) {
-  autotune::smooth_cost_function.set_source_dir("examples/kernel_smooth_cost_function");
+  autotune::smooth_cost_function.set_source_dir(
+      "examples/kernel_smooth_cost_function");
 
   autotune::limited_set parameters;
   autotune::limited_continuous_parameter p1("PAR_1", 1.0, 1.0, 5.0, true);
@@ -26,8 +27,8 @@ int main(void) {
 
   int a = 5;
 
-  autotune::tuners::monte_carlo<decltype(autotune::smooth_cost_function)> tuner(
-      autotune::smooth_cost_function, parameters, 10);
+  autotune::tuners::monte_carlo tuner(autotune::smooth_cost_function,
+                                      parameters, 10);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::limited_set optimal_parameters = tuner.tune(a);

@@ -26,8 +26,8 @@ int main(void) {
   int a = 5;
 
   size_t line_search_iterations = 1;
-  autotune::tuners::line_search<decltype(autotune::add_one)> tuner(
-      autotune::add_one, line_search_iterations, 1, parameters);
+  autotune::tuners::line_search tuner(autotune::add_one, parameters,
+                                      line_search_iterations, 1);
   tuner.setup_test(test_result);
   autotune::countable_set optimal_parameters = tuner.tune(a);
   autotune::add_one.set_parameter_values(optimal_parameters);

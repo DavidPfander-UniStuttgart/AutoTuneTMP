@@ -28,8 +28,7 @@ int main(void) {
 
   int a = 5;
 
-  autotune::tuners::bruteforce tuner(
-      autotune::add_one, parameters);
+  autotune::tuners::bruteforce tuner(autotune::add_one, parameters);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);

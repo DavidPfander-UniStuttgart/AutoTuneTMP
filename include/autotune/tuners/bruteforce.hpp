@@ -6,9 +6,6 @@
 #include "countable_set.hpp"
 
 namespace autotune {
-
-template <class... T> class kernel;
-
 namespace tuners {
 
 template <typename R, typename... Args>

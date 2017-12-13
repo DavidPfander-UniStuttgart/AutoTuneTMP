@@ -29,9 +29,8 @@ int main(void) {
 
   int a = 5;
 
-  autotune::tuners::neighborhood_search<decltype(
-      autotune::smooth_cost_function)>
-      tuner(autotune::smooth_cost_function, parameters, 5);
+  autotune::tuners::neighborhood_search tuner(autotune::smooth_cost_function,
+                                              parameters, 5);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);

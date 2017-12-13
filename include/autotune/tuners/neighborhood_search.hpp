@@ -6,24 +6,19 @@
 #include "countable_set.hpp"
 
 namespace autotune {
-
-template <class... T> class kernel;
-
 namespace tuners {
 
-template <class... Args> class neighborhood_search;
-
 template <typename R, typename... Args>
-class neighborhood_search<autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>>>
-    : public abstract_tuner<countable_set, R, Args...> {
+class neighborhood_search : public abstract_tuner<countable_set, R, Args...> {
 private:
   autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f;
   countable_set &parameters;
   size_t iterations;
 
 public:
-  neighborhood_search(autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
-                      countable_set &parameters, size_t iterations)
+  neighborhood_search(
+      autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
+      countable_set &parameters, size_t iterations)
       : f(f), parameters(parameters), iterations(iterations) {}
 
   countable_set tune(Args &... args) {
