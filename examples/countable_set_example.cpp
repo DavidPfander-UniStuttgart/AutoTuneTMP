@@ -15,7 +15,7 @@ int main(void) {
   autotune::add_one.set_source_dir("examples/kernel_minimal");
 
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter p1("PAR_1", {"eins", "zwei", "drei"});
+  autotune::fixed_set_parameter<std::string> p1("PAR_1", {"eins", "zwei", "drei"});
   parameters.add_parameter(p1);
 
   autotune::countable_continuous_parameter p2("PAR_2", 1.0, 1.0, 1.0, 5.0);

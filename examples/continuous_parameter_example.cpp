@@ -15,7 +15,7 @@ int main(void) {
 
   // register parameters
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter p1("ADD_ONE", {"0", "1"});
+  autotune::fixed_set_parameter<std::string> p1("ADD_ONE", {"0", "1"});
   parameters.add_parameter(p1);
   autotune::countable_continuous_parameter p2("CONT_PAR_DOUBLE", 2.0, 1.0, 1.0,
                                               5.0);

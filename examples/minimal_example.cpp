@@ -15,7 +15,7 @@ int main(void) {
 
   // register parameters
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter p1("ADD_ONE", {"0", "1"});
+  autotune::fixed_set_parameter<std::string> p1("ADD_ONE", {"0", "1"});
   parameters.add_parameter(p1);
 
   std::function<bool(int)> test_result = [](int) -> bool {
