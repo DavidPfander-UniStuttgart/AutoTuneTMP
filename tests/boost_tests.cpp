@@ -52,6 +52,10 @@ BOOST_AUTO_TEST_CASE(run_bruteforce) {
   parameters.add_parameter(p1);
   autotune::countable_continuous_parameter p2("PAR_2", 1.0, 1.0, 1.0, 3.0);
   parameters.add_parameter(p2);
+  autotune::fixed_set_parameter<int64_t> p3("PAR_3", {1});
+  parameters.add_parameter(p3);
+    autotune::fixed_set_parameter<double> p4("PAR_4", {2.0});
+  parameters.add_parameter(p4);
 
   std::function<bool(int)> test_result = [](int) -> bool { return true; };
 
@@ -81,7 +85,8 @@ BOOST_AUTO_TEST_CASE(run_line_search) {
   builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter<std::string> p1("PAR_1", {"eins", "zwei", "drei"});
+  autotune::fixed_set_parameter<std::string> p1("PAR_1",
+                                                {"eins", "zwei", "drei"});
   parameters.add_parameter(p1);
   autotune::countable_continuous_parameter p2("PAR_2", 1.0, 1.0, 1.0, 3.0);
   parameters.add_parameter(p2);
@@ -205,7 +210,8 @@ BOOST_AUTO_TEST_CASE(run_generalized_kernel) {
   autotune::generalized_test_kernel.set_verbose(true);
 
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter<std::string> p1("PAR_1", {"eins", "zwei", "drei"});
+  autotune::fixed_set_parameter<std::string> p1("PAR_1",
+                                                {"eins", "zwei", "drei"});
   parameters.add_parameter(p1);
   autotune::countable_continuous_parameter p2("PAR_2", 1.0, 1.0, 1.0, 5.0);
   parameters.add_parameter(p2);

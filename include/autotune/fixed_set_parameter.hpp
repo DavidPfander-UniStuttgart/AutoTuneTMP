@@ -11,7 +11,7 @@ namespace autotune {
 template <typename T> class fixed_set_parameter : public abstract_parameter {
 private:
   size_t cur_index;
-  std::vector<std::string> values;
+  std::vector<T> values;
 
 public:
   fixed_set_parameter(const std::string &name, const std::vector<T> &values)
@@ -22,7 +22,13 @@ public:
   void set_index(size_t new_index) { cur_index = new_index; };
 
   virtual const std::string get_value() const override {
-    return this->values[cur_index];
+    if
+      constexpr(std::is_same<T, std::string>::value) {
+        return std::string("\"") + this->values[cur_index] + std::string("\"");
+      }
+    else {
+      return std::to_string(this->values[cur_index]);
+    }
   }
 
   size_t count_values() const { return values.size(); }
