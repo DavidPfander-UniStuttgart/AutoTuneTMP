@@ -31,9 +31,10 @@ protected:
 public:
   abstract_tuner() : verbose(false) {}
 
-  double evaluate(bool &is_valid, parameter_interface &parameters,
-                  autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-                  Args &... args) {
+  double
+  evaluate(bool &is_valid, parameter_interface &parameters,
+           autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+           Args &... args) {
 
     f.set_parameter_values(parameters);
 
@@ -91,11 +92,19 @@ public:
     if (verbose) {
       std::cout << "duration: " << duration.count() << "s" << std::endl;
       std::cout << "------- end eval -------" << std::endl;
+      if (f.has_kernel_duration_functor()) {
+        std::cout << "internal duration: " << f.get_internal_kernel_duration()
+                  << std::endl;
+      }
     }
 
-    f.write_measurement(duration.count());
-
-    return duration.count();
+    if (f.has_kernel_duration_functor) {
+      f.write_measurement(f.get_internal_kernel_duration());
+      return f.get_internal_kernel_duration();
+    } else {
+      f.write_measurement(duration.count());
+      return duration.count();
+    }
   }
 
   void report(const std::string &message, double duration,

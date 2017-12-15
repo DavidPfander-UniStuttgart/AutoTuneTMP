@@ -2,6 +2,7 @@
 
 #include "parameter_set.hpp"
 
+#include "autotune_exception.hpp"
 #include "cppjit/function_traits.hpp"
 
 #include <fstream>
@@ -19,6 +20,8 @@ protected:
 
   std::string kernel_name;
   parameter_value_set parameter_values;
+
+  std::function<double()> kernel_duration_functor;
 
 public:
   abstract_kernel(const std::string &kernel_name)
@@ -100,5 +103,25 @@ public:
   virtual bool is_compiled() = 0;
 
   virtual void create_parameter_file() = 0;
+
+  void
+  set_kernel_duration_functor(std::function<double()> kernel_duration_functor) {
+    this->kernel_duration_functor = kernel_duration_functor;
+  }
+
+  bool has_kernel_duration_functor() {
+    if (this->kernel_duration_functor) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  double get_internal_kernel_duration() {
+    if (!this->kernel_duration_functor) {
+      throw autotune_exception("no kernel duration functor specified");
+    }
+    return this->kernel_duration_functor();
+  }
 };
 }
