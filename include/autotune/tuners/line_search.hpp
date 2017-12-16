@@ -39,7 +39,7 @@ public:
     bool is_valid = true;
     countable_set optimal_parameters = parameters.clone();
 
-    double optimal_duration;
+    double optimal_duration = -1.0;
     bool first = true;
 
     size_t counter = 0;

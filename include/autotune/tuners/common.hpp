@@ -98,7 +98,7 @@ public:
       }
     }
 
-    if (f.has_kernel_duration_functor) {
+    if (f.has_kernel_duration_functor()) {
       f.write_measurement(f.get_internal_kernel_duration());
       return f.get_internal_kernel_duration();
     } else {
