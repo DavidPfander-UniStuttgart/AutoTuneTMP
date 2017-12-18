@@ -45,6 +45,7 @@ BOOST_AUTO_TEST_CASE(run_bruteforce) {
   autotune::run_bruteforce_kernel.set_verbose(true);
   auto builder =
       autotune::run_bruteforce_kernel.get_builder_as<cppjit::builder::gcc>();
+  builder->set_verbose(true);
   builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
@@ -59,13 +60,14 @@ BOOST_AUTO_TEST_CASE(run_bruteforce) {
 
   std::function<bool(int)> test_result = [](int) -> bool { return true; };
 
-  int a = 5;
-
   autotune::tuners::bruteforce tuner(autotune::run_bruteforce_kernel,
                                      parameters);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
+
+  int a = 5;
   autotune::countable_set optimal_parameters = tuner.tune(a);
+
   bool check1 = optimal_parameters[0]->get_value().compare("\"eins\"") == 0;
   BOOST_CHECK(check1);
   bool check2 = optimal_parameters[1]->get_value().compare("2.000000") == 0;

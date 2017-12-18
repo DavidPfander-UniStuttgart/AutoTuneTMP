@@ -2,7 +2,7 @@
 
 #include "../abstract_kernel.hpp"
 #include "../parameter.hpp"
-#include "common.hpp"
+#include "abstract_tuner.hpp"
 #include "countable_set.hpp"
 
 namespace autotune {
@@ -10,23 +10,20 @@ namespace tuners {
 
 template <typename R, typename... Args>
 class bruteforce : public abstract_tuner<countable_set, R, Args...> {
-private:
-  autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
-  countable_set &parameters;
-
 public:
   bruteforce(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
              countable_set &parameters)
-      : f(f), parameters(parameters) {}
+      : abstract_tuner<countable_set, R, Args...>(f, parameters) {}
 
   countable_set tune(Args &... args) {
+
+    parameter_value_set original_values = this->f.get_parameter_values();
+
     bool is_valid = true;
 
-    f.write_header();
-
     size_t total_combinations = 1.0;
-    for (size_t i = 0; i < parameters.size(); i++) {
-      total_combinations *= parameters[i]->count_values();
+    for (size_t i = 0; i < this->parameters.size(); i++) {
+      total_combinations *= this->parameters[i]->count_values();
     }
 
     if (this->verbose) {
@@ -34,11 +31,9 @@ public:
                 << std::endl;
     }
 
-    parameter_value_set original_values = f.get_parameter_values();
-
     // brute-force tuner
-    for (size_t i = 0; i < parameters.size(); i++) {
-      parameters[i]->set_min();
+    for (size_t i = 0; i < this->parameters.size(); i++) {
+      this->parameters[i]->set_min();
     }
 
     // evaluate initial vector, always valid
@@ -50,27 +45,28 @@ public:
     combination_counter += 1;
     bool first = true;
 
-    double optimal_duration = this->evaluate(is_valid, parameters, f, args...);
+    double optimal_duration = this->evaluate(is_valid, args...);
     countable_set optimal_parameters;
     if (is_valid) {
       first = false;
-      optimal_parameters = parameters.clone();
-      this->report_verbose("new best kernel", optimal_duration, parameters);
+      optimal_parameters = this->parameters;
+      this->report_verbose("new best kernel", optimal_duration,
+                           this->parameters);
     }
 
     size_t current_index = 0;
     while (true) {
       // left the range of valid indices, done!
-      if (current_index == parameters.size()) {
+      if (current_index == this->parameters.size()) {
         break;
       }
 
       // the is another value for the current parameter
-      if (parameters[current_index]->next()) {
+      if (this->parameters[current_index]->next()) {
         // reset the parameters "below" and start with the first parameter
         // again
         for (size_t i = 0; i < current_index; i++) {
-          parameters[i]->set_min();
+          this->parameters[i]->set_min();
         }
         current_index = 0;
 
@@ -80,12 +76,13 @@ public:
                     << " (out of " << total_combinations << ")" << std::endl;
         }
         combination_counter += 1;
-        double duration = this->evaluate(is_valid, parameters, f, args...);
+        double duration = this->evaluate(is_valid, args...);
         if (is_valid && (first || duration < optimal_duration)) {
           first = false;
           optimal_duration = duration;
-          optimal_parameters = parameters.clone();
-          this->report_verbose("new best kernel", optimal_duration, parameters);
+          optimal_parameters = this->parameters;
+          this->report_verbose("new best kernel", optimal_duration,
+                               this->parameters);
         }
 
       } else {
@@ -94,7 +91,7 @@ public:
       }
     }
 
-    f.set_parameter_values(original_values);
+    this->f.set_parameter_values(original_values);
     return optimal_parameters;
   }
 };

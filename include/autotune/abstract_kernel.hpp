@@ -15,8 +15,6 @@ template <typename R, typename... Args>
 class abstract_kernel<R, cppjit::detail::pack<Args...>> {
 protected:
   bool verbose;
-  bool measurement_enabled;
-  std::ofstream scenario_measurement_file;
 
   std::string kernel_name;
   parameter_value_set parameter_values;
@@ -25,54 +23,9 @@ protected:
 
 public:
   abstract_kernel(const std::string &kernel_name)
-      : verbose(false), measurement_enabled(false), kernel_name(kernel_name) {}
+      : verbose(false), kernel_name(kernel_name) {}
 
   void set_verbose(bool verbose) { this->verbose = verbose; }
-
-  void set_write_measurement(const std::string &scenario_name) {
-    if (measurement_enabled) {
-      if (scenario_measurement_file.is_open()) {
-        scenario_measurement_file.close();
-      }
-    }
-    measurement_enabled = true;
-    scenario_measurement_file.open(scenario_name + ".csv");
-  }
-
-  // to be called from tuner, not directly
-  void write_header() {
-    if (!measurement_enabled) {
-      return;
-    }
-    bool first = true;
-    for (auto &p : parameter_values) {
-      if (!first) {
-        scenario_measurement_file << ", ";
-      } else {
-        first = false;
-      }
-      scenario_measurement_file << p.first;
-    }
-    scenario_measurement_file << ", "
-                              << "duration" << std::endl;
-  }
-
-  // to be called from tuner, not directly
-  void write_measurement(double duration_s) {
-    if (!measurement_enabled) {
-      return;
-    }
-    bool first = true;
-    for (auto &p : parameter_values) {
-      if (!first) {
-        scenario_measurement_file << ", ";
-      } else {
-        first = false;
-      }
-      scenario_measurement_file << p.second;
-    }
-    scenario_measurement_file << ", " << duration_s << std::endl;
-  }
 
   bool is_verbose() { return verbose; }
 
@@ -94,7 +47,7 @@ public:
     }
   }
 
-  parameter_value_set get_parameter_values() { return parameter_values; }
+  const parameter_value_set &get_parameter_values() { return parameter_values; }
 
   virtual R operator()(Args... args) = 0;
 

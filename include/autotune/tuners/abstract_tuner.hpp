@@ -26,17 +26,26 @@ class abstract_tuner
                               with_tests<R, Args...>,
                               without_tests<R, Args...>>::type {
 protected:
+  autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
+  parameter_interface parameters;
   bool verbose;
+  bool do_measurement;
+  bool do_write_header;
+  std::ofstream scenario_measurement_file;
 
 public:
-  abstract_tuner() : verbose(false) {}
+  abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+                 parameter_interface &parameters)
+      : f(f), parameters(parameters), verbose(false), do_measurement(false),
+        do_write_header(true), scenario_measurement_file("") {}
 
-  double
-  evaluate(bool &is_valid, parameter_interface &parameters,
-           autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-           Args &... args) {
+  double evaluate(bool &is_valid, Args &... args) {
 
     f.set_parameter_values(parameters);
+
+    if (do_measurement && do_write_header) {
+      this->write_header();
+    }
 
     is_valid = true;
 
@@ -99,10 +108,14 @@ public:
     }
 
     if (f.has_kernel_duration_functor()) {
-      f.write_measurement(f.get_internal_kernel_duration());
+      if (do_measurement) {
+        this->write_measurement(f.get_internal_kernel_duration());
+      }
       return f.get_internal_kernel_duration();
     } else {
-      f.write_measurement(duration.count());
+      if (do_measurement) {
+        this->write_measurement(duration.count());
+      }
       return duration.count();
     }
   }
@@ -120,6 +133,46 @@ public:
     if (verbose) {
       report(message, duration, parameters);
     }
+  }
+
+  void write_header() {
+    const parameter_value_set &parameter_values = f.get_parameter_values();
+    bool first = true;
+    for (auto &p : parameter_values) {
+      if (!first) {
+        scenario_measurement_file << ", ";
+      } else {
+        first = false;
+      }
+      scenario_measurement_file << p.first;
+    }
+    scenario_measurement_file << ", "
+                              << "duration" << std::endl;
+  }
+
+  void write_measurement(double duration_s) {
+    const parameter_value_set &parameter_values = f.get_parameter_values();
+    bool first = true;
+    for (auto &p : parameter_values) {
+      if (!first) {
+        scenario_measurement_file << ", ";
+      } else {
+        first = false;
+      }
+      scenario_measurement_file << p.second;
+    }
+    scenario_measurement_file << ", " << duration_s << std::endl;
+  }
+
+  void set_write_measurement(const std::string &scenario_name) {
+    if (do_measurement) {
+      if (scenario_measurement_file.is_open()) {
+        scenario_measurement_file.close();
+      }
+    }
+    do_measurement = true;
+    do_write_header = true;
+    scenario_measurement_file.open(scenario_name + ".csv");
   }
 };
 } // namespace autotune

@@ -2,7 +2,7 @@
 
 #include "../autotune.hpp"
 #include "../parameter.hpp"
-#include "common.hpp"
+#include "abstract_tuner.hpp"
 #include "limited_set.hpp"
 
 #include <random>
@@ -13,24 +13,22 @@ namespace tuners {
 template <typename R, typename... Args>
 class monte_carlo : public abstract_tuner<limited_set, R, Args...> {
 private:
-  autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f;
-  limited_set &parameters;
   size_t iterations;
 
 public:
-  monte_carlo(autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
+  monte_carlo(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
               limited_set &parameters, size_t iterations)
-      : f(f), parameters(parameters), iterations(iterations) {}
+      : abstract_tuner<limited_set, R, Args...>(f, parameters),
+        iterations(iterations) {}
 
   limited_set tune(Args &... args) {
 
-    parameter_value_set original_values = f.get_parameter_values();
+    parameter_value_set original_values = this->f.get_parameter_values();
 
     bool first = true;
     bool is_valid = true;
-    limited_set optimal_parameters = parameters.clone();
-    double optimal_duration =
-        this->evaluate(is_valid, optimal_parameters, f, args...);
+    double optimal_duration = this->evaluate(is_valid, args...);
+    limited_set optimal_parameters = this->parameters;
 
     if (is_valid) {
       first = false;
@@ -39,11 +37,9 @@ public:
 
     for (size_t i = 0; i < iterations; i++) {
 
-      limited_set current_parameters = optimal_parameters.clone();
-
       for (size_t parameter_index = 0;
-           parameter_index < current_parameters.size(); parameter_index++) {
-        auto &p = current_parameters[parameter_index];
+           parameter_index < this->parameters.size(); parameter_index++) {
+        auto &p = this->parameters[parameter_index];
 
         if (p->is_integer_parameter()) {
           std::uniform_int_distribution<size_t> distribution(
@@ -61,18 +57,17 @@ public:
         }
       }
 
-      double duration =
-          this->evaluate(is_valid, current_parameters, f, args...);
+      double duration = this->evaluate(is_valid, args...);
       if (is_valid && (first || duration < optimal_duration)) {
         first = false;
-        optimal_parameters = current_parameters.clone();
+        optimal_parameters = this->parameters;
         optimal_duration = duration;
         this->report_verbose("new best kernel", optimal_duration,
                              optimal_parameters);
       }
     }
 
-    f.set_parameter_values(original_values);
+    this->f.set_parameter_values(original_values);
     return optimal_parameters;
   }
 };

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.hpp"
+#include "abstract_tuner.hpp"
 #include "countable_set.hpp"
 
 #include <random>
@@ -11,33 +11,29 @@ namespace tuners {
 template <typename R, typename... Args>
 class line_search : public abstract_tuner<countable_set, R, Args...> {
 private:
-  autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
+  // autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
+  // countable_set &parameters;
   size_t max_iterations;
   size_t restarts;
-  countable_set &parameters;
 
 public:
   line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
               countable_set &parameters, size_t max_iterations, size_t restarts)
-      : abstract_tuner<countable_set, R, Args...>(), f(f),
-        max_iterations(max_iterations), restarts(restarts),
-        parameters(parameters) {}
+      : abstract_tuner<countable_set, R, Args...>(f, parameters),
+        max_iterations(max_iterations), restarts(restarts) {}
 
   countable_set tune(Args &... args) {
 
-    f.write_header();
+    parameter_value_set original_values = this->f.get_parameter_values();
 
     // set to initial guess (or whatever the parameter type is doing)
-    for (size_t i = 0; i < parameters.size(); i++) {
-      parameters[i]->set_min();
+    for (size_t i = 0; i < this->parameters.size(); i++) {
+      this->parameters[i]->set_min();
     }
-
-    // memorize original parameters
-    parameter_value_set original_values = f.get_parameter_values();
 
     // evaluate initial guess
     bool is_valid = true;
-    countable_set optimal_parameters = parameters.clone();
+    countable_set optimal_parameters = this->parameters;
 
     double optimal_duration = -1.0;
     bool first = true;
@@ -49,20 +45,20 @@ public:
         std::cout << "current parameter index: " << cur_index << std::endl;
       }
 
-      auto &p = parameters[cur_index];
+      auto &p = this->parameters[cur_index];
       // p->set_index(0);
       p->set_initial();
       while (true) {
 
         // if a valid new index value was found, test it
-        double duration = this->evaluate(is_valid, parameters, f, args...);
+        double duration = this->evaluate(is_valid, args...);
         if (is_valid && (first || duration < optimal_duration)) {
           first = false;
-          optimal_parameters = parameters.clone();
+          optimal_parameters = this->parameters;
           optimal_duration = duration;
           if (this->verbose) {
             this->report_verbose("new best kernel", optimal_duration,
-                                 parameters);
+                                 this->parameters);
           }
         }
         if (!p->next()) {
@@ -75,23 +71,23 @@ public:
       while (p->prev()) {
 
         // if a valid new index value was found, test it
-        double duration = this->evaluate(is_valid, parameters, f, args...);
+        double duration = this->evaluate(is_valid, args...);
         if (is_valid && (first || duration < optimal_duration)) {
           first = false;
-          optimal_parameters = parameters.clone();
+          optimal_parameters = this->parameters;
           optimal_duration = duration;
           if (this->verbose) {
             this->report_verbose("new best kernel", optimal_duration,
-                                 parameters);
+                                 this->parameters);
           }
         }
       }
-      cur_index = (cur_index + 1) % parameters.size();
+      cur_index = (cur_index + 1) % this->parameters.size();
       counter += 1;
-      parameters = optimal_parameters;
+      this->parameters = optimal_parameters;
     }
 
-    f.set_parameter_values(original_values);
+    this->f.set_parameter_values(original_values);
 
     return optimal_parameters;
   }

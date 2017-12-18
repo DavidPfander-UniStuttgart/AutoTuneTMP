@@ -71,14 +71,6 @@ public:
     this->push_back(cloned);
   }
 
-  limited_set clone() {
-    limited_set new_instance;
-    for (size_t i = 0; i < this->size(); i++) {
-      new_instance.push_back(this->operator[](i)->clone_wrapper());
-    }
-    return new_instance;
-  }
-
   void print_values() {
     std::cout << "parameter name  | ";
     bool first = true;
