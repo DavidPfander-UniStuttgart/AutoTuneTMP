@@ -6,7 +6,7 @@
 
 #include "autotune/autotune.hpp"
 #include "autotune/generalized_kernel.hpp"
-#include "autotune/parameter_set.hpp"
+#include "autotune/parameter_value_set.hpp"
 #include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/countable_set.hpp"
 #include "autotune/tuners/line_search.hpp"

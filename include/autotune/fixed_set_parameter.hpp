@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "abstract_parameter.hpp"
-#include "parameter_set.hpp"
+#include "parameter_value_set.hpp"
 
 namespace autotune {
 
