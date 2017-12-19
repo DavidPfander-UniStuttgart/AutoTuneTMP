@@ -108,10 +108,6 @@ public:
   void clear() {
     internal_kernel.clear();
     this->verbose = false;
-    if (this->scenario_measurement_file.is_open()) {
-      this->scenario_measurement_file.close();
-    }
-    this->measurement_enabled = false;
   }
 };
 }

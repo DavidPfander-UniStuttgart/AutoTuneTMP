@@ -32,6 +32,7 @@ BOOST_AUTO_TEST_CASE(run_kernel) {
   autotune::run_kernel.set_source_dir("tests/kernel_run_kernel");
   autotune::run_kernel.set_verbose(true);
   int result = autotune::run_kernel(2);
+  autotune::run_kernel.clear();
   BOOST_CHECK_EQUAL(result, 5);
 }
 
