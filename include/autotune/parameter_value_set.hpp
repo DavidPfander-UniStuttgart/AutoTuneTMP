@@ -8,7 +8,7 @@ namespace autotune {
 
 using parameter_value_set = std::map<std::string, std::string>;
 
-void print_parameter_values(parameter_value_set &parameter_values) {
+inline void print_parameter_values(parameter_value_set &parameter_values) {
   std::cout << "parameter name  | ";
   bool first = true;
   for (auto &p : parameter_values) {
