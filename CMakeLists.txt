@@ -113,6 +113,10 @@ add_executable(countable_set_example "examples/countable_set_example.cpp")
 target_link_libraries(countable_set_example AutoTuneTMP)
 install(TARGETS countable_set_example DESTINATION examples)
 
+add_executable(simple_sor_diffusion "examples/simple_sor_diffusion.cpp")
+target_link_libraries(simple_sor_diffusion AutoTuneTMP)
+install(TARGETS simple_sor_diffusion DESTINATION examples)
+
 add_executable(neighborhood_search_example "examples/neighborhood_search_example.cpp")
 target_link_libraries(neighborhood_search_example AutoTuneTMP)
 install(TARGETS neighborhood_search_example DESTINATION examples)

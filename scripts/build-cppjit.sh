@@ -3,7 +3,7 @@ set -x
 set -e
 
 if [ ! -d "cppjit" ]; then
-    git clone git@github.com:DavidPfander-UniStuttgart/cppjit.git
+    git clone https://github.com/DavidPfander-UniStuttgart/cppjit.git
 fi
 
 cd cppjit

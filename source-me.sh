@@ -14,8 +14,8 @@ if [[ -z "$CONFIGURATION_DONE" ]]; then
     fi
     echo "parallel build (-j for make): $PARALLEL_BUILD"
 
-    export CC=gcc
-    export CXX=g++
+    export CC=gcc-7
+    export CXX=g++-7
     export CXX_FLAGS="-Wall -Wextra -march=native -mtune=native"
     export CONFIGURATION_DONE=true
 else
