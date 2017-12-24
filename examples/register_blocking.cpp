@@ -101,6 +101,25 @@ public:
   size_t size() const { return left_expr::expr_elements; }
 };
 
+template <typename left_expr, typename scalar>
+class sum_scalar_expression
+    : public expression<sum_scalar_expression<left_expr, scalar>,
+                        typename left_expr::expr_vc_type,
+                        left_expr::expr_elements> {
+
+  left_expr const &u;
+  scalar const &s;
+
+public:
+  sum_scalar_expression(left_expr const &u, scalar const &s) : u(u), s(s) {}
+
+  typename left_expr::expr_vc_type operator[](size_t i) const {
+    return u[i] + s;
+  }
+
+  size_t size() const { return left_expr::expr_elements; }
+};
+
 // expression for multiplication
 template <typename left_expr, typename right_expr>
 class mult_expression
@@ -121,23 +140,99 @@ public:
   size_t size() const { return left_expr::expr_elements; }
 };
 
+template <typename left_expr, typename scalar>
+class mult_scalar_expression
+    : public expression<mult_expression<left_expr, scalar>,
+                        typename left_expr::expr_vc_type,
+                        left_expr::expr_elements> {
+
+  left_expr const &u;
+  scalar const &s;
+
+public:
+  mult_scalar_expression(left_expr const &u, scalar const &s) : u(u), s(s) {}
+
+  typename left_expr::expr_vc_type operator[](size_t i) const {
+    return u[i] * s;
+  }
+
+  size_t size() const { return left_expr::expr_elements; }
+};
+
 /////////////////////////////////
 // operators for syntactic sugar
 /////////////////////////////////
 
+// cannot work, because different types of expressions are valid and data
+// classes as well
+// typename std::enable_if<std::is_same<left_expr, right_expr>::value,
+//                         sum_expression<left_expr, right_expr>>::type
+
+// // overloaded operator for addition
+// template <typename left_expr, typename right_expr>
+// const left_expr operator+(left_expr const &u, right_expr const &v) {
+//   return sum_expression<left_expr, right_expr>(u, v);
+// }
+
 // overloaded operator for addition
-template <typename left_expr, typename right_expr>
-sum_expression<left_expr, right_expr> const operator+(left_expr const &u,
-                                                      right_expr const &v) {
-  return sum_expression<left_expr, right_expr>(u, v);
+// template <typename left_expr, typename right_expr>
+template <typename left_specialized, typename right_specialized,
+          typename vc_type, size_t elements>
+const auto
+operator+(expression<left_specialized, vc_type, elements> const &u,
+          expression<right_specialized, vc_type, elements> const &v) {
+  return sum_expression<expression<left_specialized, vc_type, elements>,
+                        expression<right_specialized, vc_type, elements>>(u, v);
+}
+
+template <typename left_specialized, typename vc_type, size_t elements>
+const auto operator+(expression<left_specialized, vc_type, elements> const &u,
+                     vc_type const &s) {
+  return sum_scalar_expression<expression<left_specialized, vc_type, elements>,
+                               vc_type>(u, s);
+}
+
+template <typename right_specialized, typename vc_type, size_t elements>
+const auto
+operator+(vc_type const &s,
+          expression<right_specialized, vc_type, elements> const &u) {
+  // using commutativity to avoid another class
+  return sum_scalar_expression<expression<right_specialized, vc_type, elements>,
+                               vc_type>(u, s);
 }
 
 // overloaded operator for multiplication
-template <typename left_expr, typename right_expr>
-mult_expression<left_expr, right_expr> const operator*(left_expr const &u,
-                                                       right_expr const &v) {
-  return mult_expression<left_expr, right_expr>(u, v);
+template <typename left_specialized, typename right_specialized,
+          typename vc_type, size_t elements>
+const auto
+operator*(expression<left_specialized, vc_type, elements> const &u,
+          expression<right_specialized, vc_type, elements> const &v) {
+  return mult_expression<expression<left_specialized, vc_type, elements>,
+                         expression<right_specialized, vc_type, elements>>(u,
+                                                                           v);
 }
+
+template <typename left_specialized, typename vc_type, size_t elements>
+const auto operator*(expression<left_specialized, vc_type, elements> const &u,
+                     vc_type const &s) {
+  return mult_scalar_expression<expression<left_specialized, vc_type, elements>,
+                                vc_type>(u, s);
+}
+
+template <typename right_specialized, typename vc_type, size_t elements>
+const auto
+operator*(vc_type const &s,
+          expression<right_specialized, vc_type, elements> const &u) {
+  // using commutativity to avoid another class
+  return mult_scalar_expression<
+      expression<right_specialized, vc_type, elements>, vc_type>(u, s);
+}
+
+// template <typename left_expr, typename right_expr>
+// mult_expression<left_expr, right_expr> const operator*(left_expr const &u,
+//                                                        right_expr const &v) {
+//   return mult_expression<left_expr, right_expr>(u, v);
+// }
 
 int main(void) {
   constexpr size_t data_blocking = 4;
@@ -152,6 +247,7 @@ int main(void) {
   register_array<double_v, 2> v0(data1.data(), Vc::flags::element_aligned);
   register_array<double_v, 2> v1(data2.data(), Vc::flags::element_aligned);
   register_array<double_v, 2> v2(data3.data(), Vc::flags::element_aligned);
+  double_v shared_scalar = 2.0;
 
   v0.print("v0");
   v1.print("v1");
@@ -187,4 +283,34 @@ int main(void) {
     }
   }
   std::cout << "assertion checked out" << std::endl;
+
+  std::cout << "adding scalars" << std::endl;
+  register_array<double_v, 2> right_scalar = v0 + shared_scalar;
+  for (size_t i = 0; i < right_scalar.size(); i++) {
+    for (size_t j = 0; j < double_v::size(); j++) {
+      assert(right_scalar[i][j] = v0[i][j] + shared_scalar[j]);
+    }
+  }
+  register_array<double_v, 2> left_scalar = shared_scalar + v0;
+  for (size_t i = 0; i < right_scalar.size(); i++) {
+    for (size_t j = 0; j < double_v::size(); j++) {
+      assert(left_scalar[i][j] = v0[i][j] + shared_scalar[j]);
+    }
+  }
+
+  std::cout << "multiplying scalars" << std::endl;
+  register_array<double_v, 2> right_scalar_mult = v0 * shared_scalar;
+  // right_scalar_mult.print("right_scalar_mult");
+  for (size_t i = 0; i < right_scalar.size(); i++) {
+    for (size_t j = 0; j < double_v::size(); j++) {
+      assert(right_scalar_mult[i][j] = v0[i][j] * shared_scalar[j]);
+    }
+  }
+  register_array<double_v, 2> left_scalar_mult = shared_scalar * v0;
+
+  for (size_t i = 0; i < left_scalar_mult.size(); i++) {
+    for (size_t j = 0; j < double_v::size(); j++) {
+      assert(left_scalar_mult[i][j] = v0[i][j] * shared_scalar[j]);
+    }
+  }
 }
