@@ -288,29 +288,29 @@ int main(void) {
   register_array<double_v, 2> right_scalar = v0 + shared_scalar;
   for (size_t i = 0; i < right_scalar.size(); i++) {
     for (size_t j = 0; j < double_v::size(); j++) {
-      assert(right_scalar[i][j] = v0[i][j] + shared_scalar[j]);
+      assert(right_scalar[i][j] == v0[i][j] + shared_scalar[j]);
     }
   }
   register_array<double_v, 2> left_scalar = shared_scalar + v0;
-  for (size_t i = 0; i < right_scalar.size(); i++) {
+  for (size_t i = 0; i < left_scalar.size(); i++) {
     for (size_t j = 0; j < double_v::size(); j++) {
-      assert(left_scalar[i][j] = v0[i][j] + shared_scalar[j]);
+      assert(left_scalar[i][j] == v0[i][j] + shared_scalar[j]);
     }
   }
 
   std::cout << "multiplying scalars" << std::endl;
   register_array<double_v, 2> right_scalar_mult = v0 * shared_scalar;
   // right_scalar_mult.print("right_scalar_mult");
-  for (size_t i = 0; i < right_scalar.size(); i++) {
+  for (size_t i = 0; i < right_scalar_mult.size(); i++) {
     for (size_t j = 0; j < double_v::size(); j++) {
-      assert(right_scalar_mult[i][j] = v0[i][j] * shared_scalar[j]);
+      assert(right_scalar_mult[i][j] == v0[i][j] * shared_scalar[j]);
     }
   }
   register_array<double_v, 2> left_scalar_mult = shared_scalar * v0;
 
   for (size_t i = 0; i < left_scalar_mult.size(); i++) {
     for (size_t j = 0; j < double_v::size(); j++) {
-      assert(left_scalar_mult[i][j] = v0[i][j] * shared_scalar[j]);
+      assert(left_scalar_mult[i][j] == v0[i][j] * shared_scalar[j]);
     }
   }
 }
