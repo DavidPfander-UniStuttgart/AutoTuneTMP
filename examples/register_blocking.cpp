@@ -39,7 +39,14 @@ public:
   vc_type &operator[](size_t i) { return elems[i]; }
   size_t size() const { return elements; }
 
-  register_array(size_t n) : elems(n) {}
+  register_array() {}
+  // register_array(size_t n) : elems(n) {}
+
+  register_array(vc_type value) {
+    for (size_t i = 0; i < elements; i++) {
+      elems[i] = value;
+    }
+  }
 
   template <typename vc_flag>
   register_array(typename vc_type::value_type *mem, vc_flag t) {
@@ -228,6 +235,46 @@ operator*(vc_type const &s,
       expression<right_specialized, vc_type, elements>, vc_type>(u, s);
 }
 
+template <typename specialized, typename vc_type, size_t elements>
+const auto abs(expression<specialized, vc_type, elements> const &u) {
+  register_array<vc_type, elements> result;
+  for (size_t i = 0; i < elements; i++) {
+    result[i] = Vc::abs(u[i]);
+  }
+  return result;
+}
+
+template <typename left_specialized, typename right_specialized,
+          typename vc_type, size_t elements>
+const auto max(expression<left_specialized, vc_type, elements> const &u,
+               expression<right_specialized, vc_type, elements> const &v) {
+  register_array<vc_type, elements> result;
+  for (size_t i = 0; i < elements; i++) {
+    result[i] = Vc::max(u[i], v[i]);
+  }
+  return result;
+}
+
+template <typename left_specialized, typename vc_type, size_t elements>
+const auto max(expression<left_specialized, vc_type, elements> const &u,
+               vc_type const &s) {
+  register_array<vc_type, elements> result;
+  for (size_t i = 0; i < elements; i++) {
+    result[i] = Vc::max(u[i], s);
+  }
+  return result;
+}
+
+template <typename right_specialized, typename vc_type, size_t elements>
+const auto max(vc_type const &s,
+               expression<right_specialized, vc_type, elements> const &u) {
+  register_array<vc_type, elements> result;
+  for (size_t i = 0; i < elements; i++) {
+    result[i] = Vc::max(u[i], s);
+  }
+  return result;
+}
+
 // template <typename left_expr, typename right_expr>
 // mult_expression<left_expr, right_expr> const operator*(left_expr const &u,
 //                                                        right_expr const &v) {
@@ -241,13 +288,14 @@ int main(void) {
       0.0);
 
   std::vector<double> data1 = {1.0, 2.0, 3.0, 4.0};
-  std::vector<double> data2 = {1.5, 2.5, 3.5, 4.5};
+  std::vector<double> data2 = {-1.5, -2.5, -3.5, -4.5};
   std::vector<double> data3 = {1.75, 2.75, 3.75, 4.75};
 
   register_array<double_v, 2> v0(data1.data(), Vc::flags::element_aligned);
   register_array<double_v, 2> v1(data2.data(), Vc::flags::element_aligned);
   register_array<double_v, 2> v2(data3.data(), Vc::flags::element_aligned);
-  double_v shared_scalar = 2.0;
+  double_v shared_scalar = -2.0;
+  register_array<double_v, 2> zero = double_v(0.0);
 
   v0.print("v0");
   v1.print("v1");
@@ -306,6 +354,8 @@ int main(void) {
       assert(right_scalar_mult[i][j] == v0[i][j] * shared_scalar[j]);
     }
   }
+  right_scalar_mult.print("right_scalar_mult");
+
   register_array<double_v, 2> left_scalar_mult = shared_scalar * v0;
 
   for (size_t i = 0; i < left_scalar_mult.size(); i++) {
@@ -313,4 +363,22 @@ int main(void) {
       assert(left_scalar_mult[i][j] == v0[i][j] * shared_scalar[j]);
     }
   }
+  left_scalar_mult.print("left_scalar_mult");
+
+  register_array<double_v, 2> abs_left_scalar_mult = abs(left_scalar_mult);
+  abs_left_scalar_mult.print("abs_left_scalar_mult");
+
+  register_array<double_v, 2> max_result = max(abs_left_scalar_mult, zero);
+  max_result.print("max_result");
+
+  register_array<double_v, 2> max_left_result =
+      max(shared_scalar, abs_left_scalar_mult);
+  max_left_result.print("max_left_result");
+
+  register_array<double_v, 2> max_right_result =
+      max(abs_left_scalar_mult, shared_scalar);
+  max_right_result.print("max_right_result");
+
+  // Vc::abs
+  // Vc::max
 }
