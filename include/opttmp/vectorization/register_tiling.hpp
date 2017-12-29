@@ -169,15 +169,16 @@ operator+(const expression<left_specialized, vc_type, elements> &u,
 }
 
 template <typename left_specialized, typename vc_type, size_t elements>
-const auto operator+(expression<left_specialized, vc_type, elements> &u,
-                     vc_type &s) {
+const auto operator+(const expression<left_specialized, vc_type, elements> &u,
+                     const vc_type &s) {
   return sum_scalar_expression<expression<left_specialized, vc_type, elements>,
                                vc_type>(u, s);
 }
 
 template <typename right_specialized, typename vc_type, size_t elements>
-const auto operator+(vc_type &s,
-                     expression<right_specialized, vc_type, elements> &u) {
+const auto
+operator+(const vc_type &s,
+          const expression<right_specialized, vc_type, elements> &u) {
   // using commutativity to avoid another class
   return sum_scalar_expression<expression<right_specialized, vc_type, elements>,
                                vc_type>(u, s);
@@ -186,22 +187,24 @@ const auto operator+(vc_type &s,
 // operators for sub
 template <typename left_specialized, typename right_specialized,
           typename vc_type, size_t elements>
-const auto operator-(expression<left_specialized, vc_type, elements> &u,
-                     expression<right_specialized, vc_type, elements> &v) {
+const auto
+operator-(const expression<left_specialized, vc_type, elements> &u,
+          const expression<right_specialized, vc_type, elements> &v) {
   return sub_expression<expression<left_specialized, vc_type, elements>,
                         expression<right_specialized, vc_type, elements>>(u, v);
 }
 
 template <typename left_specialized, typename vc_type, size_t elements>
-const auto operator-(expression<left_specialized, vc_type, elements> &u,
-                     vc_type &s) {
+const auto operator-(const expression<left_specialized, vc_type, elements> &u,
+                     const vc_type &s) {
   return sub_scalar_expression<expression<left_specialized, vc_type, elements>,
                                vc_type>(u, s);
 }
 
 template <typename right_specialized, typename vc_type, size_t elements>
-const auto operator-(vc_type &s,
-                     expression<right_specialized, vc_type, elements> &u) {
+const auto
+operator-(const vc_type &s,
+          const expression<right_specialized, vc_type, elements> &u) {
   // using commutativity to avoid another class
   return sub_scalar_expression<expression<right_specialized, vc_type, elements>,
                                vc_type>(u, s);
@@ -210,30 +213,32 @@ const auto operator-(vc_type &s,
 // overloaded operator for multiplication
 template <typename left_specialized, typename right_specialized,
           typename vc_type, size_t elements>
-const auto operator*(expression<left_specialized, vc_type, elements> &u,
-                     expression<right_specialized, vc_type, elements> &v) {
+const auto
+operator*(const expression<left_specialized, vc_type, elements> &u,
+          const expression<right_specialized, vc_type, elements> &v) {
   return mult_expression<expression<left_specialized, vc_type, elements>,
                          expression<right_specialized, vc_type, elements>>(u,
                                                                            v);
 }
 
 template <typename left_specialized, typename vc_type, size_t elements>
-const auto operator*(expression<left_specialized, vc_type, elements> &u,
-                     vc_type &s) {
+const auto operator*(const expression<left_specialized, vc_type, elements> &u,
+                     const vc_type &s) {
   return mult_scalar_expression<expression<left_specialized, vc_type, elements>,
                                 vc_type>(u, s);
 }
 
 template <typename right_specialized, typename vc_type, size_t elements>
-const auto operator*(vc_type &s,
-                     expression<right_specialized, vc_type, elements> &u) {
+const auto
+operator*(const vc_type &s,
+          const expression<right_specialized, vc_type, elements> &u) {
   // using commutativity to avoid another class
   return mult_scalar_expression<
       expression<right_specialized, vc_type, elements>, vc_type>(u, s);
 }
 
 template <typename specialized, typename vc_type, size_t elements>
-const auto abs(expression<specialized, vc_type, elements> &u) {
+const auto abs(const expression<specialized, vc_type, elements> &u) {
   register_array<vc_type, elements> result; // TODO: turn into expression
   for (size_t i = 0; i < elements; i++) {
     result[i] = Vc::abs(u[i]);
@@ -243,8 +248,8 @@ const auto abs(expression<specialized, vc_type, elements> &u) {
 
 template <typename left_specialized, typename right_specialized,
           typename vc_type, size_t elements>
-const auto max(expression<left_specialized, vc_type, elements> &u,
-               expression<right_specialized, vc_type, elements> &v) {
+const auto max(const expression<left_specialized, vc_type, elements> &u,
+               const expression<right_specialized, vc_type, elements> &v) {
   register_array<vc_type, elements> result; // TODO: turn into expression
   for (size_t i = 0; i < elements; i++) {
     result[i] = Vc::max(u[i], v[i]);
@@ -253,7 +258,8 @@ const auto max(expression<left_specialized, vc_type, elements> &u,
 }
 
 template <typename left_specialized, typename vc_type, size_t elements>
-const auto max(expression<left_specialized, vc_type, elements> &u, vc_type &s) {
+const auto max(const expression<left_specialized, vc_type, elements> &u,
+               const vc_type &s) {
   register_array<vc_type, elements> result; // TODO: turn into expression
   for (size_t i = 0; i < elements; i++) {
     result[i] = Vc::max(u[i], s);
@@ -262,8 +268,8 @@ const auto max(expression<left_specialized, vc_type, elements> &u, vc_type &s) {
 }
 
 template <typename right_specialized, typename vc_type, size_t elements>
-const auto max(vc_type &s,
-               expression<right_specialized, vc_type, elements> &u) {
+const auto max(const vc_type &s,
+               const expression<right_specialized, vc_type, elements> &u) {
   register_array<vc_type, elements> result; // TODO: turn into expression
   for (size_t i = 0; i < elements; i++) {
     result[i] = Vc::max(u[i], s);
@@ -274,14 +280,15 @@ const auto max(vc_type &s,
 // operator for unary minus
 // expression for unary minus
 template <typename left_expr, typename vc_type, size_t elements>
-const auto operator-(expression<left_expr, vc_type, elements> &l) {
+const auto operator-(const expression<left_expr, vc_type, elements> &l) {
   return sub_unary_expression<expression<left_expr, vc_type, elements>>(l);
 }
 
 template <typename left_specialized, typename right_specialized,
           typename vc_type, size_t elements>
-const auto operator*=(expression<left_specialized, vc_type, elements> &u,
-                      expression<right_specialized, vc_type, elements> &v) {
+const auto
+operator*=(const expression<left_specialized, vc_type, elements> &u,
+           const expression<right_specialized, vc_type, elements> &v) {
   auto mult_expr = u * v;
   register_array<vc_type, elements> result;
   for (size_t i = 0; i < elements; i++) {
@@ -292,8 +299,9 @@ const auto operator*=(expression<left_specialized, vc_type, elements> &u,
 
 template <typename right_specialized, // typename left_specialized,
           typename vc_type, size_t elements>
-const auto operator+=(register_array<vc_type, elements> &u,
-                      expression<right_specialized, vc_type, elements> &v) {
+const auto
+operator+=(register_array<vc_type, elements> &u,
+           const expression<right_specialized, vc_type, elements> &v) {
   // std::cout << "inside operator" << std::endl;
   // for (size_t i = 0; i < u.size(); i++) {
   //   if (i > 0) {
