@@ -212,5 +212,6 @@ abs(const vector_array<vector_type, elements> &v) {
   }
   return r;
 }
+
 }
 }
