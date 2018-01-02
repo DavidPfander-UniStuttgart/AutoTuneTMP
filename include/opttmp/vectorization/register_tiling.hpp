@@ -131,7 +131,7 @@ public:
 
 template <typename left_expr, typename scalar>
 class mult_scalar_expression
-    : public expression<mult_expression<left_expr, scalar>,
+    : public expression<mult_scalar_expression<left_expr, scalar>,
                         typename left_expr::expr_vc_type,
                         left_expr::expr_elements> {
 
@@ -304,17 +304,15 @@ const auto operator-(const expression<left_expr, vc_type, elements> &l) {
   return sub_unary_expression<expression<left_expr, vc_type, elements>>(l);
 }
 
-template <typename left_specialized, typename right_specialized,
-          typename vc_type, size_t elements>
+template <typename right_specialized, typename vc_type, size_t elements>
 const auto
-operator*=(const expression<left_specialized, vc_type, elements> &u,
+operator*=(register_array<vc_type, elements> &u,
            const expression<right_specialized, vc_type, elements> &v) {
   auto mult_expr = u * v;
-  register_array<vc_type, elements> result;
   for (size_t i = 0; i < elements; i++) {
-    result[i] = mult_expr[i];
+    u[i] = mult_expr[i];
   }
-  return result;
+  return u;
 }
 
 template <typename right_specialized, // typename left_specialized,

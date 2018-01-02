@@ -19,6 +19,7 @@ public:
     // specialized_expression_type &spec =
     //     static_cast<specialized_expression_type &>(*this);
     // return spec.operator[](i);
+    // return static_cast<specialized_expression_type const &>(*this)[i];
     return static_cast<specialized_expression_type const &>(*this)[i];
   }
 
