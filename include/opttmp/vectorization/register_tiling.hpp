@@ -70,8 +70,8 @@ public:
 };
 
 template <typename left_expr, typename scalar>
-class sub_scalar_expression
-    : public expression<sub_scalar_expression<left_expr, scalar>,
+class sub_scalar_right_expression
+    : public expression<sub_scalar_right_expression<left_expr, scalar>,
                         typename left_expr::expr_vc_type,
                         left_expr::expr_elements> {
 
@@ -79,13 +79,34 @@ class sub_scalar_expression
   scalar const &s;
 
 public:
-  sub_scalar_expression(left_expr const &u, scalar const &s) : u(u), s(s) {}
+  sub_scalar_right_expression(left_expr const &u, scalar const &s)
+      : u(u), s(s) {}
 
   typename left_expr::expr_vc_type operator[](size_t i) const {
-    return u[i] + s;
+    return u[i] - s;
   }
 
   size_t size() const { return left_expr::expr_elements; }
+};
+
+template <typename right_expr, typename scalar>
+class sub_scalar_left_expression
+    : public expression<sub_scalar_left_expression<right_expr, scalar>,
+                        typename right_expr::expr_vc_type,
+                        right_expr::expr_elements> {
+
+  right_expr const &u;
+  scalar const &s;
+
+public:
+  sub_scalar_left_expression(scalar const &s, right_expr const &u)
+      : u(u), s(s) {}
+
+  typename right_expr::expr_vc_type operator[](size_t i) const {
+    return s - u[i];
+  }
+
+  size_t size() const { return right_expr::expr_elements; }
 };
 
 // expression for multiplication
@@ -197,17 +218,16 @@ operator-(const expression<left_specialized, vc_type, elements> &u,
 template <typename left_specialized, typename vc_type, size_t elements>
 const auto operator-(const expression<left_specialized, vc_type, elements> &u,
                      const vc_type &s) {
-  return sub_scalar_expression<expression<left_specialized, vc_type, elements>,
-                               vc_type>(u, s);
+  return sub_scalar_right_expression<
+      expression<left_specialized, vc_type, elements>, vc_type>(s, u);
 }
 
 template <typename right_specialized, typename vc_type, size_t elements>
 const auto
 operator-(const vc_type &s,
           const expression<right_specialized, vc_type, elements> &u) {
-  // using commutativity to avoid another class
-  return sub_scalar_expression<expression<right_specialized, vc_type, elements>,
-                               vc_type>(u, s);
+  return sub_scalar_left_expression<
+      expression<right_specialized, vc_type, elements>, vc_type>(s, u);
 }
 
 // overloaded operator for multiplication

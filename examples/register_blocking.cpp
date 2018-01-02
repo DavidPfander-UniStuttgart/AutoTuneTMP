@@ -137,6 +137,77 @@ int main(void) {
   }
 
   {
+    // test subtraction without temporary expression through copy initialization
+    std::vector<double> result_reference(data_up.size());
+    for (size_t i = 0; i < result_reference.size(); i++) {
+      result_reference[i] = negative_values_raw[i] - positive_values_raw[i];
+    }
+    register_array<double_v, vector_elements> subtraction_result(
+        negative_values - positive_values);
+    for (size_t i = 0; i < subtraction_result.size(); i++) {
+      for (size_t j = 0; j < double_v::size(); j++) {
+        assert(subtraction_result[i][j] ==
+               result_reference[i * double_v::size() + j]);
+      }
+    }
+  }
+
+  {
+    // test subtraction without temporary expression through copy assignment
+    std::vector<double> result_reference(data_up.size());
+    for (size_t i = 0; i < result_reference.size(); i++) {
+      result_reference[i] = negative_values_raw[i] - positive_values_raw[i];
+    }
+    register_array<double_v, vector_elements> subtraction_result =
+        negative_values - positive_values;
+    for (size_t i = 0; i < subtraction_result.size(); i++) {
+      for (size_t j = 0; j < double_v::size(); j++) {
+        assert(subtraction_result[i][j] ==
+               result_reference[i * double_v::size() + j]);
+      }
+    }
+  }
+
+  {
+    // test subtraction and multiplication in one expression
+    std::vector<double> result_reference(data_up.size());
+    for (size_t i = 0; i < result_reference.size(); i++) {
+      result_reference[i] =
+          data_up[i] + (negative_values_raw[i] - positive_values_raw[i]);
+    }
+
+    register_array<double_v, vector_elements> sum =
+        up + (negative_values - positive_values);
+
+    for (size_t i = 0; i < sum.size(); i++) {
+      for (size_t j = 0; j < double_v::size(); j++) {
+        assert(result_reference[i * double_v::size() + j] == sum[i][j]);
+      }
+    }
+  }
+
+  {
+    // right-subtracting scalar
+    register_array<double_v, vector_elements> right_scalar =
+        negative_values - shared_scalar;
+    for (size_t i = 0; i < right_scalar.size(); i++) {
+      for (size_t j = 0; j < double_v::size(); j++) {
+        assert(right_scalar[i][j] == negative_values[i][j] - shared_scalar[j]);
+      }
+    }
+  }
+  {
+    // left-subtracting scalar
+    register_array<double_v, vector_elements> left_scalar =
+        shared_scalar - negative_values;
+    for (size_t i = 0; i < left_scalar.size(); i++) {
+      for (size_t j = 0; j < double_v::size(); j++) {
+        assert(left_scalar[i][j] == shared_scalar[j] - negative_values[i][j]);
+      }
+    }
+  }
+
+  {
     // right-multiplying scalar
     register_array<double_v, vector_elements> right_scalar_mult =
         negative_values * shared_scalar;
