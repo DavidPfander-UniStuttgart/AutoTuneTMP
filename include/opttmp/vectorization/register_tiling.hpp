@@ -219,7 +219,7 @@ template <typename left_specialized, typename vc_type, size_t elements>
 const auto operator-(const expression<left_specialized, vc_type, elements> &u,
                      const vc_type &s) {
   return sub_scalar_right_expression<
-      expression<left_specialized, vc_type, elements>, vc_type>(s, u);
+      expression<left_specialized, vc_type, elements>, vc_type>(u, s);
 }
 
 template <typename right_specialized, typename vc_type, size_t elements>
