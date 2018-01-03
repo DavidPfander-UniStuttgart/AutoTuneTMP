@@ -1,20 +1,25 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include "tga.h"
+#include <Vc/Vc>
+#include <chrono>
+//#include "tga.h"
 
-const int dimX = 256;
-const int dimY = 256;
+using Vc::double_v;
+
+const int dimX = 512;
+const int dimY = 512;
 const double eps = 1e-3;
 const double hx = 2.0*M_PI/dimX;
 const double hy = 2.0*M_PI/dimY;
 
-#define OMEGA 1.9
-#define VEC_SIZE 4
+#define OMEGA 1.955
 #define INNER_LOOP 10
+#define ITER_MIN 256
 
-#define VEC_D(VAR) double VAR [VEC_SIZE]
-#define LOOP_VEC(IT) for (int IT = 0; IT < VEC_SIZE; ++IT)
+const double_v hxx = 1.0/(hx*hx);
+const double_v hyy = 1.0/(hy*hy);
+const double_v pre = OMEGA * hx*hx*hy*hy/(2.0*(hx*hx + hy*hy));
 
 void InitGrid(std::vector<double> &rhs) {
   for (int y = 0; y < dimY; ++y ) {
@@ -25,102 +30,182 @@ void InitGrid(std::vector<double> &rhs) {
   }
 }
 
-void SORBoundary(std::vector<double> &grid) {
-  for (int x = 1; x <= dimX; x += VEC_SIZE) {
-    VEC_D(v);
-    LOOP_VEC(j) v[j] = grid[x + j + dimX + 2];
-    LOOP_VEC(j) grid[(dimX + 2)*(dimY + 1) + x + j] = v[j];
-    LOOP_VEC(j) v[j] = grid[(dimX + 2)*dimY + x + j];
-    LOOP_VEC(j) grid[x + j] = v[j];
+// 9 * VEC_SIZE FLOPs
+inline double_v DiffusionKernel (const double_v &di, const double_v &dt, const double_v &db,
+                                 const double_v &dl, const double_v &dr) {
+  return ((dl + dr - 2.0*di)*hxx + (dt + db - 2.0*di)*hyy);
+}
+
+// 3 + 9 = 12 * VEC_SIZE FLOPs
+template<int line, int R>
+inline void SORCycleKernel (double *red, const double *black, const double *rhs) {
+  double_v di = double_v( red,             Vc::flags::element_aligned);
+  double_v dt = double_v(&black[2*line],   Vc::flags::element_aligned);
+  double_v db = double_v( black,           Vc::flags::element_aligned);
+  double_v dl = double_v(&black[line+R-1], Vc::flags::element_aligned);
+  double_v dr = double_v(&black[line+R],   Vc::flags::element_aligned);
+  double_v  r = double_v( rhs,             Vc::flags::element_aligned);
+  r -= DiffusionKernel(di, dt, db, dl, dr);
+  di -= pre * r;
+  di.memstore(red, Vc::flags::element_aligned);
+}
+// 2 + 9 = 11 * VEC_SIZE  + VEC_SIZE - 1  FLOPs
+template<int line, int R>
+inline double SORResidualKernel (const double *red, const double *black, const double *rhs) {
+  double_v di = double_v( red,             Vc::flags::element_aligned);
+  double_v dt = double_v(&black[2*line],   Vc::flags::element_aligned);
+  double_v db = double_v( black,           Vc::flags::element_aligned);
+  double_v dl = double_v(&black[line+R-1], Vc::flags::element_aligned);
+  double_v dr = double_v(&black[line+R],   Vc::flags::element_aligned);
+  double_v  r = double_v( rhs,             Vc::flags::element_aligned);
+  r -= DiffusionKernel(di, dt, db, dl, dr);
+  return Vc::reduce(r*r);
+}
+
+template<int line, int R>
+void RBSORUpdate (std::vector<double> &grid) {
+  for (int y = 1; y <= dimY; ++y) {
+    if (y%2 == R) {
+      grid[y*line + line - 1] = grid[y*line];
+    } else {
+      grid[y*line] = grid[y*line + line - 1];
+    }
   }
-  for (int y = 1; y <= dimY; y += VEC_SIZE) {
-    VEC_D(v);
-    LOOP_VEC(j) v[j] = grid[(dimX + 2)*(y + j) + 1];
-    LOOP_VEC(j) grid[(dimX + 2)*(y + j) + dimX + 1] = v[j];
-    LOOP_VEC(j) v[j] = grid[(dimX + 2)*(y + j) + dimX];
-    LOOP_VEC(j) grid[(dimX + 2)*(y + j)] = v[j];
+  for (int x = 0; x < line; ++x) {
+    grid[x] = grid[dimY*line + x];
+    grid[(dimY + 1)*line + x] = grid[line + x];
   }
 }
 
-void SORCycle(std::vector<double> &grid, const std::vector<double> &rhs) {
-  static const double h = hx*hx*hy*hy/(2.0*(hx*hx + hy*hy));
-  static const double hxx = 1.0/(hx*hx);
-  static const double hyy = 1.0/(hy*hy);
-  for (int y = 1; y <= dimY; ++y ) {
-    for (int x = 1; x <= dimX; x += 2*VEC_SIZE) {
-      for (int k = 0; k < 2; ++k) {
-        int i = x + k + y*(dimX + 2);
-        VEC_D(di);
-        LOOP_VEC(j) di[j] = grid[i + 2*j];
-        VEC_D(du);
-        LOOP_VEC(j) du[j] = grid[i + 2*j + dimX + 2];
-        VEC_D(db);
-        LOOP_VEC(j) db[j] = grid[i + 2*j - dimX - 2];
-        VEC_D(dl);
-        LOOP_VEC(j) dl[j] = grid[i + 2*j - 1];
-        VEC_D(dr);
-        LOOP_VEC(j) dr[j] = grid[i + 2*j + 1];
-        VEC_D(r);
-        LOOP_VEC(j) r[j] = rhs[i + 2*j];
-        
-        LOOP_VEC(j) r[j] -= (dl[j] + dr[j] - 2.0*di[j])*hxx + (du[j] + db[j] - 2.0*di[j])*hyy;
-        LOOP_VEC(j) di[j] -= OMEGA * h * r[j];
-        
-        LOOP_VEC(j) grid[i + 2*j] = di[j];
-      }
-    }
-  }
-}
-double SORResidual(std::vector<double> &grid, const std::vector<double> &rhs) {
-  static const double h = hx*hx*hy*hy/(2.0*(hx*hx + hy*hy));
-  static const double hxx = 1.0/(hx*hx);
-  static const double hyy = 1.0/(hy*hy);
+constexpr int RED = 1;
+constexpr int BLACK = 0;
+
+// dimX*dimY*12 * VEC_SIZE  FLOPs
+double RBSORResidual(const std::vector<double> &grid_r, const std::vector<double> &grid_b,
+                     const std::vector<double> &rhs_r, const std::vector<double> &rhs_b) {
   double res = 0.0;
+#pragma omp parallel for reduction(+:res)
   for (int y = 1; y <= dimY; ++y ) {
-    for (int x = 1; x <= dimX; x += VEC_SIZE) {
-      int i = x + y*(dimX + 2);
-      VEC_D(di);
-      LOOP_VEC(j) di[j] = grid[i + j];
-      VEC_D(du);
-      LOOP_VEC(j) du[j] = grid[i + j + dimX + 2];
-      VEC_D(db);
-      LOOP_VEC(j) db[j] = grid[i + j - dimX - 2];
-      VEC_D(dl);
-      LOOP_VEC(j) dl[j] = grid[i + j - 1];
-      VEC_D(dr);
-      LOOP_VEC(j) dr[j] = grid[i + j + 1];
-      VEC_D(r);
-      LOOP_VEC(j) r[j] = rhs[i + j];
-      
-      LOOP_VEC(j) r[j] -= (dl[j] + dr[j] - 2.0*di[j])*hxx + (du[j] + db[j] - 2.0*di[j])*hyy;
-      LOOP_VEC(j) res += r[j]*r[j];
+    for (int x = 0; x < dimX/2; x += double_v::size()) {
+      int i = y*(dimX/2 + 1) + x;
+      if (y%2 == RED) {
+        res += SORResidualKernel<dimX/2 + 1,   RED>(&grid_r[i], &grid_b[i - dimX/2 - 1], &rhs_r[i]);
+        ++i;
+        res += SORResidualKernel<dimX/2 + 1, BLACK>(&grid_b[i], &grid_r[i - dimX/2 - 1], &rhs_b[i]);
+      } else {
+        res += SORResidualKernel<dimX/2 + 1,   RED>(&grid_b[i], &grid_r[i - dimX/2 - 1], &rhs_b[i]);
+        ++i;
+        res += SORResidualKernel<dimX/2 + 1, BLACK>(&grid_r[i], &grid_b[i - dimX/2 - 1], &rhs_r[i]);
+      }
     }
   }
   return res;
 }
 
-size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, 
-                double &res, const double &eps) {
+// dimX*dimY*12 * VEC_SIZE  FLOPs
+void RBSORCycle(std::vector<double> &grid_r, std::vector<double> &grid_b,
+                const std::vector<double> &rhs_r, const std::vector<double> &rhs_b) {
+#pragma omp parallel for
+  for (int y = 1; y <= dimY; ++y ) {
+    for (int x = 0; x < dimX/2; x += double_v::size()) {
+      int i = y*(dimX/2 + 1) + x;
+      if (y%2 == RED) {
+        SORCycleKernel<dimX/2 + 1,   RED>(&grid_r[i], &grid_b[i - dimX/2 - 1], &rhs_r[i]);
+      } else {
+        ++i;
+        SORCycleKernel<dimX/2 + 1, BLACK>(&grid_r[i], &grid_b[i - dimX/2 - 1], &rhs_r[i]);
+      }
+    }
+  }
+  RBSORUpdate<dimX/2 + 1, RED>(grid_r);
+#pragma omp parallel for
+  for (int y = 1; y <= dimY; ++y ) {
+    for (int x = 0; x < dimX/2; x += double_v::size()) {
+      int i = y*(dimX/2 + 1) + x;
+      if (y%2 == RED) {
+        ++i;
+        SORCycleKernel<dimX/2 + 1, BLACK>(&grid_b[i], &grid_r[i - dimX/2 - 1], &rhs_b[i]);
+      } else {
+        SORCycleKernel<dimX/2 + 1,   RED>(&grid_b[i], &grid_r[i - dimX/2 - 1], &rhs_b[i]);
+      }
+    }
+  }
+  RBSORUpdate<dimX/2 + 1, BLACK>(grid_b);
+}
+
+size_t SORFlops (size_t iter) {
+  return iter*dimX*dimY*12*double_v::size() + (iter/INNER_LOOP)*dimX*dimY*12*double_v::size();
+}
+
+// iter*(dimX*dimY*12)* VEC_SIZE  + iter/INNER_LOOP*(dimX*dimY*12) * VEC_SIZE 
+size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, const double &eps) {
   const double eps_limit = eps*eps*dimX*dimY;
   size_t iter = 0;
+  size_t iter_top = 0;
+  double res;
   double res_old = -1.0;
+  double res_top = -1.0;
+  double rate = 0.0;
   
   res = 0.0;
-  for (auto &cell : grid) cell = 0.0;
+  std::vector<double> grid_r((dimX+2)*(dimY+2)/2, 0.0);
+  std::vector<double> grid_b((dimX+2)*(dimY+2)/2, 0.0);
   
-  while ((res = SORResidual(grid, rhs)) > eps_limit) {
-    //if ((iter % 100) == 0) std::cout << iter << " " << res << std::endl;
-    if (iter < 10 + INNER_LOOP && res > res_old) res_old = res;
-    if (iter >= 10 + INNER_LOOP && res >= res_old) break;
+  std::vector<double> rhs_r((dimX+2)*(dimY+2)/2);
+  std::vector<double> rhs_b((dimX+2)*(dimY+2)/2);
+  for (int y = 1; y <= dimY; ++y ) {
+    for (int x = 0; x < dimX/2; ++x) {
+      int i = x + y*(dimX/2 + 1);
+      if (y%2 == RED) {
+        rhs_r[i] = rhs[2*i + 1];
+        rhs_b[i+1] = rhs[2*i + 2];
+      } else {
+        rhs_b[i] = rhs[2*i + 1];
+        rhs_r[i+1] = rhs[2*i + 2];
+      }
+    }
+  }
+  
+  auto start = std::chrono::high_resolution_clock::now();
+  while ((res = RBSORResidual(grid_r, grid_b, rhs_r, rhs_b)) > eps_limit) {
+    // FLOPs not counted for break conditions
+    if (res > res_top) {
+      res_top = res;
+      iter_top = iter;
+    }
+    if (iter > ITER_MIN) {
+      if (res_top <= res + eps) break;
+      if (abs(res_old - res) < eps) break;
+    }
     res_old = res;
     
     for (int i = 0; i < INNER_LOOP; ++i) {
       ++iter;
-      SORCycle(grid, rhs);
-      SORBoundary(grid);
+      RBSORCycle(grid_r, grid_b, rhs_r, rhs_b);
     }
   }
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> diff = end - start;
   
+  for (int y = 1; y <= dimY; ++y ) {
+    for (int x = 0; x < dimX/2; ++x) {
+      int i = x + y*(dimX/2 + 1);
+      if (y%2 == RED) {
+        grid[2*i + 1] = grid_r[i];
+        grid[2*i + 2] = grid_b[i+1];
+      } else {
+        grid[2*i + 1] = grid_b[i];
+        grid[2*i + 2] = grid_r[i+1];
+      }
+    }
+  }
+  std::cout << "Convergence rate: " << pow(res_top/res, 0.5/(iter - iter_top)) - 1.0;
+  std::cout << " after " << iter_top << " iterations" << std::endl;
+  std::cout << "Solved in " << iter << " iterations" << std::endl;
+  std::cout << "Residual: " << sqrt(res/(dimX*dimY)) << std::endl << std::endl;
+  std::cout << "Finished in " << diff.count() << "s" << std::endl;
+  std::cout << "Executed " << SORFlops(iter) << " FLOPs" << std::endl;
+  std::cout << "Achieved " << double(SORFlops(iter))*1e-9/diff.count() << " GFLOP/s" << std::endl;
   return iter;
 }
 
@@ -129,13 +214,9 @@ int main (void) {
   std::vector<double> rhs ((dimX+2)*(dimY+2), 0.0);
   
   InitGrid(rhs);
-  double res;
-  size_t iter = SORSolve(grid, rhs, res, eps);
+  SORSolve(grid, rhs, eps);
   
-  std::cout << "Solved in " << iter << " iterations" << std::endl;
-  std::cout << "Residual: " << sqrt(res/(dimX*dimY)) << std::endl;
-  
-  RGB_t img[dimX*dimY];
+  /*RGB_t img[dimX*dimY];
   double gmin, gmax;
   gmin = gmax = grid[0];
   for (int i = 0; i < dimX*dimY; ++i) {
@@ -149,7 +230,7 @@ int main (void) {
       img[x + y*dimX] = ColorRGB(val, val, val);
     }
   }
-  write_tga("SOR_Diffusion.tga", img, dimX, dimY);
+  write_tga("SOR_Diffusion.tga", img, dimX, dimY);*/
   
   return 0;
 }
