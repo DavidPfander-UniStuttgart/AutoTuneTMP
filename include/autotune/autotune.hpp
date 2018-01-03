@@ -87,6 +87,7 @@ public:
     parameter_file << "#pragma once" << std::endl;
     for (auto &p : this->parameter_values) {
       parameter_file << "#define " << p.first << " " << p.second << "\n";
+      // std::cout << "#define " << p.first << " " << p.second << std::endl;
       // parameter_file << parameters[i]->to_parameter_source_line();
     }
     parameter_file.close();
