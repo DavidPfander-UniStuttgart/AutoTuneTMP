@@ -58,7 +58,6 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values) {
   int result = autotune::run_different_parameter_values(2);
   BOOST_CHECK_EQUAL(result, 1);
   // run with "PAR_1" set to "2"
-
   // change parameter value
   parameters[0]->next();
 
