@@ -68,6 +68,35 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values) {
   BOOST_CHECK_EQUAL(result, 2);
 }
 
+BOOST_AUTO_TEST_CASE(run_different_parameter_values_more_automation) {
+
+  autotune::countable_set parameters;
+  autotune::fixed_set_parameter<int> p1("PAR_1", {1, 2});
+  parameters.add_parameter(p1);
+
+  autotune::run_different_parameter_values.set_source_dir(
+      "tests/kernel_run_different_parameter_values");
+  autotune::run_different_parameter_values.set_verbose(true);
+  auto builder = autotune::run_different_parameter_values
+                     .get_builder_as<cppjit::builder::gcc>();
+  builder->set_verbose(true);
+
+  // run with "PAR_1" set to "1"
+  autotune::run_different_parameter_values.set_parameter_values(parameters);
+  int result = autotune::run_different_parameter_values(2);
+  BOOST_CHECK_EQUAL(result, 1);
+  // run with "PAR_1" set to "2"
+
+  // autotune::run_different_parameter_values.clear();
+  
+  // change parameter value
+  parameters[0]->next();
+
+  autotune::run_different_parameter_values.set_parameter_values(parameters);
+  result = autotune::run_different_parameter_values(2);
+  BOOST_CHECK_EQUAL(result, 2);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(bruteforce)

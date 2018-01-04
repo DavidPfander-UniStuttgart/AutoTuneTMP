@@ -128,6 +128,11 @@ add_executable(register_blocking_example "examples/register_blocking.cpp")
 target_link_libraries(register_blocking_example AutoTuneTMP)
 install(TARGETS register_blocking_example DESTINATION examples)
 
+add_executable(mult_example "examples/mult_example.cpp")
+target_link_libraries(mult_example AutoTuneTMP)
+target_compile_options(mult_example PUBLIC -fopenmp)
+install(TARGETS mult_example DESTINATION examples)
+
 add_executable(boost_tests "tests/boost_tests.cpp")
 target_link_libraries(boost_tests PUBLIC AutoTuneTMP Boost::boost Boost::unit_test_framework)
 
