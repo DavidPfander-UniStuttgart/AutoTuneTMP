@@ -45,6 +45,7 @@ public:
 
     if (do_measurement && do_write_header) {
       this->write_header();
+      do_write_header = false;
     }
 
     is_valid = true;
