@@ -6,19 +6,36 @@
 
 namespace autotune {
 
-class continuous_parameter : public abstract_parameter {
+class stepable_continuous_parameter {
 protected:
-  double current;
+  std::string name;
   double initial;
+  double current;
+  double step;
+  std::function<double(double, double)> next_functional;
+  std::function<double(double, double)> prev_functional;
 
 public:
-  continuous_parameter(const std::string &name, double initial)
-      : abstract_parameter(name), current(initial), initial(initial) {}
+  stepable_continuous_parameter(
+      const std::string &name, double initial, double step,
+      std::function<double(double, double)> next_functional =
+          std::plus<double>(),
+      std::function<double(double, double)> prev_functional =
+          std::minus<double>())
+      : name(name), initial(initial), current(initial), step(step),
+        next_functional(next_functional), prev_functional(prev_functional) {}
 
-  // TODO: probably need a set_value method
+  const std::string &get_name() const { return this->name; }
 
-  virtual const std::string get_value() const override {
-    return std::to_string(current);
+  virtual const std::string get_value() const {
+    std::stringstream ss;
+    ss << std::fixed << current;
+    std::string str(ss.str());
+    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+    if (*(str.end() - 1) == '.') {
+      str.erase(str.end() - 1, str.end());
+    }
+    return str;
   }
 
   virtual void set_initial() {
@@ -26,95 +43,17 @@ public:
     current = initial;
   }
 
-  // virtual std::string to_parameter_source_line() override {
-  //   return "#define " + name + " " + std::to_string(current) + "\n";
-  // }
-
-  // virtual std::shared_ptr<continuous_parameter> clone() override {
-  //   auto new_instance =
-  //       std::make_shared<continuous_parameter>(this->name, initial);
-  //   new_instance->current = this->current;
-  //   return new_instance;
-  // }
-};
-
-class stepable_continuous_parameter : public continuous_parameter {
-protected:
-  double step;
-
-  // // modifies the current value to a next value
-  // // this depends on the parameter, could be adding a increment, double
-  // // something more complex
-  // std::function<double(double)> next_function;
-  // // modifies the current to a previous value (opposite to next)
-  // std::function<double(double)> prev_function;
-  // // validates values, used by the next and prev functions
-  // // can be used to implement lower and upper bounds
-  // std::function<bool(double)> valid_function;
-
-public:
-  stepable_continuous_parameter(const std::string &name, double initial,
-                                double step)
-      : continuous_parameter(name, initial), step(step) {}
-
-  // void set_next_function(std::function<double(double)> next_function) {
-  //   this->next_function = next_function;
-  // }
-
   virtual bool next() {
-    current += step;
+    // current += step;
+    current = next_functional(current, step);
     return true;
   }
 
   virtual bool prev() {
-    current -= step;
+    // current -= step;
+    current = prev_functional(current, step);
     return true;
   }
-
-  // virtual std::shared_ptr<abstract_parameter> clone() override {
-  //   std::shared_ptr<continuous_parameter> new_instance =
-  //       std::make_shared<continuous_parameter>(this->name, initial);
-  //   new_instance->current = this->current;
-  //   return std::dynamic_pointer_cast<abstract_parameter>(new_instance);
-  // }
-
-  // bool next() {
-  //   double temp = this->next_function(current);
-  //   if (valid_function) {
-  //     if (valid_function(temp)) {
-  //       current = temp;
-  //       return true;
-  //     } else {
-  //       return false;
-  //     }
-  //   } else {
-  //     current = temp;
-  //     return true;
-  //   }
-  // }
-
-  // void set_prev_function(std::function<double(double)> prev_function) {
-  //   this->prev_function = prev_function;
-  // }
-
-  // bool prev() {
-  //   double temp = this->prev_function(current);
-  //   if (valid_function) {
-  //     if (valid_function(temp)) {
-  //       current = temp;
-  //       return true;
-  //     } else {
-  //       return false;
-  //     }
-  //   } else {
-  //     current = temp;
-  //     return true;
-  //   }
-  // }
-
-  // void set_valid_function(std::function<double(double)> valid_function) {
-  //   this->valid_function = valid_function;
-  // }
 };
 
 class countable_continuous_parameter : public stepable_continuous_parameter {
@@ -123,30 +62,39 @@ private:
   double max;
 
 public:
-  countable_continuous_parameter(const std::string &name, double initial,
-                                 double step, double min, double max)
-      : stepable_continuous_parameter(name, initial, step), min(min), max(max) {
-  }
+  countable_continuous_parameter(
+      const std::string &name, double initial, double step, double min,
+      double max, std::function<double(double, double)> next_functional =
+                      std::plus<double>(),
+      std::function<double(double, double)> prev_functional =
+          std::minus<double>())
+      : stepable_continuous_parameter(name, initial, step, next_functional,
+                                      prev_functional),
+        min(min), max(max) {}
 
   virtual bool next() override {
-    if (current + step <= max) {
-      current += step;
+    // if (this->current + this->step <= max) {
+    if (next_functional(current, step) <= max) {
+      // this->current += this->step;
+      current = next_functional(current, step);
       return true;
     }
     return false;
   }
 
   virtual bool prev() override {
-    if (current - step >= min) {
-      current -= step;
+    // if (this->current - this->step >= min) {
+    if (prev_functional(current, step) >= min) {
+      // this->current -= this->step;
+      current = prev_functional(current, step);
       return true;
     }
     return false;
   }
 
-  void set_min() { current = min; }
+  void set_min() { this->current = min; }
 
-  void set_max() { current = max; }
+  void set_max() { this->current = max; }
 
   double get_min() const { return min; }
 
@@ -154,12 +102,15 @@ public:
 
   size_t count_values() const {
     // TODO: implement
-    return static_cast<size_t>(std::floor((max - min) / step)) + 1;
+    return static_cast<size_t>(std::floor((max - min) / this->step)) + 1;
   }
 };
 
-class limited_continuous_parameter : public continuous_parameter {
+class limited_continuous_parameter {
 private:
+  std::string name;
+  double initial;
+  double current;
   double min;
   double max;
   bool integer_parameter;
@@ -168,8 +119,21 @@ public:
   limited_continuous_parameter(const std::string &name, double initial,
                                double min, double max,
                                bool integer_parameter = false)
-      : continuous_parameter(name, initial), min(min), max(max),
+      : name(name), initial(initial), current(initial), min(min), max(max),
         integer_parameter(integer_parameter) {}
+
+  const std::string &get_name() const { return this->name; }
+
+  virtual const std::string get_value() const {
+    std::stringstream ss;
+    ss << std::fixed << current;
+    std::string str(ss.str());
+    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+    if (*(str.end() - 1) == '.') {
+      str.erase(str.end() - 1, str.end());
+    }
+    return std::to_string(current);
+  }
 
   void set_min() { current = min; }
 
@@ -178,6 +142,11 @@ public:
   double get_min() const { return min; }
 
   double get_max() const { return max; }
+
+  virtual void set_initial() {
+    // TODO: should be extended, so that an initial guess can be supplied
+    current = initial;
+  }
 
   bool set_value(double new_value) {
     if (new_value < min || new_value > max) {
