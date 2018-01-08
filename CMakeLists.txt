@@ -9,6 +9,8 @@ find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_ROOT})
 
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
+message("Vc_INCLUDE_DIR: " ${Vc_INCLUDE_DIR})
+
 # target_include_directories(AutoTuneTMP INTERFACE ${Vc_INCLUDE_DIR})
 target_include_directories(AutoTuneTMP INTERFACE
   $<BUILD_INTERFACE:${Vc_INCLUDE_DIR}>
@@ -70,7 +72,8 @@ INSTALL (
 
 # set(CMAKE_CXX_FLAGS "-march=native -mno-vzeroupper -ffast-math -std=c++17 -g -Wall -Wextra -Wno-unused-parameter ${CMAKE_CXX_FLAGS}")
 
-target_compile_options(AutoTuneTMP INTERFACE -std=c++17 -Wall -Wextra -Wcast-qual -Wconversion -Wformat=2 -Wformat-nonliteral -Wformat-security -Winit-self -Wmissing-format-attribute -Wmissing-include-dirs -Wpacked -Wunreachable-code -Wunused -Wno-unused-parameter -Wswitch-enum -Wredundant-decls -pedantic -Wswitch-default ${CMAKE_CXX_FLAGS})
+# -Wconversion
+target_compile_options(AutoTuneTMP INTERFACE -std=c++17 -Wall -Wextra -Wcast-qual -Wformat=2 -Wformat-nonliteral -Wformat-security -Winit-self -Wmissing-format-attribute -Wmissing-include-dirs -Wpacked -Wunreachable-code -Wunused -Wno-unused-parameter -Wswitch-enum -Wredundant-decls -pedantic -Wswitch-default ${CMAKE_CXX_FLAGS})
 
 #################
 # build examples
@@ -124,6 +127,15 @@ install(TARGETS neighborhood_search_example DESTINATION examples)
 add_executable(monte_carlo_example "examples/monte_carlo_example.cpp")
 target_link_libraries(monte_carlo_example AutoTuneTMP)
 install(TARGETS monte_carlo_example DESTINATION examples)
+
+add_executable(register_blocking_example "examples/register_blocking.cpp")
+target_link_libraries(register_blocking_example AutoTuneTMP)
+install(TARGETS register_blocking_example DESTINATION examples)
+
+add_executable(mult_example "examples/mult_example.cpp")
+target_link_libraries(mult_example AutoTuneTMP)
+target_compile_options(mult_example PUBLIC -fopenmp)
+install(TARGETS mult_example DESTINATION examples)
 
 add_executable(boost_tests "tests/boost_tests.cpp")
 target_link_libraries(boost_tests PUBLIC AutoTuneTMP Boost::boost Boost::unit_test_framework)

@@ -59,22 +59,41 @@ public:
   }
 
   virtual R operator()(Args... args) override {
+    if (this->parameters_changed) {
+      compile();
+    }
     return internal_kernel(std::forward<Args>(args)...);
   }
 
   // very useful overload for the kernel tuners, so that they don't have to
   // track source-related arguments
   void compile(const std::string &source_dir) {
+    if (this->parameters_changed) {
+      create_parameter_file();
+      this->parameters_changed = false;
+    }
     internal_kernel.compile(source_dir);
   }
 
   void compile_inline(const std::string &source) {
+    if (this->parameters_changed) {
+      create_parameter_file();
+      this->parameters_changed = false;
+    }
     internal_kernel.compile_inline(source);
   }
 
-  virtual void compile() override { internal_kernel.compile(); }
+  virtual void compile() override {
+    if (this->parameters_changed) {
+      create_parameter_file();
+      this->parameters_changed = false;
+    }
+    internal_kernel.compile();
+  }
 
-  virtual bool is_compiled() override { return internal_kernel.is_compiled(); }
+  virtual bool is_compiled() override {
+    return !this->parameters_changed && internal_kernel.is_compiled();
+  }
 
   // TODO: add parameter_set argument?
   virtual void create_parameter_file() override {
@@ -87,6 +106,7 @@ public:
     parameter_file << "#pragma once" << std::endl;
     for (auto &p : this->parameter_values) {
       parameter_file << "#define " << p.first << " " << p.second << "\n";
+      // std::cout << "#define " << p.first << " " << p.second << std::endl;
       // parameter_file << parameters[i]->to_parameter_source_line();
     }
     parameter_file.close();

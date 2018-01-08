@@ -20,9 +20,11 @@ protected:
 
   std::function<double()> kernel_duration_functor;
 
+  bool parameters_changed;
+
 public:
   abstract_kernel(const std::string &kernel_name)
-      : verbose(false), kernel_name(kernel_name) {}
+      : verbose(false), kernel_name(kernel_name), parameters_changed(true) {}
 
   void set_verbose(bool verbose) { this->verbose = verbose; }
 
@@ -31,6 +33,7 @@ public:
   virtual bool is_valid_parameter_combination() = 0;
 
   void set_parameter_values(parameter_value_set &new_parameter_values) {
+    parameters_changed = true;
     parameter_values.clear();
     for (auto &p : new_parameter_values) {
       parameter_values[p.first] = p.second;
@@ -39,6 +42,7 @@ public:
 
   template <typename parameter_set_type>
   void set_parameter_values(parameter_set_type &parameters) {
+    parameters_changed = true;
     parameter_values.clear();
     for (size_t i = 0; i < parameters.size(); i++) {
       auto &p = parameters[i];

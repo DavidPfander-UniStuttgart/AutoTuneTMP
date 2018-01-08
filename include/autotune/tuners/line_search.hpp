@@ -16,6 +16,22 @@ private:
   size_t max_iterations;
   size_t restarts;
 
+  void evaluate_parameter_set(bool &first, countable_set &optimal_parameters,
+                              double &optimal_duration, Args &... args) {
+    // if a valid new index value was found, test it
+    bool is_valid = true;
+    double duration = this->evaluate(is_valid, args...);
+    if (is_valid && (first || duration < optimal_duration)) {
+      first = false;
+      optimal_parameters = this->parameters;
+      optimal_duration = duration;
+      if (this->verbose) {
+        this->report_verbose("new best kernel", optimal_duration,
+                             this->parameters);
+      }
+    }
+  }
+
 public:
   line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
               countable_set &parameters, size_t max_iterations, size_t restarts)
@@ -32,7 +48,6 @@ public:
     }
 
     // evaluate initial guess
-    bool is_valid = true;
     countable_set optimal_parameters = this->parameters;
 
     double optimal_duration = -1.0;
@@ -46,40 +61,27 @@ public:
       }
 
       auto &p = this->parameters[cur_index];
-      // p->set_index(0);
+      std::string old_value = p->get_value();
       p->set_initial();
-      while (true) {
 
-        // if a valid new index value was found, test it
-        double duration = this->evaluate(is_valid, args...);
-        if (is_valid && (first || duration < optimal_duration)) {
-          first = false;
-          optimal_parameters = this->parameters;
-          optimal_duration = duration;
-          if (this->verbose) {
-            this->report_verbose("new best kernel", optimal_duration,
-                                 this->parameters);
-          }
-        }
-        if (!p->next()) {
-          break;
+      if (first || p->get_value().compare(old_value) != 0) {
+        evaluate_parameter_set(first, optimal_parameters, optimal_duration,
+                               args...);
+      }
+
+      while (p->next()) {
+        if (first || p->get_value().compare(old_value) != 0) {
+          evaluate_parameter_set(first, optimal_parameters, optimal_duration,
+                                 args...);
         }
       }
 
       p->set_initial();
       // do not evaluate resetted value
       while (p->prev()) {
-
-        // if a valid new index value was found, test it
-        double duration = this->evaluate(is_valid, args...);
-        if (is_valid && (first || duration < optimal_duration)) {
-          first = false;
-          optimal_parameters = this->parameters;
-          optimal_duration = duration;
-          if (this->verbose) {
-            this->report_verbose("new best kernel", optimal_duration,
-                                 this->parameters);
-          }
+        if (first || p->get_value().compare(old_value) != 0) {
+          evaluate_parameter_set(first, optimal_parameters, optimal_duration,
+                                 args...);
         }
       }
       cur_index = (cur_index + 1) % this->parameters.size();

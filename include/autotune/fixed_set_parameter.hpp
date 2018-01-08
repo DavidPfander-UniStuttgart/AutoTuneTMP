@@ -8,20 +8,23 @@
 
 namespace autotune {
 
-template <typename T> class fixed_set_parameter : public abstract_parameter {
+template <typename T> class fixed_set_parameter {
 private:
+  std::string name;
   size_t cur_index;
   std::vector<T> values;
 
 public:
   fixed_set_parameter(const std::string &name, const std::vector<T> &values)
-      : abstract_parameter(name), cur_index(0), values(values) {}
+      : name(name), cur_index(0), values(values) {}
+
+  const std::string &get_name() const { return this->name; }
 
   const std::vector<std::string> &get_values() const { return this->values; }
 
   void set_index(size_t new_index) { cur_index = new_index; };
 
-  virtual const std::string get_value() const override {
+  virtual const std::string get_value() const {
     if
       constexpr(std::is_same<T, bool>::value) {
         if (this->values[cur_index]) {
@@ -63,8 +66,9 @@ public:
   }
 };
 
-template <> class fixed_set_parameter<std::string> : public abstract_parameter {
+template <> class fixed_set_parameter<std::string> {
 private:
+  std::string name;
   size_t cur_index;
   std::vector<std::string> values;
   bool quote_string;
@@ -73,14 +77,15 @@ public:
   fixed_set_parameter(const std::string &name,
                       const std::vector<std::string> &values,
                       bool quote_string = true)
-      : abstract_parameter(name), cur_index(0), values(values),
-        quote_string(quote_string) {}
+      : name(name), cur_index(0), values(values), quote_string(quote_string) {}
+
+  const std::string &get_name() const { return this->name; }
 
   const std::vector<std::string> &get_values() const { return this->values; }
 
   void set_index(size_t new_index) { cur_index = new_index; };
 
-  virtual const std::string get_value() const override {
+  virtual const std::string get_value() const {
     if (quote_string) {
       return std::string("\"") + this->values[cur_index] + std::string("\"");
     } else {

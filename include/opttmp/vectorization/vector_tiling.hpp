@@ -43,7 +43,7 @@ public:
   template <typename Vc_flag>
   vector_array(typename vector_type::value_type *mem, Vc_flag t) {
     for (size_t i = 0; i < elements; i++) {
-      arr[i] = double_v(mem + (i * double_v::size()), t);
+      arr[i] = double_v(mem + (i * vector_type::size()), t);
     }
   }
 
@@ -180,7 +180,7 @@ public:
   template <typename Vc_flag>
   void memstore(typename vector_type::value_type *mem, Vc_flag t) {
     for (size_t i = 0; i < elements; i++) { // additional integer work
-      arr[i].memstore(mem + (i * double_v::size()), t);
+      arr[i].memstore(mem + (i * vector_type::size()), t);
     }
   }
 
@@ -212,5 +212,6 @@ abs(const vector_array<vector_type, elements> &v) {
   }
   return r;
 }
+
 }
 }

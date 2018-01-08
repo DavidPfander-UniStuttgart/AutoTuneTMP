@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# set -e
 set -x
 
 # it is possible for the configuration to have been done by a project that uses AutoTuneTMP
