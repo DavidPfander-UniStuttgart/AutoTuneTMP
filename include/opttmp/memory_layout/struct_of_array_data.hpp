@@ -4,21 +4,21 @@ namespace opttmp {
 namespace memory_layout {
 
 // component type has to be indexable, and has to have a size() operator
-template <typename vector_type, typename component_type,
-          typename AoS_container_type>
+template <typename vc_type, typename AoS_container_type, size_t num_components,
+          size_t entries, size_t padding>
 class struct_of_array_data {
 private:
   // data in SoA form
-  size_t num_components;
-  size_t entries;
-  size_t padding;
-  size_t padded_entries_per_component;
+  // const size_t num_components;
+  // const size_t entries;
+  // const size_t padding;
+  static constexpr size_t padded_entries_per_component = entries + padding;
 
-  component_type *const data;
+  typename vc_type::value_type *const data;
 
 public:
   template <size_t component_access>
-  inline component_type *pointer(const size_t flat_index) const {
+  inline typename vc_type::value_type *pointer(const size_t flat_index) const {
     constexpr size_t component_array_offset =
         component_access * padded_entries_per_component;
     // should result in single move instruction, indirect addressing: reg + reg
@@ -26,28 +26,31 @@ public:
     return data + flat_index + component_array_offset;
   }
 
-  inline component_type *pointer(const size_t component_access,
-                                 const size_t flat_index) const {
-    const size_t component_array_offset =
-        component_access * padded_entries_per_component;
+  inline typename vc_type::value_type *pointer(const size_t component_access,
+                                               const size_t flat_index) const {
+    // const size_t component_array_offset =
+    //     component_access * padded_entries_per_component;
     // should result in single move instruction, indirect addressing: reg + reg
     // + constant
-    return data + flat_index + component_array_offset;
+    // return data + flat_index + component_array_offset;
+    return data + component_access * padded_entries_per_component + flat_index;
   }
 
   // careful, this returns a copy!
   template <size_t component_access>
-  inline vector_type value(const size_t flat_index) const {
-    return vector_type(this->pointer<component_access>(flat_index),
-                       Vc::flags::element_aligned);
+  inline vc_type value(const size_t flat_index) const {
+    return vc_type(this->pointer<component_access>(flat_index),
+                   Vc::flags::element_aligned);
   }
 
-  struct_of_array_data(const AoS_container_type &org, size_t num_components,
-                       size_t entries, size_t padding)
-      : num_components(num_components), entries(entries), padding(padding),
-        padded_entries_per_component(entries + padding),
-        data(
-            new component_type[num_components * padded_entries_per_component]) {
+  struct_of_array_data(const AoS_container_type &org //, size_t num_components,
+                       // size_t entries, size_t padding
+                       )
+      : // num_components(num_components),
+        // entries(entries),
+        // padding(padding), padded_entries_per_component(entries + padding),
+        data(new typename vc_type::value_type[num_components *
+                                              padded_entries_per_component]) {
     for (size_t component = 0; component < num_components; component++) {
       for (size_t entry = 0; entry < entries; entry++) {
         data[component * padded_entries_per_component + entry] =
@@ -64,9 +67,8 @@ public:
   }
 
   struct_of_array_data(const size_t entries_per_component)
-      : data(
-            new component_type[num_components * padded_entries_per_component]) {
-  }
+      : data(new typename vc_type::value_type[num_components *
+                                              padded_entries_per_component]) {}
 
   ~struct_of_array_data() {
     if (data) {
