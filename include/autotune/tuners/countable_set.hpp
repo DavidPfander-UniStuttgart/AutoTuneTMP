@@ -4,46 +4,6 @@
 
 namespace autotune {
 
-namespace tree {
-
-template <typename parameter_interface> class node {
-public:
-  std::unordered_map<std::string, node<parameter_interface>> children;
-
-  void insert(parameter_interface &parameters, size_t cur_index) {
-    if (cur_index == parameters.size()) {
-      return;
-    }
-
-    if (children.find(parameters[cur_index]->get_value()) == children.end()) {
-      children[parameters[cur_index]->get_value()] =
-          node<parameter_interface>();
-    } else {
-    }
-    r.insert(parameters, cur_index + 1);
-  }
-
-  bool contains(parameter_interface &candidate) {
-    return r.contains(candidate, 0);
-  }
-};
-
-template <typename parameter_interface>
-class leaf : public node<parameter_interface> {};
-}
-
-template <typename parameter_interface> class root_node {
-private:
-  node<parameter_interface> r;
-
-public:
-  void insert(parameter_interface &parameters) { r.insert(parameters); }
-
-  bool contains(parameter_interface &candidate) {
-    return r.contains(candidate, 0);
-  }
-};
-
 class countable_parameter {
 public:
   virtual bool next() = 0;

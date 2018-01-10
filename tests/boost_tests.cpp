@@ -68,6 +68,36 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values) {
   BOOST_CHECK_EQUAL(result, 2);
 }
 
+BOOST_AUTO_TEST_CASE(test_tuner_result_cache) {
+  autotune::countable_set parameters;
+  autotune::fixed_set_parameter<int> p1("PAR_1", {1, 2});
+  autotune::fixed_set_parameter<int> p2("PAR_2", {3, 4});
+  autotune::fixed_set_parameter<int> p3("PAR_3", {5, 6});
+
+  parameters.add_parameter(p1);
+  parameters.add_parameter(p2);
+  parameters.add_parameter(p3);
+
+  autotune::parameter_result_cache<autotune::countable_set> r;
+  BOOST_CHECK(!r.contains(parameters));
+  r.insert(parameters);
+  BOOST_CHECK(r.contains(parameters));
+
+  parameters[2]->next();
+  BOOST_CHECK(!r.contains(parameters));
+  r.insert(parameters);
+  BOOST_CHECK(r.contains(parameters));
+
+  parameters[0]->next();
+  parameters[2]->prev();
+  BOOST_CHECK(!r.contains(parameters));
+  r.insert(parameters);
+  BOOST_CHECK(r.contains(parameters));
+
+  r.clear();
+  BOOST_CHECK(!r.contains(parameters));
+}
+
 BOOST_AUTO_TEST_CASE(run_different_parameter_values_more_automation) {
 
   autotune::countable_set parameters;
@@ -88,7 +118,7 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values_more_automation) {
   // run with "PAR_1" set to "2"
 
   // autotune::run_different_parameter_values.clear();
-  
+
   // change parameter value
   parameters[0]->next();
 
