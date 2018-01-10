@@ -59,6 +59,15 @@ public:
     return *this;
   }
 
+  std::shared_ptr<countable_parameter> get_by_name(const std::string &name) {
+    for (auto p : *this) {
+      if (p->get_name().compare(name) == 0) {
+        return p;
+      }
+    }
+    return nullptr;
+  }
+
   template <typename T> void add_parameter(T &p) {
     std::shared_ptr<countable_parameter_wrapper<T>> cloned =
         std::make_shared<countable_parameter_wrapper<T>>(p);
