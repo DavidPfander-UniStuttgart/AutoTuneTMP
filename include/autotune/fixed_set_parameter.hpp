@@ -66,24 +66,13 @@ public:
     cur_index = 0;
   }
 
-  const std::string get_random_value() const {
+  void set_random_value() {
     // randomize index
     std::uniform_int_distribution<size_t> distribution(0,
                                                        this->values.size() - 1);
     std::random_device rd;
     std::default_random_engine generator(rd());
-    size_t random_index = distribution(generator);
-    if
-      constexpr(std::is_same<T, bool>::value) {
-        if (this->values[random_index]) {
-          return "true";
-        } else {
-          return "false";
-        }
-      }
-    else {
-      return std::to_string(this->values[random_index]);
-    }
+    cur_index = distribution(generator);
   }
 };
 

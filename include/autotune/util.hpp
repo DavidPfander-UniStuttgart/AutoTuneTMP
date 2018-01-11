@@ -5,7 +5,7 @@
 namespace autotune {
 namespace detail {
 
-std::string truncate_trailing_zeros(double value) {
+inline std::string truncate_trailing_zeros(double value) {
   std::stringstream ss;
   ss << std::fixed << value;
   std::string str(ss.str());
