@@ -1,8 +1,10 @@
 #pragma once
 
+#include "util.hpp"
 #include <cmath>
 #include <functional>
 #include <iomanip>
+#include <random>
 
 namespace autotune {
 
@@ -27,29 +29,22 @@ public:
 
   const std::string &get_name() const { return this->name; }
 
-  virtual const std::string get_value() const {
-    std::stringstream ss;
-    ss << std::fixed << current;
-    std::string str(ss.str());
-    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
-    if (*(str.end() - 1) == '.') {
-      str.erase(str.end() - 1, str.end());
-    }
-    return str;
+  const std::string get_value() const {
+    return detail::truncate_trailing_zeros(current);
   }
 
-  virtual void set_initial() {
+  void set_initial() {
     // TODO: should be extended, so that an initial guess can be supplied
     current = initial;
   }
 
-  virtual bool next() {
+  bool next() {
     // current += step;
     current = next_functional(current, step);
     return true;
   }
 
-  virtual bool prev() {
+  bool prev() {
     // current -= step;
     current = prev_functional(current, step);
     return true;
@@ -72,7 +67,7 @@ public:
                                       prev_functional),
         min(min), max(max) {}
 
-  virtual bool next() override {
+  bool next() {
     // if (this->current + this->step <= max) {
     if (next_functional(current, step) <= max) {
       // this->current += this->step;
@@ -82,7 +77,7 @@ public:
     return false;
   }
 
-  virtual bool prev() override {
+  bool prev() {
     // if (this->current - this->step >= min) {
     if (prev_functional(current, step) >= min) {
       // this->current -= this->step;
@@ -104,6 +99,23 @@ public:
     // TODO: implement
     return static_cast<size_t>(std::floor((max - min) / this->step)) + 1;
   }
+
+  void set_random_value() {
+    size_t num_values = count_values();
+
+    std::uniform_real_distribution<double> distribution(0, num_values - 1);
+    std::random_device rd;
+    std::default_random_engine generator(rd());
+
+    size_t value_index = distribution(generator);
+
+    double value = get_min();
+    for (size_t i = 0; i < value_index; i++) {
+      value = next_functional(value, step);
+    }
+
+    current = value;
+  }
 };
 
 class limited_continuous_parameter {
@@ -124,15 +136,8 @@ public:
 
   const std::string &get_name() const { return this->name; }
 
-  virtual const std::string get_value() const {
-    std::stringstream ss;
-    ss << std::fixed << current;
-    std::string str(ss.str());
-    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
-    if (*(str.end() - 1) == '.') {
-      str.erase(str.end() - 1, str.end());
-    }
-    return std::to_string(current);
+  const std::string get_value() const {
+    return detail::truncate_trailing_zeros(current);
   }
 
   void set_min() { current = min; }
@@ -143,7 +148,7 @@ public:
 
   double get_max() const { return max; }
 
-  virtual void set_initial() {
+  void set_initial() {
     // TODO: should be extended, so that an initial guess can be supplied
     current = initial;
   }
@@ -160,6 +165,22 @@ public:
   }
 
   bool is_integer_parameter() const { return integer_parameter; }
+
+  void set_random_value() {
+    if (this->is_integer_parameter()) {
+      // randomize index
+      std::uniform_int_distribution<size_t> distribution(
+          static_cast<size_t>(min), static_cast<size_t>(max));
+      std::random_device rd;
+      std::default_random_engine generator(rd());
+      current = distribution(generator);
+    } else {
+      std::uniform_real_distribution<double> distribution(min, max);
+      std::random_device rd;
+      std::default_random_engine generator(rd());
+      current = distribution(generator);
+    }
+  }
 };
 
 } // namespace autotune

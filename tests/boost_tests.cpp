@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(run_monte_carlo) {
       autotune::run_monte_carlo_kernel.get_builder_as<cppjit::builder::gcc>();
   builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
-  autotune::limited_set parameters;
+  autotune::randomizable_set parameters;
   autotune::limited_continuous_parameter p1("PAR_1", 1.0, 1.0, 5.0, true);
   parameters.add_parameter(p1);
   autotune::limited_continuous_parameter p2("PAR_2", 1.0, 1.0, 5.0, false);
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(run_monte_carlo) {
                                       parameters, 10);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
-  autotune::limited_set optimal_parameters = tuner.tune(a);
+  autotune::randomizable_set optimal_parameters = tuner.tune(a);
   optimal_parameters.print_values();
   // bool check1 = optimal_parameters[0]->get_value().compare("1.000000") != 0;
   // BOOST_CHECK(check1);

@@ -20,7 +20,7 @@ private:
     // if a valid new index value was found, test it
     bool did_eval = true;
     double duration = this->evaluate(did_eval, args...);
-    if (did_eval && (optimal_duration == -1 || duration < optimal_duration)) {
+    if (did_eval && (optimal_duration == -1.0 || duration < optimal_duration)) {
       optimal_parameters = this->parameters;
       optimal_duration = duration;
       if (this->verbose) {

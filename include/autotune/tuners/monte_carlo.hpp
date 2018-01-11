@@ -3,7 +3,7 @@
 #include "../autotune.hpp"
 #include "../parameter.hpp"
 #include "abstract_tuner.hpp"
-#include "limited_set.hpp"
+#include "randomizable_set.hpp"
 
 #include <random>
 
@@ -11,17 +11,17 @@ namespace autotune {
 namespace tuners {
 
 template <typename R, typename... Args>
-class monte_carlo : public abstract_tuner<limited_set, R, Args...> {
+class monte_carlo : public abstract_tuner<randomizable_set, R, Args...> {
 private:
   size_t iterations;
 
 public:
   monte_carlo(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-              limited_set &parameters, size_t iterations)
-      : abstract_tuner<limited_set, R, Args...>(f, parameters),
+              randomizable_set &parameters, size_t iterations)
+      : abstract_tuner<randomizable_set, R, Args...>(f, parameters),
         iterations(iterations) {}
 
-  limited_set tune(Args &... args) {
+  randomizable_set tune(Args &... args) {
 
     this->result_cache.clear();
 
@@ -30,7 +30,7 @@ public:
     bool first = true;
     bool is_valid = true;
     double optimal_duration = this->evaluate(is_valid, args...);
-    limited_set optimal_parameters = this->parameters;
+    randomizable_set optimal_parameters = this->parameters;
 
     if (is_valid) {
       first = false;
@@ -43,20 +43,21 @@ public:
            parameter_index < this->parameters.size(); parameter_index++) {
         auto &p = this->parameters[parameter_index];
 
-        if (p->is_integer_parameter()) {
-          std::uniform_int_distribution<size_t> distribution(
-              static_cast<size_t>(p->get_min()),
-              static_cast<size_t>(p->get_max()));
-          std::random_device rd;
-          std::default_random_engine generator(rd());
-          p->set_value(static_cast<double>(distribution(generator)));
-        } else {
-          std::uniform_real_distribution<double> distribution(p->get_min(),
-                                                              p->get_max());
-          std::random_device rd;
-          std::default_random_engine generator(rd());
-          p->set_value(distribution(generator));
-        }
+        // if (p->is_integer_parameter()) {
+        //   std::uniform_int_distribution<size_t> distribution(
+        //       static_cast<size_t>(p->get_min()),
+        //       static_cast<size_t>(p->get_max()));
+        //   std::random_device rd;
+        //   std::default_random_engine generator(rd());
+        //   p->set_value(static_cast<double>(distribution(generator)));
+        // } else {
+        //   std::uniform_real_distribution<double> distribution(p->get_min(),
+        //                                                       p->get_max());
+        //   std::random_device rd;
+        //   std::default_random_engine generator(rd());
+        //   p->set_value(distribution(generator));
+        // }
+        p->set_random_value();
       }
 
       double duration = this->evaluate(is_valid, args...);

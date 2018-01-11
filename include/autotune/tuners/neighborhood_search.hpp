@@ -26,13 +26,13 @@ public:
 
     parameter_value_set original_values = this->f.get_parameter_values();
 
-    bool first = true;
     bool is_valid = true;
-    double optimal_duration = this->evaluate(is_valid, args...);
-    countable_set optimal_parameters = this->parameters;
-
+    double optimal_duration = -1.0;
+    double duration = this->evaluate(is_valid, args...);
+    countable_set optimal_parameters;
     if (is_valid) {
-      first = false;
+      optimal_parameters = this->parameters;
+      optimal_duration = duration;
     }
 
     for (size_t i = 0; i < iterations; i++) {
@@ -46,9 +46,9 @@ public:
         // test next
         this->parameters = base_parameters;
         if (this->parameters[d]->next()) {
-          double duration = this->evaluate(is_valid, args...);
-          if (is_valid && (first || duration < optimal_duration)) {
-            first = false;
+          duration = this->evaluate(is_valid, args...);
+          if (is_valid &&
+              (optimal_duration == -1.0 || duration < optimal_duration)) {
             optimal_parameters = this->parameters;
             optimal_duration = duration;
             this->report_verbose("new best kernel", optimal_duration,
@@ -58,9 +58,9 @@ public:
         // test previous
         this->parameters = base_parameters;
         if (this->parameters[d]->prev()) {
-          double duration = this->evaluate(is_valid, args...);
-          if (is_valid && (first || duration < optimal_duration)) {
-            first = false;
+          duration = this->evaluate(is_valid, args...);
+          if (is_valid &&
+              (optimal_duration == -1.0 || duration < optimal_duration)) {
             optimal_parameters = this->parameters;
             optimal_duration = duration;
             this->report_verbose("new best kernel", optimal_duration,
