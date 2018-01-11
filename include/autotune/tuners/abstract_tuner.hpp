@@ -33,6 +33,8 @@ protected:
   bool do_write_header;
   std::ofstream scenario_measurement_file;
 
+  std::function<bool(parameter_interface &)> validate_parameters_functor;
+
 public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
@@ -60,6 +62,18 @@ public:
     f.compile();
 
     if (!f.is_valid_parameter_combination()) {
+      if (verbose) {
+        std::cout << "invalid parameter combination encountered" << std::endl;
+      }
+      is_valid = false;
+      return std::numeric_limits<double>::max();
+    } else {
+      if (verbose) {
+        std::cout << "parameter combination is valid" << std::endl;
+      }
+    }
+
+    if (!this->validate_parameters(parameters)) {
       if (verbose) {
         std::cout << "invalid parameter combination encountered" << std::endl;
       }
@@ -174,6 +188,19 @@ public:
     do_measurement = true;
     do_write_header = true;
     scenario_measurement_file.open(scenario_name + ".csv");
+  }
+
+  void set_validate_parameters_functor(
+      std::function<bool(parameter_interface &parameters)>
+          &validate_parameters_functor) {
+    this->validate_parameters_functor = validate_parameters_functor;
+  }
+
+  bool validate_parameters(parameter_interface &parameters) {
+    if (validate_parameters_functor) {
+      return validate_parameters_functor(parameters);
+    }
+    return true;
   }
 };
 } // namespace autotune

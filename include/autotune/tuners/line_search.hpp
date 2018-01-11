@@ -2,6 +2,7 @@
 
 #include "abstract_tuner.hpp"
 #include "countable_set.hpp"
+#include "parameter_result_cache.hpp"
 
 #include <random>
 
@@ -31,6 +32,8 @@ private:
       }
     }
   }
+
+  parameter_result_cache<countable_set> result_cache;
 
 public:
   line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
@@ -64,13 +67,17 @@ public:
       std::string old_value = p->get_value();
       p->set_initial();
 
-      if (first || p->get_value().compare(old_value) != 0) {
+      // if (first || p->get_value().compare(old_value) != 0) {
+      if (first || !result_cache.contains(optimal_parameters)) {
+        result_cache.insert(optimal_parameters);
         evaluate_parameter_set(first, optimal_parameters, optimal_duration,
                                args...);
       }
 
       while (p->next()) {
-        if (first || p->get_value().compare(old_value) != 0) {
+        // if (first || p->get_value().compare(old_value) != 0) {
+        if (first || !result_cache.contains(optimal_parameters)) {
+          result_cache.insert(optimal_parameters);
           evaluate_parameter_set(first, optimal_parameters, optimal_duration,
                                  args...);
         }
@@ -79,7 +86,9 @@ public:
       p->set_initial();
       // do not evaluate resetted value
       while (p->prev()) {
-        if (first || p->get_value().compare(old_value) != 0) {
+        // if (first || p->get_value().compare(old_value) != 0) {
+        if (first || !result_cache.contains(optimal_parameters)) {
+          result_cache.insert(optimal_parameters);
           evaluate_parameter_set(first, optimal_parameters, optimal_duration,
                                  args...);
         }
@@ -90,6 +99,8 @@ public:
     }
 
     this->f.set_parameter_values(original_values);
+
+    result_cache.clear();
 
     return optimal_parameters;
   }
