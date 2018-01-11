@@ -17,6 +17,8 @@ public:
 
   countable_set tune(Args &... args) {
 
+    this->result_cache.clear();
+
     parameter_value_set original_values = this->f.get_parameter_values();
 
     bool is_valid = true;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../abstract_kernel.hpp"
+#include "parameter_result_cache.hpp"
 
 #include <chrono>
 
@@ -35,13 +36,28 @@ protected:
 
   std::function<bool(parameter_interface &)> validate_parameters_functor;
 
+  parameter_result_cache<parameter_interface> result_cache;
+
 public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
       : f(f), parameters(parameters), verbose(false), do_measurement(false),
         do_write_header(true), scenario_measurement_file("") {}
 
-  double evaluate(bool &is_valid, Args &... args) {
+  double evaluate(bool &did_eval, Args &... args) {
+
+    if (!result_cache.contains(parameters)) {
+      result_cache.insert(parameters);
+    } else {
+      did_eval = false;
+
+      if (verbose) {
+        std::cout << "------ skipped eval ------" << std::endl;
+        parameters.print_values();
+        std::cout << "--------------------------" << std::endl;
+      }
+      return std::numeric_limits<double>::max();
+    }
 
     f.set_parameter_values(parameters);
 
@@ -50,7 +66,7 @@ public:
       do_write_header = false;
     }
 
-    is_valid = true;
+    did_eval = true;
 
     if (verbose) {
       std::cout << "------ begin eval ------" << std::endl;
@@ -65,7 +81,7 @@ public:
       if (verbose) {
         std::cout << "invalid parameter combination encountered" << std::endl;
       }
-      is_valid = false;
+      did_eval = false;
       return std::numeric_limits<double>::max();
     } else {
       if (verbose) {
@@ -77,7 +93,7 @@ public:
       if (verbose) {
         std::cout << "invalid parameter combination encountered" << std::endl;
       }
-      is_valid = false;
+      did_eval = false;
       return std::numeric_limits<double>::max();
     } else {
       if (verbose) {
