@@ -12,18 +12,15 @@ namespace tuners {
 template <typename R, typename... Args>
 class line_search : public abstract_tuner<countable_set, R, Args...> {
 private:
-  // autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
-  // countable_set &parameters;
   size_t max_iterations;
   size_t restarts;
 
-  void evaluate_parameter_set(bool &first, countable_set &optimal_parameters,
+  void evaluate_parameter_set(countable_set &optimal_parameters,
                               double &optimal_duration, Args &... args) {
     // if a valid new index value was found, test it
-    bool is_valid = true;
-    double duration = this->evaluate(is_valid, args...);
-    if (is_valid && (first || duration < optimal_duration)) {
-      first = false;
+    bool did_eval = true;
+    double duration = this->evaluate(did_eval, args...);
+    if (did_eval && (optimal_duration == -1 || duration < optimal_duration)) {
       optimal_parameters = this->parameters;
       optimal_duration = duration;
       if (this->verbose) {
@@ -33,8 +30,6 @@ private:
     }
   }
 
-  parameter_result_cache<countable_set> result_cache;
-
 public:
   line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
               countable_set &parameters, size_t max_iterations, size_t restarts)
@@ -42,6 +37,8 @@ public:
         max_iterations(max_iterations), restarts(restarts) {}
 
   countable_set tune(Args &... args) {
+
+    this->result_cache.clear();
 
     parameter_value_set original_values = this->f.get_parameter_values();
 
@@ -54,7 +51,6 @@ public:
     countable_set optimal_parameters = this->parameters;
 
     double optimal_duration = -1.0;
-    bool first = true;
 
     size_t counter = 0;
     size_t cur_index = 0;
@@ -67,31 +63,16 @@ public:
       std::string old_value = p->get_value();
       p->set_initial();
 
-      // if (first || p->get_value().compare(old_value) != 0) {
-      if (first || !result_cache.contains(optimal_parameters)) {
-        result_cache.insert(optimal_parameters);
-        evaluate_parameter_set(first, optimal_parameters, optimal_duration,
-                               args...);
-      }
+      evaluate_parameter_set(optimal_parameters, optimal_duration, args...);
 
       while (p->next()) {
-        // if (first || p->get_value().compare(old_value) != 0) {
-        if (first || !result_cache.contains(optimal_parameters)) {
-          result_cache.insert(optimal_parameters);
-          evaluate_parameter_set(first, optimal_parameters, optimal_duration,
-                                 args...);
-        }
+        evaluate_parameter_set(optimal_parameters, optimal_duration, args...);
       }
 
       p->set_initial();
       // do not evaluate resetted value
       while (p->prev()) {
-        // if (first || p->get_value().compare(old_value) != 0) {
-        if (first || !result_cache.contains(optimal_parameters)) {
-          result_cache.insert(optimal_parameters);
-          evaluate_parameter_set(first, optimal_parameters, optimal_duration,
-                                 args...);
-        }
+        evaluate_parameter_set(optimal_parameters, optimal_duration, args...);
       }
       cur_index = (cur_index + 1) % this->parameters.size();
       counter += 1;
@@ -99,8 +80,6 @@ public:
     }
 
     this->f.set_parameter_values(original_values);
-
-    result_cache.clear();
 
     return optimal_parameters;
   }

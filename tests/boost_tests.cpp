@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(run_bruteforce) {
 
   bool check1 = optimal_parameters[0]->get_value().compare("\"eins\"") == 0;
   BOOST_CHECK(check1);
-  bool check2 = optimal_parameters[1]->get_value().compare("2.000000") == 0;
+  bool check2 = optimal_parameters[1]->get_value().compare("2") == 0;
   BOOST_CHECK(check2);
 }
 
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(run_line_search) {
   autotune::countable_set optimal_parameters = tuner.tune(a);
   bool check1 = optimal_parameters[0]->get_value().compare("\"zwei\"") == 0;
   BOOST_CHECK(check1);
-  bool check2 = optimal_parameters[1]->get_value().compare("2.000000") == 0;
+  bool check2 = optimal_parameters[1]->get_value().compare("2") == 0;
   BOOST_CHECK(check2);
 }
 
@@ -228,9 +228,9 @@ BOOST_AUTO_TEST_CASE(run_neighborhood_search) {
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);
   optimal_parameters.print_values();
-  bool check1 = optimal_parameters[0]->get_value().compare("2.000000") == 0;
+  bool check1 = optimal_parameters[0]->get_value().compare("2") == 0;
   BOOST_CHECK(check1);
-  bool check2 = optimal_parameters[1]->get_value().compare("3.000000") == 0;
+  bool check2 = optimal_parameters[1]->get_value().compare("3") == 0;
   BOOST_CHECK(check2);
 }
 
@@ -285,10 +285,10 @@ BOOST_AUTO_TEST_CASE(run_generalized_kernel) {
         std::cout << "in_kernel_parameter_2: " << in_kernel_parameter_2
                   << std::endl;
         if (in_kernel_parameter_1.compare("\"zwei\"") == 0 &&
-            in_kernel_parameter_2.compare("3.000000") == 0) {
+            in_kernel_parameter_2.compare("3") == 0) {
           std::cout << "fast kernel" << std::endl;
         } else if (in_kernel_parameter_1.compare("\"zwei\"") == 0 ||
-                   in_kernel_parameter_2.compare("3.000000") == 0) {
+                   in_kernel_parameter_2.compare("3") == 0) {
           std::this_thread::sleep_for(std::chrono::milliseconds(25));
         } else {
           std::this_thread::sleep_for(std::chrono::milliseconds(50));
