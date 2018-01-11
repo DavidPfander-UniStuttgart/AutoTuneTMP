@@ -52,7 +52,7 @@ size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, const
   }
   
   autotune::countable_set parameters;
-  autotune::countable_continuous_parameter p1("OMEGA", 1.95, 0.005, 1.80, 1.995);
+  autotune::countable_continuous_parameter p1("OMEGA", 1.99, 0.005, 1.80, 1.995);
   autotune::fixed_set_parameter<int> p2("BLOCKSIZEX", {1, 2, 4, 8});
   autotune::fixed_set_parameter<int> p3("BLOCKSIZEY", {1, 2, 4, 8});
   autotune::fixed_set_parameter<int> p4("NUMTHREADS", {1, 2, 4});
@@ -81,8 +81,16 @@ size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, const
   autotune::SORDiffusion.set_parameter_values(optimal_parameters);
   
   std::cout << "Done tuning" << std::endl;
-    
-  autotune::SORDiffusion(grid_r, grid_b, rhs_r, rhs_b, eps, res, rate, time, iter, itermax);
+  
+  for (int i = 0; i < 10; ++i) {
+    autotune::SORDiffusion(grid_r, grid_b, rhs_r, rhs_b, eps, res, rate, time, iter, itermax);
+    std::cout << "Convergence rate: " << rate << std::endl;
+    std::cout << "Solved in " << iter << " iterations" << std::endl;
+    std::cout << "Residual: " << res << std::endl << std::endl;
+    std::cout << "Finished in " << time << "s" << std::endl;
+    std::cout << "Executed " << SORFlops(iter) << " FLOPs" << std::endl;
+    std::cout << "Achieved " << double(SORFlops(iter))*1e-9/time << " GFLOP/s" << std::endl;
+  }
   
   for (int y = 1; y <= dimY; ++y ) {
     for (int x = 0; x < dimX/2; ++x) {
@@ -96,12 +104,6 @@ size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, const
       }
     }
   }
-  std::cout << "Convergence rate: " << rate << std::endl;
-  std::cout << "Solved in " << iter << " iterations" << std::endl;
-  std::cout << "Residual: " << res << std::endl << std::endl;
-  std::cout << "Finished in " << time << "s" << std::endl;
-  std::cout << "Executed " << SORFlops(iter) << " FLOPs" << std::endl;
-  std::cout << "Achieved " << double(SORFlops(iter))*1e-9/time << " GFLOP/s" << std::endl;
   return iter;
 }
 
@@ -126,7 +128,7 @@ int main (void) {
     
   SORSolve(grid, rhs, eps);
   
-  RGB_t img[dimX*dimY];
+  /*RGB_t *img = new RGB_t[dimX*dimY];
   double gmin, gmax;
   gmin = gmax = grid[0];
   for (int i = 0; i < dimX*dimY; ++i) {
@@ -141,6 +143,7 @@ int main (void) {
     }
   }
   write_tga("SOR_Diffusion.tga", img, dimX, dimY);
+  delete[] img;*/
   
   return 0;
 }
