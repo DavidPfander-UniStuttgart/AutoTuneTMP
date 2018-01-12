@@ -34,8 +34,6 @@ protected:
   bool do_write_header;
   std::ofstream scenario_measurement_file;
 
-  std::function<bool(parameter_interface &)> validate_parameters_functor;
-
   parameter_result_cache<parameter_interface> result_cache;
 
 public:
@@ -59,7 +57,23 @@ public:
       return std::numeric_limits<double>::max();
     }
 
-    f.set_parameter_values(parameters);
+    parameter_value_set parameter_values = to_parameter_values(parameters);
+    if (!f.precompile_validate_parameters(parameter_values)) {
+      if (verbose) {
+        std::cout << "invalid parameter combination in precompile validator "
+                     "encountered"
+                  << std::endl;
+      }
+      did_eval = false;
+      return std::numeric_limits<double>::max();
+    } else {
+      if (verbose) {
+        std::cout << "parameter combination passed precompile check"
+                  << std::endl;
+      }
+    }
+
+    f.set_parameter_values(parameter_values);
 
     if (do_measurement && do_write_header) {
       this->write_header();
@@ -78,18 +92,6 @@ public:
     f.compile();
 
     if (!f.is_valid_parameter_combination()) {
-      if (verbose) {
-        std::cout << "invalid parameter combination encountered" << std::endl;
-      }
-      did_eval = false;
-      return std::numeric_limits<double>::max();
-    } else {
-      if (verbose) {
-        std::cout << "parameter combination is valid" << std::endl;
-      }
-    }
-
-    if (!this->validate_parameters(parameters)) {
       if (verbose) {
         std::cout << "invalid parameter combination encountered" << std::endl;
       }
@@ -204,19 +206,6 @@ public:
     do_measurement = true;
     do_write_header = true;
     scenario_measurement_file.open(scenario_name + ".csv");
-  }
-
-  void set_validate_parameters_functor(
-      std::function<bool(parameter_interface &parameters)>
-          &validate_parameters_functor) {
-    this->validate_parameters_functor = validate_parameters_functor;
-  }
-
-  bool validate_parameters(parameter_interface &parameters) {
-    if (validate_parameters_functor) {
-      return validate_parameters_functor(parameters);
-    }
-    return true;
   }
 };
 } // namespace autotune

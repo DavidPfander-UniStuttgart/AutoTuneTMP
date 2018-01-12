@@ -14,18 +14,23 @@ protected:
   double initial;
   double current;
   double step;
+  bool multiply;
   std::function<double(double, double)> next_functional;
   std::function<double(double, double)> prev_functional;
 
 public:
-  stepable_continuous_parameter(
-      const std::string &name, double initial, double step,
-      std::function<double(double, double)> next_functional =
-          std::plus<double>(),
-      std::function<double(double, double)> prev_functional =
-          std::minus<double>())
+  stepable_continuous_parameter(const std::string &name, double initial,
+                                double step, bool multiply = false)
       : name(name), initial(initial), current(initial), step(step),
-        next_functional(next_functional), prev_functional(prev_functional) {}
+        multiply(multiply) {
+    if (multiply) {
+      next_functional = std::multiplies<double>();
+      prev_functional = std::divides<double>();
+    } else {
+      next_functional = std::plus<double>();
+      prev_functional = std::minus<double>();
+    }
+  }
 
   const std::string &get_name() const { return this->name; }
 
@@ -57,15 +62,11 @@ private:
   double max;
 
 public:
-  countable_continuous_parameter(
-      const std::string &name, double initial, double step, double min,
-      double max, std::function<double(double, double)> next_functional =
-                      std::plus<double>(),
-      std::function<double(double, double)> prev_functional =
-          std::minus<double>())
-      : stepable_continuous_parameter(name, initial, step, next_functional,
-                                      prev_functional),
-        min(min), max(max) {}
+  countable_continuous_parameter(const std::string &name, double initial,
+                                 double step, double min, double max,
+                                 bool multiply = false)
+      : stepable_continuous_parameter(name, initial, step, multiply), min(min),
+        max(max) {}
 
   bool next() {
     // if (this->current + this->step <= max) {
@@ -96,8 +97,12 @@ public:
   double get_max() const { return min; }
 
   size_t count_values() const {
-    // TODO: implement
-    return static_cast<size_t>(std::floor((max - min) / this->step)) + 1;
+    if (multiply) {
+      double range = max / min;
+      return std::log2(range) / std::log2(step) + 1;
+    } else {
+      return static_cast<size_t>(std::floor((max - min) / this->step)) + 1;
+    }
   }
 
   void set_random_value() {
@@ -163,7 +168,6 @@ public:
     current = new_value;
     return true;
   }
-
   bool is_integer_parameter() const { return integer_parameter; }
 
   void set_random_value() {

@@ -42,21 +42,6 @@ public:
       for (size_t parameter_index = 0;
            parameter_index < this->parameters.size(); parameter_index++) {
         auto &p = this->parameters[parameter_index];
-
-        // if (p->is_integer_parameter()) {
-        //   std::uniform_int_distribution<size_t> distribution(
-        //       static_cast<size_t>(p->get_min()),
-        //       static_cast<size_t>(p->get_max()));
-        //   std::random_device rd;
-        //   std::default_random_engine generator(rd());
-        //   p->set_value(static_cast<double>(distribution(generator)));
-        // } else {
-        //   std::uniform_real_distribution<double> distribution(p->get_min(),
-        //                                                       p->get_max());
-        //   std::random_device rd;
-        //   std::default_random_engine generator(rd());
-        //   p->set_value(distribution(generator));
-        // }
         p->set_random_value();
       }
 

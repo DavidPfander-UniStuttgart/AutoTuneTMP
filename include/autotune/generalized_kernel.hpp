@@ -7,7 +7,6 @@
 #include "cppjit/function_traits.hpp"
 
 #include "abstract_kernel.hpp"
-#include "abstract_parameter.hpp"
 #include "autotune_exception.hpp"
 #include "continuous_parameter.hpp"
 #include "fixed_set_parameter.hpp"

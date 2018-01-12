@@ -2,11 +2,19 @@
 
 #include <map>
 
-#include "abstract_parameter.hpp"
-
 namespace autotune {
 
 using parameter_value_set = std::map<std::string, std::string>;
+
+template <typename parameter_set_type>
+parameter_value_set to_parameter_values(parameter_set_type &parameters) {
+  parameter_value_set value_set;
+  for (size_t i = 0; i < parameters.size(); i++) {
+    auto &p = parameters[i];
+    value_set[p->get_name()] = p->get_value();
+  }
+  return value_set;
+}
 
 inline void print_parameter_values(parameter_value_set &parameter_values) {
   std::cout << "parameter name  | ";

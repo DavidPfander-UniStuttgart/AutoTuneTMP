@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../abstract_parameter.hpp"
+#include "../autotune_exception.hpp"
 
 namespace autotune {
 
@@ -13,6 +13,7 @@ public:
   virtual const std::string &get_name() const = 0;
   virtual const std::string get_value() const = 0;
   virtual void set_initial() = 0;
+  virtual void set_random_value() = 0;
   virtual std::shared_ptr<countable_parameter> clone_wrapper() = 0;
 };
 
@@ -34,6 +35,7 @@ public:
   virtual const std::string &get_name() const override { return p.get_name(); }
   virtual const std::string get_value() const override { return p.get_value(); }
   virtual void set_initial() override { p.set_initial(); };
+  virtual void set_random_value() override { return p.set_random_value(); }
   virtual std::shared_ptr<countable_parameter> clone_wrapper() override {
     return std::make_shared<countable_parameter_wrapper<T>>(*this);
   }
@@ -65,7 +67,7 @@ public:
         return p;
       }
     }
-    return nullptr;
+    throw autotune_exception("parameter not in set");
   }
 
   template <typename T> void add_parameter(T &p) {

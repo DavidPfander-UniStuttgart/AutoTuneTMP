@@ -22,6 +22,9 @@ protected:
 
   bool parameters_changed;
 
+  std::function<bool(parameter_value_set &)>
+      precompile_validate_parameters_functor;
+
 public:
   abstract_kernel(const std::string &kernel_name)
       : verbose(false), kernel_name(kernel_name), parameters_changed(true) {}
@@ -44,10 +47,7 @@ public:
   void set_parameter_values(parameter_set_type &parameters) {
     parameters_changed = true;
     parameter_values.clear();
-    for (size_t i = 0; i < parameters.size(); i++) {
-      auto &p = parameters[i];
-      parameter_values[p->get_name()] = p->get_value();
-    }
+    parameter_values = to_parameter_values(parameters);
   }
 
   const parameter_value_set &get_parameter_values() { return parameter_values; }
@@ -78,6 +78,20 @@ public:
       throw autotune_exception("no kernel duration functor specified");
     }
     return this->kernel_duration_functor();
+  }
+
+  void set_precompile_validate_parameter_functor(
+      const std::function<bool(parameter_value_set &parameters)>
+          &precompile_validate_parameters) {
+    this->precompile_validate_parameters_functor =
+        precompile_validate_parameters;
+  }
+
+  bool precompile_validate_parameters(parameter_value_set &parameters) {
+    if (precompile_validate_parameters_functor) {
+      return precompile_validate_parameters_functor(parameters);
+    }
+    return true;
   }
 };
 }
