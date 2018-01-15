@@ -1,5 +1,6 @@
 #pragma once
 
+#include "autotune_exception.hpp"
 #include "util.hpp"
 #include <cmath>
 #include <functional>
@@ -38,6 +39,8 @@ public:
     return detail::truncate_trailing_zeros(current);
   }
 
+  double get_raw_value() const { return current; }
+
   void set_initial() {
     // TODO: should be extended, so that an initial guess can be supplied
     current = initial;
@@ -54,6 +57,17 @@ public:
     current = prev_functional(current, step);
     return true;
   }
+
+  void to_nearest_valid(double factor) {
+    if (!multiply) {
+      current = autotune::detail::round_to_nearest(current, factor);
+    } else {
+      throw autotune_exception(
+          "cannot adjust to nearest valid value with multiplied steps");
+    }
+  }
+
+  double get_step() { return step; }
 };
 
 class countable_continuous_parameter : public stepable_continuous_parameter {
@@ -121,6 +135,16 @@ public:
 
     current = value;
   }
+
+  void to_nearest_valid(double factor) {
+    if (!multiply) {
+      current =
+          autotune::detail::round_to_nearest_bounded(current, factor, min, max);
+    } else {
+      throw autotune_exception(
+          "cannot adjust to nearest valid value with multiplied steps");
+    }
+  }
 };
 
 class limited_continuous_parameter {
@@ -144,6 +168,8 @@ public:
   const std::string get_value() const {
     return detail::truncate_trailing_zeros(current);
   }
+
+  double get_raw_value() const { return current; }
 
   void set_min() { current = min; }
 
@@ -184,6 +210,11 @@ public:
       std::default_random_engine generator(rd());
       current = distribution(generator);
     }
+  }
+
+  void to_nearest_valid(double factor) {
+    current =
+        autotune::detail::round_to_nearest_bounded(current, factor, min, max);
   }
 };
 

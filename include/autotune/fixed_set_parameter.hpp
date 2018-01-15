@@ -38,6 +38,8 @@ public:
     }
   }
 
+  T get_raw_value() { return values[cur_index]; };
+
   size_t count_values() const { return values.size(); }
 
   bool next() {
@@ -101,6 +103,8 @@ public:
       return this->values[cur_index];
     }
   }
+
+  std::string get_raw_value() { return values[cur_index]; };
 
   size_t count_values() const { return values.size(); }
 

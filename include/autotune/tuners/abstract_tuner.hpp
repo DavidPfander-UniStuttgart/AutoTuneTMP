@@ -36,6 +36,8 @@ protected:
 
   parameter_result_cache<parameter_interface> result_cache;
 
+  std::function<void(parameter_interface &)> parameter_adjustment_functor;
+
 public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
@@ -57,12 +59,21 @@ public:
       return std::numeric_limits<double>::max();
     }
 
+    if (parameter_adjustment_functor) {
+      if (verbose) {
+        std::cout << "------ parameters pre-adjustment ------" << std::endl;
+        parameters.print_values();
+        std::cout << "--------------------------" << std::endl;
+      }
+      parameter_adjustment_functor(parameters);
+    }
+
     parameter_value_set parameter_values = to_parameter_values(parameters);
     if (!f.precompile_validate_parameters(parameter_values)) {
       if (verbose) {
-        std::cout << "invalid parameter combination in precompile validator "
-                     "encountered"
-                  << std::endl;
+        std::cout << "------ invalidated eval (precompile) ------" << std::endl;
+        parameters.print_values();
+        std::cout << "--------------------------" << std::endl;
       }
       did_eval = false;
       return std::numeric_limits<double>::max();
@@ -206,6 +217,11 @@ public:
     do_measurement = true;
     do_write_header = true;
     scenario_measurement_file.open(scenario_name + ".csv");
+  }
+
+  void set_parameter_adjustment_functor(
+      std::function<void(parameter_interface &)> parameter_adjustment_functor) {
+    this->parameter_adjustment_functor = parameter_adjustment_functor;
   }
 };
 } // namespace autotune

@@ -81,6 +81,15 @@ public:
         first = false;
       }
       std::cout << p->get_name();
+      int64_t padding = std::max(p->get_name().size(), p->get_value().size()) -
+                        p->get_name().size();
+      if (padding > 0) {
+        std::stringstream ss;
+        for (int64_t i = 0; i < padding; i++) {
+          ss << " ";
+        }
+        std::cout << ss.str();
+      }
     }
     std::cout << std::endl;
     std::cout << "parameter value | ";
@@ -92,6 +101,15 @@ public:
         first = false;
       }
       std::cout << p->get_value();
+      int64_t padding = std::max(p->get_name().size(), p->get_value().size()) -
+                        p->get_value().size();
+      if (padding > 0) {
+        std::stringstream ss;
+        for (int64_t i = 0; i < padding; i++) {
+          ss << " ";
+        }
+        std::cout << ss.str();
+      }
     }
     std::cout << std::endl;
   }

@@ -4,6 +4,8 @@
 
 namespace autotune {
 
+template <typename T> class countable_parameter_wrapper;
+
 class countable_parameter {
 public:
   virtual bool next() = 0;
@@ -15,6 +17,10 @@ public:
   virtual void set_initial() = 0;
   virtual void set_random_value() = 0;
   virtual std::shared_ptr<countable_parameter> clone_wrapper() = 0;
+  template <typename T> T &get_unwrapped_parameter() {
+    auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
+    return derived->unwrapped_parameter();
+  }
 };
 
 // interface-wrapper generating template
@@ -39,6 +45,7 @@ public:
   virtual std::shared_ptr<countable_parameter> clone_wrapper() override {
     return std::make_shared<countable_parameter_wrapper<T>>(*this);
   }
+  T &unwrapped_parameter() { return p; }
 };
 
 class countable_set : public std::vector<std::shared_ptr<countable_parameter>> {
@@ -61,10 +68,10 @@ public:
     return *this;
   }
 
-  std::shared_ptr<countable_parameter> get_by_name(const std::string &name) {
+  template <typename T> T &get_by_name(const std::string &name) {
     for (auto p : *this) {
       if (p->get_name().compare(name) == 0) {
-        return p;
+        return p->get_unwrapped_parameter<T>();
       }
     }
     throw autotune_exception("parameter not in set");
