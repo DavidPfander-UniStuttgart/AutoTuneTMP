@@ -32,7 +32,8 @@ protected:
   bool verbose;
   bool do_measurement;
   bool do_write_header;
-  std::ofstream scenario_measurement_file;
+  std::ofstream scenario_kernel_duration_file;
+  std::ofstream scenario_compile_duration_file;
 
   parameter_result_cache<parameter_interface> result_cache;
 
@@ -42,7 +43,7 @@ public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
       : f(f), parameters(parameters), verbose(false), do_measurement(false),
-        do_write_header(true), scenario_measurement_file("") {}
+        do_write_header(true) {}
 
   double evaluate(bool &did_eval, Args &... args) {
 
@@ -147,10 +148,11 @@ public:
       if (f.has_kernel_duration_functor()) {
         std::cout << "internal duration: " << f.get_internal_kernel_duration()
                   << std::endl;
-        std::cout << "(duration tuner: " << duration.count() << "s" << std::endl;
+        std::cout << "(duration tuner: " << duration.count() << "s"
+                  << std::endl;
       } else {
-          std::cout << "duration: " << duration.count() << "s" << std::endl;
-          std::cout << "------- end eval -------" << std::endl;
+        std::cout << "duration: " << duration.count() << "s" << std::endl;
+        std::cout << "------- end eval -------" << std::endl;
       }
     }
 
@@ -191,14 +193,18 @@ public:
     bool first = true;
     for (auto &p : parameter_values) {
       if (!first) {
-        scenario_measurement_file << ", ";
+        scenario_kernel_duration_file << ", ";
+        scenario_compile_duration_file << ", ";
       } else {
         first = false;
       }
-      scenario_measurement_file << p.first;
+      scenario_kernel_duration_file << p.first;
+      scenario_compile_duration_file << p.first;
     }
-    scenario_measurement_file << ", "
-                              << "duration" << std::endl;
+    scenario_kernel_duration_file << ", "
+                                  << "duration" << std::endl;
+    scenario_compile_duration_file << ", "
+                                   << "duration" << std::endl;
   }
 
   void write_measurement(double duration_s) {
@@ -206,24 +212,32 @@ public:
     bool first = true;
     for (auto &p : parameter_values) {
       if (!first) {
-        scenario_measurement_file << ", ";
+        scenario_kernel_duration_file << ", ";
+        scenario_compile_duration_file << ", ";
       } else {
         first = false;
       }
-      scenario_measurement_file << p.second;
+      scenario_kernel_duration_file << p.second;
+      scenario_compile_duration_file << p.second;
     }
-    scenario_measurement_file << ", " << duration_s << std::endl;
+    scenario_kernel_duration_file << ", " << duration_s << std::endl;
+    scenario_compile_duration_file << ", " << duration_s << std::endl;
   }
 
   void set_write_measurement(const std::string &scenario_name) {
     if (do_measurement) {
-      if (scenario_measurement_file.is_open()) {
-        scenario_measurement_file.close();
+      if (scenario_kernel_duration_file.is_open()) {
+        scenario_kernel_duration_file.close();
+      }
+      if (scenario_compile_duration_file.is_open()) {
+        scenario_compile_duration_file.close();
       }
     }
     do_measurement = true;
     do_write_header = true;
-    scenario_measurement_file.open(scenario_name + ".csv");
+    scenario_kernel_duration_file.open(scenario_name + "_kernel_duration.csv");
+    scenario_compile_duration_file.open(scenario_name +
+                                        "_compile_duration.csv");
   }
 
   void set_parameter_adjustment_functor(
