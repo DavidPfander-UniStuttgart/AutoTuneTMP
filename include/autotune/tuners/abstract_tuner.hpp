@@ -144,11 +144,13 @@ public:
     std::chrono::duration<double> duration = end - start;
 
     if (verbose) {
-      std::cout << "duration: " << duration.count() << "s" << std::endl;
-      std::cout << "------- end eval -------" << std::endl;
       if (f.has_kernel_duration_functor()) {
         std::cout << "internal duration: " << f.get_internal_kernel_duration()
                   << std::endl;
+        std::cout << "(duration tuner: " << duration.count() << "s" << std::endl;
+      } else {
+          std::cout << "duration: " << duration.count() << "s" << std::endl;
+          std::cout << "------- end eval -------" << std::endl;
       }
     }
 
