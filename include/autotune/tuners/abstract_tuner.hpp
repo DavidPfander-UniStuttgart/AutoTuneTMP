@@ -59,6 +59,7 @@ public:
       return std::numeric_limits<double>::max();
     }
 
+    parameter_interface original_parameters = parameters;
     if (parameter_adjustment_functor) {
       if (verbose) {
         std::cout << "------ parameters pre-adjustment ------" << std::endl;
@@ -149,6 +150,10 @@ public:
         std::cout << "internal duration: " << f.get_internal_kernel_duration()
                   << std::endl;
       }
+    }
+
+    if (parameter_adjustment_functor) {
+      parameters = original_parameters;
     }
 
     if (f.has_kernel_duration_functor()) {

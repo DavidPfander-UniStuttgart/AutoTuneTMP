@@ -116,6 +116,10 @@ public:
     }
 
     this->f.set_parameter_values(original_values);
+
+    if (this->parameter_adjustment_functor) {
+      this->parameter_adjustment_functor(this->parameters);
+    }
     return optimal_parameters;
   }
 };
