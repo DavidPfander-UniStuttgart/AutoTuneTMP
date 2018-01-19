@@ -17,8 +17,8 @@ AUTOTUNE_DECLARE_DEFINE_KERNEL(void(std::vector<double> &,
 
 int main(void) {
 
-  auto builder = autotune::square.get_builder_as<cppjit::builder::gcc>();
-  builder->set_verbose(true);
+  auto &builder = autotune::square.get_builder<cppjit::builder::gcc>();
+  builder.set_verbose(true);
 
   size_t N = 2048 * 2048; // 32MB
   size_t repetitions = 100;
@@ -35,7 +35,7 @@ int main(void) {
   double duration_slow = 0.0;
 
   {
-    builder->set_cpp_flags("-std=c++17");
+    builder.set_cpp_flags("-std=c++17");
     autotune::square.compile();
 
     for (size_t i = 0; i < repetitions; i++) {
@@ -57,7 +57,7 @@ int main(void) {
 
   double duration_fast = 0.0;
   {
-    builder->set_cpp_flags("-std=c++17 -O3 -march=native -mtune=native");
+    builder.set_cpp_flags("-std=c++17 -O3 -march=native"); // -mtune=native
     autotune::square.compile();
     for (size_t i = 0; i < repetitions; i++) {
       time_point start = high_resolution_clock::now();

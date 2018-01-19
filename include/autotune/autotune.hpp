@@ -119,9 +119,8 @@ public:
     return internal_kernel.get_builder();
   }
 
-  template <typename builder_class>
-  std::shared_ptr<builder_class> get_builder_as() {
-    return internal_kernel.template get_builder_as<builder_class>();
+  template <typename builder_class> builder_class &get_builder() {
+    return internal_kernel.template get_builder<builder_class>();
   }
 
   void clear() {
