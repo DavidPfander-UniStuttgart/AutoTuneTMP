@@ -104,6 +104,14 @@ add_executable(minimal_example "examples/minimal_example.cpp")
 target_link_libraries(minimal_example AutoTuneTMP)
 install(TARGETS minimal_example DESTINATION examples)
 
+add_executable(jit_only_kernel "examples/jit_only_example.cpp")
+target_link_libraries(jit_only_kernel AutoTuneTMP AutoTuneTMP Boost::boost)
+install(TARGETS jit_only_kernel DESTINATION examples)
+
+add_executable(simplified_jit_only_kernel "examples/simplified_jit_only_example.cpp")
+target_link_libraries(simplified_jit_only_kernel AutoTuneTMP AutoTuneTMP Boost::boost)
+install(TARGETS simplified_jit_only_kernel DESTINATION examples)
+
 add_executable(continuous_parameter_example "examples/continuous_parameter_example.cpp")
 target_link_libraries(continuous_parameter_example AutoTuneTMP)
 install(TARGETS continuous_parameter_example DESTINATION examples)
