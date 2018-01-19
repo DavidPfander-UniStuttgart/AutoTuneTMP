@@ -13,11 +13,11 @@ using time_point = std::chrono::high_resolution_clock::time_point;
 // defines kernel, put in single compilation unit
 AUTOTUNE_DECLARE_DEFINE_KERNEL(void(std::vector<double> &,
                                     std::vector<double> &),
-                               copy_memory)
+                               square)
 
 int main(void) {
 
-  auto builder = autotune::copy_memory.get_builder_as<cppjit::builder::gcc>();
+  auto builder = autotune::square.get_builder_as<cppjit::builder::gcc>();
   builder->set_verbose(true);
 
   size_t N = 2048 * 2048; // 32MB
@@ -30,18 +30,18 @@ int main(void) {
   std::vector<double> dest_reference(N);
   std::fill(dest_reference.begin(), dest_reference.end(), 4.0);
 
-  autotune::copy_memory.set_source_dir("examples/jit_only_kernel");
+  autotune::square.set_source_dir("examples/jit_only_kernel");
 
   double duration_slow = 0.0;
 
   {
     builder->set_cpp_flags("-std=c++17");
     builder->set_link_flags("-std=c++17");
-    autotune::copy_memory.compile();
+    autotune::square.compile();
 
     for (size_t i = 0; i < repetitions; i++) {
       time_point start = high_resolution_clock::now();
-      autotune::copy_memory(origin, dest_slow);
+      autotune::square(origin, dest_slow);
       time_point end = high_resolution_clock::now();
       duration_slow += std::chrono::duration<double>(end - start).count();
     }
@@ -60,10 +60,10 @@ int main(void) {
   {
     builder->set_cpp_flags("-std=c++17 -O3 -march=native -mtune=native");
     builder->set_link_flags("-std=c++17 -O3 -march=native -mtune=native");
-    autotune::copy_memory.compile();
+    autotune::square.compile();
     for (size_t i = 0; i < repetitions; i++) {
       time_point start = high_resolution_clock::now();
-      autotune::copy_memory(origin, dest_fast);
+      autotune::square(origin, dest_fast);
       time_point end = high_resolution_clock::now();
       duration_fast += std::chrono::duration<double>(end - start).count();
     }
