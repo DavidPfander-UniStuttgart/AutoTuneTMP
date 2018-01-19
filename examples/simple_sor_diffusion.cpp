@@ -7,7 +7,6 @@
 #include "simple_sor_diffusion.hpp"
 
 #include "autotune/autotune.hpp"
-#include "autotune/parameter_set.hpp"
 #include "autotune/continuous_parameter.hpp"
 #include "autotune/tuners/line_search.hpp"
 #include "autotune/tuners/bisect_search.hpp"
@@ -55,7 +54,6 @@ size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, const
   
   autotune::countable_set parameters;
   autotune::limited_set parameters2;
-  autotune::parameter_set allparams;
   //autotune::countable_continuous_parameter p1("OMEGA", 1.9, 0.005, 1.8, 1.995);
   autotune::limited_continuous_parameter p1("OMEGA", 1.5, 1.0, 2.0);
   autotune::fixed_set_parameter<int> p2("BLOCKSIZEX", {1, 2, 4, 8});
@@ -65,8 +63,8 @@ size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, const
   parameters.add_parameter(p2);
   parameters.add_parameter(p3);
   parameters.add_parameter(p4);
-  allparams.add_parameter_list(parameters2);
-  allparams.add_parameter_list(parameters);
+  autotune::SORDiffusion.set_parameter_values(parameters2);
+  autotune::SORDiffusion.set_parameter_values(parameters);
   
   auto rate_functor = [&rate, &time, &iter]() {
     std::cout << rate << " in " << time << "s : " << iter << std::endl;
@@ -80,17 +78,17 @@ size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, const
     //return true;
   };
   
-  autotune::tuners::bisect_search btune(autotune::SORDiffusion, parameters2, allparams, 10);
+  autotune::tuners::bisect_search btune(autotune::SORDiffusion, parameters2, 10);
   btune.setup_test(test_result);
-  allparams.add_parameter_list(btune.tune(grid_r, grid_b, rhs_r, rhs_b, eps, res, rate, time, iter, itermax));
+  autotune::SORDiffusion.set_parameter_values(btune.tune(grid_r, grid_b, rhs_r, rhs_b, 
+                                                          eps, res, rate, time, iter, itermax));
   
   size_t line_search_iterations = 4;
-  autotune::tuners::line_search tuner(autotune::SORDiffusion, parameters, allparams,
-                                      line_search_iterations, 1);
+  autotune::tuners::line_search tuner(autotune::SORDiffusion, parameters, line_search_iterations, 1);
   tuner.setup_test(test_result);
-  allparams.add_parameter_list(tuner.tune(grid_r, grid_b, rhs_r, rhs_b, eps, res, rate, time, iter, itermax));
+  autotune::SORDiffusion.set_parameter_values(tuner.tune(grid_r, grid_b, rhs_r, rhs_b, 
+                                                          eps, res, rate, time, iter, itermax));
   
-  autotune::SORDiffusion.set_parameter_values(allparams);
   std::cout << "Done tuning" << std::endl;
   
   for (int i = 0; i < 10; ++i) {
@@ -138,6 +136,8 @@ int main (void) {
   InitGrid(rhs);
     
   SORSolve(grid, rhs, eps);
+  
+  std::cout << "Done" << std::endl;
   
   /*RGB_t *img = new RGB_t[dimX*dimY];
   double gmin, gmax;

@@ -2,7 +2,6 @@
 
 #include "../abstract_kernel.hpp"
 #include "parameter_result_cache.hpp"
-#include "../parameter_set.hpp"
 
 #include <chrono>
 
@@ -40,18 +39,11 @@ protected:
 
   std::function<void(parameter_interface &)> parameter_adjustment_functor;
   
-  parameter_set allparameters;
-
 public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
       : f(f), parameters(parameters), verbose(false), do_measurement(false),
         do_write_header(true) {}
-  
-  abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-                 parameter_interface &parameters, parameter_set &allparameters)
-      : f(f), parameters(parameters), verbose(false), do_measurement(false),
-        do_write_header(true), allparameters(allparameters) {}
 
   double evaluate(bool &did_eval, Args &... args) {
 
@@ -78,8 +70,7 @@ public:
       parameter_adjustment_functor(parameters);
     }
     
-    parameter_set parameter_values = allparameters;
-    parameter_values.add_parameter_list(parameters);
+    parameter_value_set parameter_values = to_parameter_values(parameters);
     if (!f.precompile_validate_parameters(parameter_values)) {
       if (verbose) {
         std::cout << "------ invalidated eval (precompile) ------" << std::endl;

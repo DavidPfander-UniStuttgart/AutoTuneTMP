@@ -3,7 +3,7 @@
 #include "autotune_exception.hpp"
 #include "cppjit/function_traits.hpp"
 #include "parameter_value_set.hpp"
-#include "parameter_set.hpp"
+//#include "parameter_set.hpp"
 
 #include <fstream>
 
@@ -35,28 +35,29 @@ public:
   bool is_verbose() { return verbose; }
 
   virtual bool is_valid_parameter_combination() = 0;
+  
+  template<typename T> void set_parameter_value(const T &p) {
+    parameters_changed = true;
+    parameter_values[p.get_name()] = p.get_value();
+  }
 
+  template<typename T> void set_parameter_values(const std::vector<std::shared_ptr<T>> &pl) {
+    parameters_changed = true;
+    for (auto &p : pl) {
+      set_parameter_value(*p);
+    }
+  }
+  
   void set_parameter_values(parameter_value_set &new_parameter_values) {
     parameters_changed = true;
-    parameter_values.clear();
     for (auto &p : new_parameter_values) {
       parameter_values[p.first] = p.second;
     }
   }
   
-  void set_parameter_values(parameter_set &new_parameter_values) {
+  void clear_all_parameters() {
     parameters_changed = true;
     parameter_values.clear();
-    for (auto &p : new_parameter_values) {
-      parameter_values[p.first] = p.second;
-    }
-  }
-
-  template <typename parameter_set_type>
-  void set_parameter_values(parameter_set_type &parameters) {
-    parameters_changed = true;
-    parameter_values.clear();
-    parameter_values = to_parameter_values(parameters);
   }
 
   const parameter_value_set &get_parameter_values() { return parameter_values; }

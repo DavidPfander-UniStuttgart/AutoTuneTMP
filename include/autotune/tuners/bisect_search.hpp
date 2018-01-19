@@ -18,10 +18,6 @@ public:
               limited_set &parameters, size_t iterations)
       : abstract_tuner<limited_set, R, Args...>(f, parameters),
         iterations(iterations) {}
-  bisect_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-              limited_set &parameters, parameter_set allparameters, size_t iterations)
-      : abstract_tuner<limited_set, R, Args...>(f, parameters, allparameters),
-        iterations(iterations) {}
 
   limited_set tune(Args &... args) {
 
