@@ -7,8 +7,10 @@
 #include "simple_sor_diffusion.hpp"
 
 #include "autotune/autotune.hpp"
+#include "autotune/parameter_set.hpp"
 #include "autotune/continuous_parameter.hpp"
 #include "autotune/tuners/line_search.hpp"
+#include "autotune/tuners/bisect_search.hpp"
 
 AUTOTUNE_DECLARE_DEFINE_KERNEL(double(std::vector<double> &, std::vector<double> &, 
                                       const std::vector<double> &, const std::vector<double> &, 
@@ -52,7 +54,7 @@ size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, const
   }
   
   autotune::countable_set parameters;
-  autotune::countable_continuous_parameter p1("OMEGA", 1.99, 0.005, 1.80, 1.995);
+  autotune::countable_continuous_parameter p1("OMEGA", 1.9, 0.005, 1.8, 1.995);
   autotune::fixed_set_parameter<int> p2("BLOCKSIZEX", {1, 2, 4, 8});
   autotune::fixed_set_parameter<int> p3("BLOCKSIZEY", {1, 2, 4, 8});
   autotune::fixed_set_parameter<int> p4("NUMTHREADS", {1, 2, 4});
