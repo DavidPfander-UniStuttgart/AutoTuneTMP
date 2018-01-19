@@ -1,67 +1,56 @@
 #pragma once
 
-#include "../autotune_exception.hpp"
-#include "../abstract_parameter.hpp"
-
 namespace autotune {
 
-template <typename T> class countable_parameter_wrapper;
+template <typename T> class randomizable_parameter_wrapper;
 
-class countable_parameter : public abstract_parameter {
+class randomizable_parameter {
 public:
-  virtual bool next() = 0;
-  virtual bool prev() = 0;
-  virtual void set_min() = 0;
-  virtual size_t count_values() const = 0;
-  //virtual const std::string &get_name() const = 0;
-  //virtual const std::string get_value() const = 0;
-  //virtual void set_initial() = 0;
+  virtual const std::string &get_name() const = 0;
   virtual void set_random_value() = 0;
-  virtual std::shared_ptr<countable_parameter> clone_wrapper() = 0;
-  //template <typename T> T &get_unwrapped_parameter() {
-  //  auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
-  //  return derived->unwrapped_parameter();
-  //}
+  virtual const std::string get_value() const = 0;
+  virtual std::shared_ptr<randomizable_parameter> clone_wrapper() = 0;
+  template <typename T> T &get_unwrapped_parameter() {
+    auto derived = dynamic_cast<randomizable_parameter_wrapper<T> *>(this);
+    return derived->unwrapped_parameter();
+  }
 };
 
 // interface-wrapper generating template
 template <typename T>
-class countable_parameter_wrapper : public countable_parameter {
+class randomizable_parameter_wrapper : public randomizable_parameter {
   T p;
 
 public:
-  countable_parameter_wrapper(T p) : p(p) {}
+  randomizable_parameter_wrapper(T p) : p(p) {}
 
-  countable_parameter_wrapper(const countable_parameter_wrapper<T> &other)
+  randomizable_parameter_wrapper(const randomizable_parameter_wrapper<T> &other)
       : p(other.p) {}
 
-  virtual bool next() override { return p.next(); }
-  virtual bool prev() override { return p.prev(); }
-  virtual void set_min() override { return p.set_min(); }
-  virtual size_t count_values() const override { return p.count_values(); }
   virtual const std::string &get_name() const override { return p.get_name(); }
-  virtual const std::string get_value() const override { return p.get_value(); }
-  virtual void set_initial() override { p.set_initial(); };
+
   virtual void set_random_value() override { return p.set_random_value(); }
-  virtual std::shared_ptr<countable_parameter> clone_wrapper() override {
-    return std::make_shared<countable_parameter_wrapper<T>>(*this);
+  virtual const std::string get_value() const override { return p.get_value(); }
+  virtual std::shared_ptr<randomizable_parameter> clone_wrapper() override {
+    return std::make_shared<randomizable_parameter_wrapper<T>>(*this);
   }
   T &unwrapped_parameter() { return p; }
 };
 
-class countable_set : public std::vector<std::shared_ptr<countable_parameter>> {
+class randomizable_set
+    : public std::vector<std::shared_ptr<randomizable_parameter>> {
 
 public:
-  countable_set() : std::vector<std::shared_ptr<countable_parameter>>() {}
+  randomizable_set() : std::vector<std::shared_ptr<randomizable_parameter>>() {}
 
-  countable_set(const countable_set &other)
-      : std::vector<std::shared_ptr<countable_parameter>>() {
+  randomizable_set(const randomizable_set &other)
+      : std::vector<std::shared_ptr<randomizable_parameter>>() {
     for (size_t i = 0; i < other.size(); i++) {
       this->push_back(other[i]->clone_wrapper());
     }
   }
 
-  countable_set &operator=(const countable_set &other) {
+  randomizable_set &operator=(const randomizable_set &other) {
     this->clear();
     for (size_t i = 0; i < other.size(); i++) {
       this->push_back(other[i]->clone_wrapper());
@@ -79,8 +68,8 @@ public:
   }
 
   template <typename T> void add_parameter(T &p) {
-    std::shared_ptr<countable_parameter_wrapper<T>> cloned =
-        std::make_shared<countable_parameter_wrapper<T>>(p);
+    std::shared_ptr<randomizable_parameter_wrapper<T>> cloned =
+        std::make_shared<randomizable_parameter_wrapper<T>>(p);
     this->push_back(cloned);
   }
 

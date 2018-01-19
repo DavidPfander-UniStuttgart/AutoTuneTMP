@@ -20,7 +20,7 @@ private:
     // if a valid new index value was found, test it
     bool did_eval = true;
     double duration = this->evaluate(did_eval, args...);
-    if (did_eval && (optimal_duration == -1 || duration < optimal_duration)) {
+    if (did_eval && (optimal_duration == -1.0 || duration < optimal_duration)) {
       optimal_parameters = this->parameters;
       optimal_duration = duration;
       if (this->verbose) {
@@ -34,6 +34,12 @@ public:
   line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
               countable_set &parameters, size_t max_iterations, size_t restarts)
       : abstract_tuner<countable_set, R, Args...>(f, parameters),
+        max_iterations(max_iterations), restarts(restarts) {}
+  
+  line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+              countable_set &parameters, parameter_set &allparameters,
+              size_t max_iterations, size_t restarts)
+      : abstract_tuner<countable_set, R, Args...>(f, parameters, allparameters),
         max_iterations(max_iterations), restarts(restarts) {}
 
   countable_set tune(Args &... args) {
@@ -81,6 +87,9 @@ public:
 
     this->f.set_parameter_values(original_values);
 
+    if (this->parameter_adjustment_functor) {
+      this->parameter_adjustment_functor(this->parameters);
+    }
     return optimal_parameters;
   }
 };

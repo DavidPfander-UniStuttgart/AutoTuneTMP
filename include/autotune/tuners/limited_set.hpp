@@ -4,17 +4,22 @@
 
 namespace autotune {
 
-class limited_parameter {
+template <typename T> class limited_parameter_wrapper;
+
+class limited_parameter : public abstract_parameter {
 public:
   virtual void set_min() = 0;
   virtual void set_max() = 0;
   virtual double get_min() const = 0;
   virtual double get_max() const = 0;
-  virtual const std::string &get_name() const = 0;
-  virtual const std::string get_value() const = 0;
+  //virtual const std::string &get_name() const = 0;
+  //virtual const std::string get_value() const = 0;
   virtual bool set_value(double new_value) = 0;
-  virtual void set_initial() = 0;
+  //virtual void set_initial() = 0;
   virtual bool is_integer_parameter() const = 0;
+  /*template<typename T> std::shared_ptr<T> clone_wrapper() {
+    return std::make_shared<limited_parameter_wrapper<T>>(*this);
+  }*/
   virtual std::shared_ptr<limited_parameter> clone_wrapper() = 0;
 };
 
@@ -81,6 +86,15 @@ public:
         first = false;
       }
       std::cout << p->get_name();
+      int64_t padding = std::max(p->get_name().size(), p->get_value().size()) -
+                        p->get_name().size();
+      if (padding > 0) {
+        std::stringstream ss;
+        for (int64_t i = 0; i < padding; i++) {
+          ss << " ";
+        }
+        std::cout << ss.str();
+      }
     }
     std::cout << std::endl;
     std::cout << "parameter value | ";
@@ -92,6 +106,15 @@ public:
         first = false;
       }
       std::cout << p->get_value();
+      int64_t padding = std::max(p->get_name().size(), p->get_value().size()) -
+                        p->get_value().size();
+      if (padding > 0) {
+        std::stringstream ss;
+        for (int64_t i = 0; i < padding; i++) {
+          ss << " ";
+        }
+        std::cout << ss.str();
+      }
     }
     std::cout << std::endl;
   }

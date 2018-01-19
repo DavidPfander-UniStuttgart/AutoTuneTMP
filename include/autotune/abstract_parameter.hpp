@@ -8,19 +8,20 @@
 
 namespace autotune {
 
-class abstract_parameter {
-  const std::vector<std::string> flags;
-public:
-  abstract_parameter(const std::map<std::string, bool>& flags) : flags(flags) {};
-  virtual bool has_flag(const std::string& flag) const {
-    auto it = flags.find(flag);
-    if (it != flags.end()) return it->second;
-    return false;
-  }
+template <typename T> class abstract_parameter_wrapper;
+
+class abstract_parameter {public:
   virtual const std::string &get_name() const = 0;
   virtual const std::string get_value() const = 0;
   virtual void set_initial() = 0;
-  virtual std::shared_ptr<abstract_parameter> clone_wrapper() = 0;
+  //virtual std::shared_ptr<abstract_parameter> clone_wrapper() = 0;
+  /*template<typename T> std::shared_ptr<T> clone_wrapper() {
+    return std::make_shared<abstract_parameter_wrapper<T>>(*this);
+  }*/
+  template <typename T> T &get_unwrapped_parameter() {
+    auto derived = dynamic_cast<abstract_parameter_wrapper<T> *>(this);
+    return derived->unwrapped_parameter();
+  }
 };
 
 template <typename T>
@@ -32,9 +33,10 @@ public:
   virtual const std::string &get_name() const override { return p.get_name(); }
   virtual const std::string get_value() const override { return p.get_value(); }
   virtual void set_initial() override { p.set_initial(); };
-  virtual std::shared_ptr<abstract_parameter> clone_wrapper() override {
+  /*virtual std::shared_ptr<abstract_parameter> clone_wrapper() override {
     return std::make_shared<abstract_parameter_wrapper<T>>(*this);
-  }
+  }*/
+  T &unwrapped_parameter() { return p; }
 };
 
 // class abstract_parameter;

@@ -33,7 +33,7 @@ contrib/download_prerequisites
 
 mkdir -p build-gcc
 cd build-gcc
-../configure --prefix="$GCC_ROOT_DIR" --disable-nls --enable-languages=c,c++
+../configure --prefix="$GCC_ROOT_DIR" --disable-nls --disable-multilib --enable-languages=c,c++
 make -j${PARALLEL_BUILD}
 make install
 cd ../..

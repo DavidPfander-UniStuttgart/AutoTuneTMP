@@ -2,6 +2,7 @@
 
 #include "../abstract_kernel.hpp"
 #include "parameter_result_cache.hpp"
+#include "../parameter_set.hpp"
 
 #include <chrono>
 
@@ -32,17 +33,25 @@ protected:
   bool verbose;
   bool do_measurement;
   bool do_write_header;
-  std::ofstream scenario_measurement_file;
-
-  std::function<bool(parameter_interface &)> validate_parameters_functor;
+  std::ofstream scenario_kernel_duration_file;
+  std::ofstream scenario_compile_duration_file;
 
   parameter_result_cache<parameter_interface> result_cache;
+
+  std::function<void(parameter_interface &)> parameter_adjustment_functor;
+  
+  parameter_set allparameters;
 
 public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
       : f(f), parameters(parameters), verbose(false), do_measurement(false),
-        do_write_header(true), scenario_measurement_file("") {}
+        do_write_header(true) {}
+  
+  abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+                 parameter_interface &parameters, parameter_set &allparameters)
+      : f(f), parameters(parameters), verbose(false), do_measurement(false),
+        do_write_header(true), allparameters(allparameters) {}
 
   double evaluate(bool &did_eval, Args &... args) {
 
@@ -59,7 +68,34 @@ public:
       return std::numeric_limits<double>::max();
     }
 
-    f.set_parameter_values(parameters);
+    parameter_interface original_parameters = parameters;
+    if (parameter_adjustment_functor) {
+      if (verbose) {
+        std::cout << "------ parameters pre-adjustment ------" << std::endl;
+        parameters.print_values();
+        std::cout << "--------------------------" << std::endl;
+      }
+      parameter_adjustment_functor(parameters);
+    }
+    
+    parameter_set parameter_values = allparameters;
+    parameter_values.add_parameter_list(parameters);
+    if (!f.precompile_validate_parameters(parameter_values)) {
+      if (verbose) {
+        std::cout << "------ invalidated eval (precompile) ------" << std::endl;
+        parameters.print_values();
+        std::cout << "--------------------------" << std::endl;
+      }
+      did_eval = false;
+      return std::numeric_limits<double>::max();
+    } else {
+      if (verbose) {
+        std::cout << "parameter combination passed precompile check"
+                  << std::endl;
+      }
+    }
+
+    f.set_parameter_values(parameter_values);
 
     if (do_measurement && do_write_header) {
       this->write_header();
@@ -78,18 +114,6 @@ public:
     f.compile();
 
     if (!f.is_valid_parameter_combination()) {
-      if (verbose) {
-        std::cout << "invalid parameter combination encountered" << std::endl;
-      }
-      did_eval = false;
-      return std::numeric_limits<double>::max();
-    } else {
-      if (verbose) {
-        std::cout << "parameter combination is valid" << std::endl;
-      }
-    }
-
-    if (!this->validate_parameters(parameters)) {
       if (verbose) {
         std::cout << "invalid parameter combination encountered" << std::endl;
       }
@@ -130,12 +154,19 @@ public:
     std::chrono::duration<double> duration = end - start;
 
     if (verbose) {
-      std::cout << "duration: " << duration.count() << "s" << std::endl;
-      std::cout << "------- end eval -------" << std::endl;
       if (f.has_kernel_duration_functor()) {
         std::cout << "internal duration: " << f.get_internal_kernel_duration()
                   << std::endl;
+        std::cout << "(duration tuner: " << duration.count() << "s"
+                  << std::endl;
+      } else {
+        std::cout << "duration: " << duration.count() << "s" << std::endl;
+        std::cout << "------- end eval -------" << std::endl;
       }
+    }
+
+    if (parameter_adjustment_functor) {
+      parameters = original_parameters;
     }
 
     if (f.has_kernel_duration_functor()) {
@@ -171,14 +202,18 @@ public:
     bool first = true;
     for (auto &p : parameter_values) {
       if (!first) {
-        scenario_measurement_file << ", ";
+        scenario_kernel_duration_file << ", ";
+        scenario_compile_duration_file << ", ";
       } else {
         first = false;
       }
-      scenario_measurement_file << p.first;
+      scenario_kernel_duration_file << p.first;
+      scenario_compile_duration_file << p.first;
     }
-    scenario_measurement_file << ", "
-                              << "duration" << std::endl;
+    scenario_kernel_duration_file << ", "
+                                  << "duration" << std::endl;
+    scenario_compile_duration_file << ", "
+                                   << "duration" << std::endl;
   }
 
   void write_measurement(double duration_s) {
@@ -186,37 +221,37 @@ public:
     bool first = true;
     for (auto &p : parameter_values) {
       if (!first) {
-        scenario_measurement_file << ", ";
+        scenario_kernel_duration_file << ", ";
+        scenario_compile_duration_file << ", ";
       } else {
         first = false;
       }
-      scenario_measurement_file << p.second;
+      scenario_kernel_duration_file << p.second;
+      scenario_compile_duration_file << p.second;
     }
-    scenario_measurement_file << ", " << duration_s << std::endl;
+    scenario_kernel_duration_file << ", " << duration_s << std::endl;
+    scenario_compile_duration_file << ", " << duration_s << std::endl;
   }
 
   void set_write_measurement(const std::string &scenario_name) {
     if (do_measurement) {
-      if (scenario_measurement_file.is_open()) {
-        scenario_measurement_file.close();
+      if (scenario_kernel_duration_file.is_open()) {
+        scenario_kernel_duration_file.close();
+      }
+      if (scenario_compile_duration_file.is_open()) {
+        scenario_compile_duration_file.close();
       }
     }
     do_measurement = true;
     do_write_header = true;
-    scenario_measurement_file.open(scenario_name + ".csv");
+    scenario_kernel_duration_file.open(scenario_name + "_kernel_duration.csv");
+    scenario_compile_duration_file.open(scenario_name +
+                                        "_compile_duration.csv");
   }
 
-  void set_validate_parameters_functor(
-      std::function<bool(parameter_interface &parameters)>
-          &validate_parameters_functor) {
-    this->validate_parameters_functor = validate_parameters_functor;
-  }
-
-  bool validate_parameters(parameter_interface &parameters) {
-    if (validate_parameters_functor) {
-      return validate_parameters_functor(parameters);
-    }
-    return true;
+  void set_parameter_adjustment_functor(
+      std::function<void(parameter_interface &)> parameter_adjustment_functor) {
+    this->parameter_adjustment_functor = parameter_adjustment_functor;
   }
 };
 } // namespace autotune

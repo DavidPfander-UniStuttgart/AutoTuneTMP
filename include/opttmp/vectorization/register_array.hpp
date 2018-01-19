@@ -32,12 +32,21 @@ public:
   register_array() {}
   // register_array(size_t n) : elems(n) {}
 
+  // scalar initialization (broadcast)
+  register_array(typename vc_type::value_type scalar) {
+    for (size_t i = 0; i < elements; i++) {
+      elems[i] = scalar;
+    }
+  }
+
+  // pseudo-scalar initialization (broadcasting vector variable to whole array)
   register_array(vc_type value) {
     for (size_t i = 0; i < elements; i++) {
       elems[i] = value;
     }
   }
 
+  // initialize from mem
   template <typename vc_flag>
   register_array(typename vc_type::value_type *mem, vc_flag t) {
     for (size_t i = 0; i < elements; i++) {

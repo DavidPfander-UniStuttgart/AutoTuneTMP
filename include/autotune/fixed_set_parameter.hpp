@@ -1,9 +1,9 @@
 #pragma once
 
 #include <memory>
+#include <random>
 #include <vector>
 
-#include "abstract_parameter.hpp"
 #include "parameter_value_set.hpp"
 
 namespace autotune {
@@ -24,7 +24,7 @@ public:
 
   void set_index(size_t new_index) { cur_index = new_index; };
 
-  virtual const std::string get_value() const {
+  const std::string get_value() const {
     if
       constexpr(std::is_same<T, bool>::value) {
         if (this->values[cur_index]) {
@@ -37,6 +37,8 @@ public:
       return std::to_string(this->values[cur_index]);
     }
   }
+
+  T get_raw_value() { return values[cur_index]; };
 
   size_t count_values() const { return values.size(); }
 
@@ -64,6 +66,15 @@ public:
     // TODO: should be extended, so that an initial guess can be supplied
     cur_index = 0;
   }
+
+  void set_random_value() {
+    // randomize index
+    std::uniform_int_distribution<size_t> distribution(0,
+                                                       this->values.size() - 1);
+    std::random_device rd;
+    std::default_random_engine generator(rd());
+    cur_index = distribution(generator);
+  }
 };
 
 template <> class fixed_set_parameter<std::string> {
@@ -85,13 +96,15 @@ public:
 
   void set_index(size_t new_index) { cur_index = new_index; };
 
-  virtual const std::string get_value() const {
+  const std::string get_value() const {
     if (quote_string) {
       return std::string("\"") + this->values[cur_index] + std::string("\"");
     } else {
       return this->values[cur_index];
     }
   }
+
+  std::string get_raw_value() { return values[cur_index]; };
 
   size_t count_values() const { return values.size(); }
 
@@ -122,6 +135,15 @@ public:
 
   void set_quote_string(bool quote_string) {
     this->quote_string = quote_string;
+  }
+
+  void set_random_value() {
+    // randomize index
+    std::uniform_int_distribution<size_t> distribution(0,
+                                                       this->values.size() - 1);
+    std::random_device rd;
+    std::default_random_engine generator(rd());
+    cur_index = distribution(generator);
   }
 };
 }

@@ -18,6 +18,10 @@ public:
               limited_set &parameters, size_t iterations)
       : abstract_tuner<limited_set, R, Args...>(f, parameters),
         iterations(iterations) {}
+  bisect_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+              limited_set &parameters, parameter_set allparameters, size_t iterations)
+      : abstract_tuner<limited_set, R, Args...>(f, parameters, allparameters),
+        iterations(iterations) {}
 
   limited_set tune(Args &... args) {
 
@@ -40,7 +44,7 @@ public:
       min[p_idx] = p->get_min() + 0.25*range;
       mid[p_idx] = p->get_min() + 0.50*range;
       max[p_idx] = p->get_min() + 0.75*range;
-      p.set_value(mid[p_idx]);
+      p->set_value(mid[p_idx]);
       min_eval[p_idx].second = false;
       max_eval[p_idx].second = false;
       mid_eval[p_idx].second = false;

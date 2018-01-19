@@ -1,8 +1,11 @@
 #pragma once
 
+#include "autotune_exception.hpp"
+#include "util.hpp"
 #include <cmath>
 #include <functional>
 #include <iomanip>
+#include <random>
 
 namespace autotune {
 
@@ -12,48 +15,59 @@ protected:
   double initial;
   double current;
   double step;
+  bool multiply;
   std::function<double(double, double)> next_functional;
   std::function<double(double, double)> prev_functional;
 
 public:
-  stepable_continuous_parameter(
-      const std::string &name, double initial, double step,
-      std::function<double(double, double)> next_functional =
-          std::plus<double>(),
-      std::function<double(double, double)> prev_functional =
-          std::minus<double>())
+  stepable_continuous_parameter(const std::string &name, double initial,
+                                double step, bool multiply = false)
       : name(name), initial(initial), current(initial), step(step),
-        next_functional(next_functional), prev_functional(prev_functional) {}
+        multiply(multiply) {
+    if (multiply) {
+      next_functional = std::multiplies<double>();
+      prev_functional = std::divides<double>();
+    } else {
+      next_functional = std::plus<double>();
+      prev_functional = std::minus<double>();
+    }
+  }
 
   const std::string &get_name() const { return this->name; }
 
-  virtual const std::string get_value() const {
-    std::stringstream ss;
-    ss << std::fixed << current;
-    std::string str(ss.str());
-    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
-    if (*(str.end() - 1) == '.') {
-      str.erase(str.end() - 1, str.end());
-    }
-    return str;
+  const std::string get_value() const {
+    return detail::truncate_trailing_zeros(current);
   }
 
-  virtual void set_initial() {
+  double get_raw_value() const { return current; }
+
+  void set_initial() {
     // TODO: should be extended, so that an initial guess can be supplied
     current = initial;
   }
 
-  virtual bool next() {
+  bool next() {
     // current += step;
     current = next_functional(current, step);
     return true;
   }
 
-  virtual bool prev() {
+  bool prev() {
     // current -= step;
     current = prev_functional(current, step);
     return true;
   }
+
+  void to_nearest_valid(double factor) {
+    if (!multiply) {
+      current = autotune::detail::round_to_nearest(current, factor);
+    } else {
+      throw autotune_exception(
+          "cannot adjust to nearest valid value with multiplied steps");
+    }
+  }
+
+  double get_step() { return step; }
 };
 
 class countable_continuous_parameter : public stepable_continuous_parameter {
@@ -62,17 +76,13 @@ private:
   double max;
 
 public:
-  countable_continuous_parameter(
-      const std::string &name, double initial, double step, double min,
-      double max, std::function<double(double, double)> next_functional =
-                      std::plus<double>(),
-      std::function<double(double, double)> prev_functional =
-          std::minus<double>())
-      : stepable_continuous_parameter(name, initial, step, next_functional,
-                                      prev_functional),
-        min(min), max(max) {}
+  countable_continuous_parameter(const std::string &name, double initial,
+                                 double step, double min, double max,
+                                 bool multiply = false)
+      : stepable_continuous_parameter(name, initial, step, multiply), min(min),
+        max(max) {}
 
-  virtual bool next() override {
+  bool next() {
     // if (this->current + this->step <= max) {
     if (next_functional(current, step) <= max) {
       // this->current += this->step;
@@ -82,7 +92,7 @@ public:
     return false;
   }
 
-  virtual bool prev() override {
+  bool prev() {
     // if (this->current - this->step >= min) {
     if (prev_functional(current, step) >= min) {
       // this->current -= this->step;
@@ -101,8 +111,39 @@ public:
   double get_max() const { return min; }
 
   size_t count_values() const {
-    // TODO: implement
-    return static_cast<size_t>(std::floor((max - min) / this->step)) + 1;
+    if (multiply) {
+      double range = max / min;
+      return std::log2(range) / std::log2(step) + 1;
+    } else {
+      return static_cast<size_t>(std::floor((max - min) / this->step)) + 1;
+    }
+  }
+
+  void set_random_value() {
+    size_t num_values = count_values();
+
+    std::uniform_real_distribution<double> distribution(0, num_values - 1);
+    std::random_device rd;
+    std::default_random_engine generator(rd());
+
+    size_t value_index = distribution(generator);
+
+    double value = get_min();
+    for (size_t i = 0; i < value_index; i++) {
+      value = next_functional(value, step);
+    }
+
+    current = value;
+  }
+
+  void to_nearest_valid(double factor) {
+    if (!multiply) {
+      current =
+          autotune::detail::round_to_nearest_bounded(current, factor, min, max);
+    } else {
+      throw autotune_exception(
+          "cannot adjust to nearest valid value with multiplied steps");
+    }
   }
 };
 
@@ -124,16 +165,11 @@ public:
 
   const std::string &get_name() const { return this->name; }
 
-  virtual const std::string get_value() const {
-    std::stringstream ss;
-    ss << std::fixed << current;
-    std::string str(ss.str());
-    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
-    if (*(str.end() - 1) == '.') {
-      str.erase(str.end() - 1, str.end());
-    }
-    return std::to_string(current);
+  const std::string get_value() const {
+    return detail::truncate_trailing_zeros(current);
   }
+
+  double get_raw_value() const { return current; }
 
   void set_min() { current = min; }
 
@@ -143,7 +179,7 @@ public:
 
   double get_max() const { return max; }
 
-  virtual void set_initial() {
+  void set_initial() {
     // TODO: should be extended, so that an initial guess can be supplied
     current = initial;
   }
@@ -158,8 +194,28 @@ public:
     current = new_value;
     return true;
   }
-
   bool is_integer_parameter() const { return integer_parameter; }
+
+  void set_random_value() {
+    if (this->is_integer_parameter()) {
+      // randomize index
+      std::uniform_int_distribution<size_t> distribution(
+          static_cast<size_t>(min), static_cast<size_t>(max));
+      std::random_device rd;
+      std::default_random_engine generator(rd());
+      current = distribution(generator);
+    } else {
+      std::uniform_real_distribution<double> distribution(min, max);
+      std::random_device rd;
+      std::default_random_engine generator(rd());
+      current = distribution(generator);
+    }
+  }
+
+  void to_nearest_valid(double factor) {
+    current =
+        autotune::detail::round_to_nearest_bounded(current, factor, min, max);
+  }
 };
 
 } // namespace autotune
