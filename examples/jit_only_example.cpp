@@ -36,7 +36,6 @@ int main(void) {
 
   {
     builder->set_cpp_flags("-std=c++17");
-    builder->set_link_flags("-std=c++17");
     autotune::square.compile();
 
     for (size_t i = 0; i < repetitions; i++) {
@@ -59,7 +58,6 @@ int main(void) {
   double duration_fast = 0.0;
   {
     builder->set_cpp_flags("-std=c++17 -O3 -march=native -mtune=native");
-    builder->set_link_flags("-std=c++17 -O3 -march=native -mtune=native");
     autotune::square.compile();
     for (size_t i = 0; i < repetitions; i++) {
       time_point start = high_resolution_clock::now();
