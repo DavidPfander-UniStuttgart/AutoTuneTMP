@@ -151,3 +151,18 @@ public:
 #define AUTOTUNE_DECLARE_DEFINE_KERNEL(signature, kernel_name)                 \
   AUTOTUNE_DECLARE_KERNEL(signature, kernel_name)                              \
   AUTOTUNE_DEFINE_KERNEL(signature, kernel_name)
+
+#define AUTOTUNE_DEFINE_KERNEL_SRC(kernel_signature, kernel_name,              \
+                                   kernel_src_dir)                             \
+  CPPJIT_DEFINE_KERNEL_SRC(kernel_signature, kernel_name, kernel_src_dir)      \
+  namespace autotune {                                                         \
+  cppjit_kernel<                                                               \
+      cppjit::detail::function_traits<kernel_signature>::return_type,          \
+      cppjit::detail::function_traits<kernel_signature>::args_type>            \
+      kernel_name(#kernel_name, cppjit::kernel_name);                          \
+  } /* namespace autotune */
+
+#define AUTOTUNE_DECLARE_DEFINE_KERNEL_SRC(signature, kernel_name,             \
+                                           kernel_src_dir)                     \
+  AUTOTUNE_DECLARE_KERNEL(signature, kernel_name)                              \
+  AUTOTUNE_DEFINE_KERNEL_SRC(signature, kernel_name, kernel_src_dir)
