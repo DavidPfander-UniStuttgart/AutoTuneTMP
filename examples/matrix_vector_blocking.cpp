@@ -13,7 +13,7 @@ using namespace cppjit::builder;
 #include "autotune/tuners/line_search.hpp"
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL_SRC(vector<double>(vector<double> &,
+AUTOTUNE_DECLARE_DEFINE_KERNEL_SRC(vector<double>(size_t, vector<double> &,
                                                   vector<double> &),
                                    matrix_vector,
                                    "examples/kernel_matrix_vector")
@@ -48,21 +48,21 @@ int main(void) {
   matrix_vector.get_builder<gcc>().set_verbose(true);
   matrix_vector.get_builder<gcc>().set_cpp_flags(
       "-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
-      "-march=native -mtune=native ");
-  matrix_vector.get_builder<gcc>().set_link_flags("-std=c++17 -O3 -g -fopenmp ");
+      "-march=native -mtune=native -fstrict-aliasing ");
+  matrix_vector.get_builder<gcc>().set_link_flags(
+      "-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
   matrix_vector.get_builder<gcc>().set_include_paths("-IVc_install/include");
   matrix_vector.compile();
-  double duration_fast = 0.0;
   time_point start = high_resolution_clock::now();
   for (size_t i = 0; i < repetitions; i++) {
-    result = matrix_vector(m, v);
+    result = matrix_vector(N, m, v);
   }
   time_point end = high_resolution_clock::now();
-  duration_fast += std::chrono::duration<double>(end - start).count();
+  double duration_s = std::chrono::duration<double>(end - start).count();
   std::cout << "avr. matrix_vector duration (native specified): "
-            << (duration_fast / repetitions) << std::endl;
+            << (duration_s / repetitions) << std::endl;
   std::cout << "matrix_vector duration wallclock (native specified): "
-            << duration_fast << std::endl;
+            << duration_s << std::endl;
 
   std::vector<double> result_reference = matrix_vector_reference(m, v);
 
