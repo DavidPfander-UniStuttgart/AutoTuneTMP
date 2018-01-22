@@ -50,9 +50,9 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values) {
   autotune::run_different_parameter_values.set_source_dir(
       "tests/kernel_run_different_parameter_values");
   autotune::run_different_parameter_values.set_verbose(true);
-  auto builder = autotune::run_different_parameter_values
-                     .get_builder_as<cppjit::builder::gcc>();
-  builder->set_verbose(true);
+  auto &builder = autotune::run_different_parameter_values
+                     .get_builder<cppjit::builder::gcc>();
+  builder.set_verbose(true);
 
   // run with "PAR_1" set to "1"
   autotune::run_different_parameter_values.set_parameter_values(parameters);
@@ -110,9 +110,9 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values_more_automation) {
   autotune::run_different_parameter_values.set_source_dir(
       "tests/kernel_run_different_parameter_values");
   autotune::run_different_parameter_values.set_verbose(true);
-  auto builder = autotune::run_different_parameter_values
-                     .get_builder_as<cppjit::builder::gcc>();
-  builder->set_verbose(true);
+  auto &builder = autotune::run_different_parameter_values
+                     .get_builder<cppjit::builder::gcc>();
+  builder.set_verbose(true);
 
   // run with "PAR_1" set to "1"
   autotune::run_different_parameter_values.set_parameter_values(parameters);
@@ -138,10 +138,10 @@ BOOST_AUTO_TEST_CASE(run_bruteforce) {
   autotune::run_bruteforce_kernel.set_source_dir(
       "tests/kernel_run_bruteforce_kernel");
   autotune::run_bruteforce_kernel.set_verbose(true);
-  auto builder =
-      autotune::run_bruteforce_kernel.get_builder_as<cppjit::builder::gcc>();
-  builder->set_verbose(true);
-  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
+  auto &builder =
+      autotune::run_bruteforce_kernel.get_builder<cppjit::builder::gcc>();
+  builder.set_verbose(true);
+  builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
   autotune::fixed_set_parameter<std::string> p1("PAR_1", {"eins", "zwei"});
@@ -177,9 +177,9 @@ BOOST_AUTO_TEST_CASE(run_line_search) {
   autotune::run_line_search_kernel.set_source_dir(
       "tests/kernel_run_line_search_kernel");
   // autotune::run_line_search_kernel.set_verbose(true);
-  auto builder =
-      autotune::run_line_search_kernel.get_builder_as<cppjit::builder::gcc>();
-  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
+  auto &builder =
+      autotune::run_line_search_kernel.get_builder<cppjit::builder::gcc>();
+  builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
   autotune::fixed_set_parameter<std::string> p1("PAR_1",
@@ -211,9 +211,9 @@ BOOST_AUTO_TEST_CASE(run_neighborhood_search) {
   autotune::run_neighborhood_search_kernel.set_source_dir(
       "tests/kernel_run_neighborhood_search_kernel");
   autotune::run_line_search_kernel.set_verbose(true);
-  auto builder = autotune::run_neighborhood_search_kernel
-                     .get_builder_as<cppjit::builder::gcc>();
-  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
+  auto &builder = autotune::run_neighborhood_search_kernel
+                     .get_builder<cppjit::builder::gcc>();
+  builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
   autotune::countable_continuous_parameter p1("PAR_1", 1.0, 1.0, 1.0, 5.0);
@@ -245,10 +245,10 @@ BOOST_AUTO_TEST_CASE(run_full_neighborhood_search) {
   autotune::run_full_neighborhood_search_kernel.set_source_dir(
       "tests/kernel_run_full_neighborhood_search_kernel");
   autotune::run_line_search_kernel.set_verbose(true);
-  auto builder = autotune::run_full_neighborhood_search_kernel
-                     .get_builder_as<cppjit::builder::gcc>();
-  builder->set_verbose(false);
-  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
+  auto &builder = autotune::run_full_neighborhood_search_kernel
+                     .get_builder<cppjit::builder::gcc>();
+  builder.set_verbose(false);
+  builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
   autotune::countable_continuous_parameter p1("PAR_1", 1.0, 1.0, 1.0, 5.0);
@@ -280,9 +280,9 @@ BOOST_AUTO_TEST_CASE(run_monte_carlo) {
   autotune::run_monte_carlo_kernel.set_source_dir(
       "tests/kernel_run_monte_carlo_kernel");
   autotune::run_line_search_kernel.set_verbose(true);
-  auto builder =
-      autotune::run_monte_carlo_kernel.get_builder_as<cppjit::builder::gcc>();
-  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
+  auto &builder =
+      autotune::run_monte_carlo_kernel.get_builder<cppjit::builder::gcc>();
+  builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::randomizable_set parameters;
   autotune::limited_continuous_parameter p1("PAR_1", 1.0, 1.0, 5.0, true);

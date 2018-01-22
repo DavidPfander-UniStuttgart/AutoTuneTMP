@@ -112,6 +112,11 @@ add_executable(simplified_jit_only_kernel "examples/simplified_jit_only_example.
 target_link_libraries(simplified_jit_only_kernel AutoTuneTMP AutoTuneTMP Boost::boost)
 install(TARGETS simplified_jit_only_kernel DESTINATION examples)
 
+add_executable(matrix_vector_blocking "examples/matrix_vector_blocking.cpp")
+target_compile_options(matrix_vector_blocking PUBLIC -fopenmp)
+target_link_libraries(matrix_vector_blocking AutoTuneTMP AutoTuneTMP Boost::boost -fopenmp)
+install(TARGETS matrix_vector_blocking DESTINATION examples)
+
 add_executable(continuous_parameter_example "examples/continuous_parameter_example.cpp")
 target_link_libraries(continuous_parameter_example AutoTuneTMP)
 install(TARGETS continuous_parameter_example DESTINATION examples)

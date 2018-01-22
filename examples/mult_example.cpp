@@ -15,15 +15,16 @@ AUTOTUNE_DECLARE_DEFINE_KERNEL(
 int main(void) {
   std::cout << "testing countable set interface" << std::endl;
   autotune::mult_kernel.set_source_dir("examples/mult_kernel");
-  auto builder = autotune::mult_kernel.get_builder_as<cppjit::builder::gcc>();
-  builder->set_verbose(true);
-  builder->set_include_paths(
+  auto &builder = autotune::mult_kernel.get_builder<cppjit::builder::gcc>();
+  builder.set_verbose(true);
+  builder.set_include_paths(
       "-I/home/pfandedd/git/AutoTuneTMP/AutoTuneTMP_install_debug/include "
       "-I/home/pfandedd/git/AutoTuneTMP/Vc_install/include "
       "-I/home/pfandedd/git/AutoTuneTMP/boost_install/include");
-  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -march=native -mtune=native "
-                         "-O3 -g -ffast-math  -fPIC -fno-gnu-unique"); // -fopenmp
-  builder->set_link_flags("-shared -fno-gnu-unique "); // -fopenmp
+  builder.set_cpp_flags(
+      "-Wall -Wextra -std=c++17 -march=native -mtune=native "
+      "-O3 -g -ffast-math  -fPIC -fno-gnu-unique");   // -fopenmp
+  builder.set_link_flags("-shared -fno-gnu-unique "); // -fopenmp
 
   autotune::countable_set parameters;
   autotune::fixed_set_parameter<size_t> p1("DATA_BLOCKING", {6});
@@ -54,8 +55,8 @@ int main(void) {
 
   // compile beforehand so that compilation is not part of the measured duration
   autotune::mult_kernel.set_parameter_values(parameters);
-  autotune::mult_kernel(dims, dataset_SoA, dataset_size, level_list,
-                                  index_list, alpha, result_padded);
+  autotune::mult_kernel(dims, dataset_SoA, dataset_size, level_list, index_list,
+                        alpha, result_padded);
 
   return 0;
 }
