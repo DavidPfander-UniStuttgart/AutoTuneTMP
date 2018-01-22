@@ -42,10 +42,11 @@ public:
   }
 
   template <typename T>
-  void set_parameter_values(const std::vector<std::shared_ptr<T>> &pl) {
+  void set_parameter_values(const T &parameter_interface) {
     parameters_changed = true;
-    for (auto &p : pl) {
-      set_parameter_value(*p);
+    for (size_t i = 0; i < parameter_interface.size(); i++) {
+      parameter_values[parameter_interface[i]->get_name()] =
+          parameter_interface[i]->get_value();
     }
   }
 
