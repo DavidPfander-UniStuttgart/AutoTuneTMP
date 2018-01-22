@@ -18,10 +18,10 @@ public:
   //virtual void set_initial() = 0;
   virtual void set_random_value() = 0;
   virtual std::shared_ptr<countable_parameter> clone_wrapper() = 0;
-  //template <typename T> T &get_unwrapped_parameter() {
-  //  auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
-  //  return derived->unwrapped_parameter();
-  //}
+  template <typename T> T &get_unwrapped_parameter() {
+   auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
+   return derived->unwrapped_parameter();
+  }
 };
 
 // interface-wrapper generating template

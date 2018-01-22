@@ -18,10 +18,12 @@ class abstract_parameter {public:
   /*template<typename T> std::shared_ptr<T> clone_wrapper() {
     return std::make_shared<abstract_parameter_wrapper<T>>(*this);
   }*/
-  template <typename T> T &get_unwrapped_parameter() {
-    auto derived = dynamic_cast<abstract_parameter_wrapper<T> *>(this);
-    return derived->unwrapped_parameter();
-  }
+
+  // TODO: BUGGY!
+  // template <typename T> T &get_unwrapped_parameter() {
+  //   auto derived = dynamic_cast<abstract_parameter_wrapper<T> *>(this);
+  //   return derived->unwrapped_parameter();
+  // }
 };
 
 template <typename T>
