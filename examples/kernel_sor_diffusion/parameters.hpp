@@ -2,4 +2,4 @@
 #define BLOCKSIZEX 1
 #define BLOCKSIZEY 1
 #define NUMTHREADS 1
-#define OMEGA 1.25
+#define OMEGA 1.98002

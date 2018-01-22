@@ -15,6 +15,7 @@ public:
   //virtual const std::string &get_name() const = 0;
   //virtual const std::string get_value() const = 0;
   virtual bool set_value(double new_value) = 0;
+  virtual double get_raw_value() const = 0;
   //virtual void set_initial() = 0;
   virtual bool is_integer_parameter() const = 0;
   /*template<typename T> std::shared_ptr<T> clone_wrapper() {
@@ -40,6 +41,7 @@ public:
   virtual double get_max() const override { return p.get_max(); };
   virtual const std::string &get_name() const override { return p.get_name(); }
   virtual const std::string get_value() const override { return p.get_value(); }
+  virtual double get_raw_value() const override { return p.get_raw_value(); }
   virtual bool set_value(double new_value) override {
     return p.set_value(new_value);
   }

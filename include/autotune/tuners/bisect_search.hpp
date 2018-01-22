@@ -36,11 +36,9 @@ public:
     
     for (size_t p_idx = 0; p_idx < this->parameters.size(); p_idx++) {
       auto &p = this->parameters[p_idx];
-      double range = p->get_max() - p->get_min();
-      min[p_idx] = p->get_min() + 0.25*range;
-      mid[p_idx] = p->get_min() + 0.50*range;
-      max[p_idx] = p->get_min() + 0.75*range;
-      p->set_value(mid[p_idx]);
+      min[p_idx] = p->get_min();
+      mid[p_idx] = p->get_raw_value();
+      max[p_idx] = p->get_max();
       min_eval[p_idx].second = false;
       max_eval[p_idx].second = false;
       mid_eval[p_idx].second = false;
@@ -48,20 +46,21 @@ public:
 
     for (size_t i = 0; i < iterations; i++) {
       for (size_t p_idx = 0; p_idx < this->parameters.size(); p_idx++) {
+        std::cout << min[p_idx] << " " << mid[p_idx] << " " << max[p_idx] << std::endl;
         auto &p = this->parameters[p_idx];
-        if (!min_eval[p_idx].second) {
-          p->set_value(min[p_idx]);
-          min_eval[p_idx].first = this->evaluate(min_eval[p_idx].second, args...);
-        }
-        if (!max_eval[p_idx].second) {
-          p->set_value(max[p_idx]);
-          max_eval[p_idx].first = this->evaluate(max_eval[p_idx].second, args...);
-        }
         if (!mid_eval[p_idx].second) {
           p->set_value(mid[p_idx]);
           mid_eval[p_idx].first = this->evaluate(mid_eval[p_idx].second, args...);
         }
-        double opt_val = min[p_idx];
+        if (!min_eval[p_idx].second) {
+          p->set_value(0.5*(min[p_idx]+mid[p_idx]));
+          min_eval[p_idx].first = this->evaluate(min_eval[p_idx].second, args...);
+        }
+        if (!max_eval[p_idx].second) {
+          p->set_value(0.5*(max[p_idx]+mid[p_idx]));
+          max_eval[p_idx].first = this->evaluate(max_eval[p_idx].second, args...);
+        }
+        double opt_val = 0.5*(min[p_idx]+mid[p_idx]);
         std::pair<double, bool> opt = min_eval[p_idx];
         if (!opt.second || (mid_eval[p_idx].second && mid_eval[p_idx].first < opt.first)) {
           opt = mid_eval[p_idx];
@@ -69,20 +68,29 @@ public:
         }
         if (!opt.second || (max_eval[p_idx].second && max_eval[p_idx].first < opt.first)) {
           opt = max_eval[p_idx];
-          opt_val = max[p_idx];
+          opt_val = 0.5*(max[p_idx]+mid[p_idx]);
         }
         if (opt.second) {
-          mid[p_idx] = opt_val;
-          mid_eval[p_idx] = opt;
-          double range = max[p_idx] - min[p_idx];
-          min[p_idx] = opt_val - 0.25*range;
-          max[p_idx] = opt_val + 0.25*range;
-          min_eval[p_idx].second = false;
-          max_eval[p_idx].second = false;
+          if (opt_val < mid[p_idx]) {
+            max[p_idx] = mid[p_idx];
+            max_eval = mid_eval;
+            mid[p_idx] = opt_val;
+            mid_eval[p_idx] = opt;
+            min_eval[p_idx].second = false;
+          } else if (opt_val > mid[p_idx]) {
+            min[p_idx] = mid[p_idx];
+            min_eval = mid_eval;
+            mid[p_idx] = opt_val;
+            mid_eval[p_idx] = opt;
+            max_eval[p_idx].second = false;
+          } else {
+            min[p_idx] = 0.5*(min[p_idx]+mid[p_idx]);
+            max[p_idx] = 0.5*(max[p_idx]+mid[p_idx]);
+            min_eval[p_idx].second = false;
+            max_eval[p_idx].second = false;
+          }
+          p->set_value(mid[p_idx]);
           optimal_parameters = this->parameters;
-        } else {
-          min[p_idx] = 0.5*(min[p_idx] + p->get_min());
-          max[p_idx] = 0.5*(max[p_idx] + p->get_max());
         }
         p->set_value(mid[p_idx]);
       }
