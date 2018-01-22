@@ -1,26 +1,27 @@
 #pragma once
 
 #include "../autotune_exception.hpp"
+#include "../abstract_parameter.hpp"
 
 namespace autotune {
 
 template <typename T> class countable_parameter_wrapper;
 
-class countable_parameter {
+class countable_parameter : public abstract_parameter {
 public:
   virtual bool next() = 0;
   virtual bool prev() = 0;
   virtual void set_min() = 0;
   virtual size_t count_values() const = 0;
-  virtual const std::string &get_name() const = 0;
-  virtual const std::string get_value() const = 0;
-  virtual void set_initial() = 0;
+  //virtual const std::string &get_name() const = 0;
+  //virtual const std::string get_value() const = 0;
+  //virtual void set_initial() = 0;
   virtual void set_random_value() = 0;
   virtual std::shared_ptr<countable_parameter> clone_wrapper() = 0;
-  template <typename T> T &get_unwrapped_parameter() {
-    auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
-    return derived->unwrapped_parameter();
-  }
+  //template <typename T> T &get_unwrapped_parameter() {
+  //  auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
+  //  return derived->unwrapped_parameter();
+  //}
 };
 
 // interface-wrapper generating template

@@ -124,6 +124,7 @@ public:
   }
 
   void clear() {
+    abstract_kernel<R, cppjit::detail::pack<Args...>>::clear();
     internal_kernel.clear();
     this->verbose = false;
   }

@@ -38,6 +38,7 @@ protected:
   parameter_result_cache<parameter_interface> result_cache;
 
   std::function<void(parameter_interface &)> parameter_adjustment_functor;
+
   size_t repetitions = 1;
 
 public:
