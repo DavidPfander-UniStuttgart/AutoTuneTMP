@@ -124,16 +124,16 @@ size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs, const
 
 int main (void) {
   autotune::SORDiffusion.set_verbose(true);
-  auto builder = autotune::SORDiffusion.get_builder_as<cppjit::builder::gcc>();
+  auto &builder = autotune::SORDiffusion.get_builder<cppjit::builder::gcc>();
   //builder->set_verbose(true);
   autotune::SORDiffusion.set_source_dir("examples/kernel_sor_diffusion");
-  builder->set_include_paths(
+  builder.set_include_paths(
       "-IAutoTuneTMP_install/include "
       "-IVc_install/include "
       "-Iboost_install/include");
-  builder->set_cpp_flags("-Wall -Wextra -std=c++17 -march=native -mtune=native "
+  builder.set_cpp_flags("-Wall -Wextra -std=c++17 -march=native -mtune=native "
                          "-O3 -g -ffast-math -fopenmp -fPIC -fno-gnu-unique");
-  builder->set_link_flags("-shared -g -fopenmp -fno-gnu-unique");
+  builder.set_link_flags("-shared -g -fopenmp -fno-gnu-unique");
 
   
   std::vector<double> grid((dimX+2)*(dimY+2), 0.0);

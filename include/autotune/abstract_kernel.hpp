@@ -55,7 +55,7 @@ public:
     }
   }
   
-  void clear_all_parameters() {
+  void clear() {
     parameters_changed = true;
     parameter_values.clear();
   }
