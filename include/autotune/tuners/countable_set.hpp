@@ -29,7 +29,9 @@ class countable_parameter_wrapper : public countable_parameter {
   T p;
 
 public:
-  countable_parameter_wrapper(T p) : p(p) {}
+  // calls either constructor or copy-constructor
+
+  countable_parameter_wrapper(T p) : p(std::move(p)) {}
 
   countable_parameter_wrapper(const countable_parameter_wrapper<T> &other)
       : p(other.p) {}
@@ -48,9 +50,12 @@ public:
   T &unwrapped_parameter() { return p; }
 };
 
-class countable_set : public std::vector<std::shared_ptr<countable_parameter>> {
+class countable_set : std::vector<std::shared_ptr<countable_parameter>> {
 
 public:
+  using std::vector<std::shared_ptr<countable_parameter>>::operator[];
+  using std::vector<std::shared_ptr<countable_parameter>>::size;
+
   countable_set() : std::vector<std::shared_ptr<countable_parameter>>() {}
 
   countable_set(const countable_set &other)
@@ -81,6 +86,13 @@ public:
     std::shared_ptr<countable_parameter_wrapper<T>> cloned =
         std::make_shared<countable_parameter_wrapper<T>>(p);
     this->push_back(cloned);
+  }
+
+  template <typename T, typename... Ts> void emplace_parameter(Ts &&... args) {
+    T p(std::forward<Ts>(args)...);
+    std::shared_ptr<countable_parameter_wrapper<T>> wrapper =
+        std::make_shared<countable_parameter_wrapper<T>>(std::move(p));
+    this->push_back(wrapper);
   }
 
   void print_values() {

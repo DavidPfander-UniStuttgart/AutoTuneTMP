@@ -18,6 +18,9 @@ public:
   fixed_set_parameter(const std::string &name, const std::vector<T> &values)
       : name(name), cur_index(0), values(values) {}
 
+  fixed_set_parameter(const fixed_set_parameter<T> &other)
+      : name(other.name), cur_index(other.cur_index), values(other.values) {}
+
   const std::string &get_name() const { return this->name; }
 
   const std::vector<std::string> &get_values() const { return this->values; }

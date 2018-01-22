@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <random>
 #include <vector>
 using namespace std; // to shorten code
 using high_resolution_clock = std::chrono::high_resolution_clock;
@@ -10,16 +11,18 @@ using time_point = std::chrono::high_resolution_clock::time_point;
 using namespace autotune;
 using namespace cppjit::builder;
 #include "autotune/parameter.hpp"
-#include "autotune/tuners/line_search.hpp"
+#include "autotune/tuners/bruteforce.hpp"
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL_SRC(vector<double>(size_t, vector<double> &,
-                                                  vector<double> &),
+AUTOTUNE_DECLARE_DEFINE_KERNEL_SRC(vector<double>(const size_t,
+                                                  const vector<double> &,
+                                                  const vector<double> &),
                                    matrix_vector,
                                    "examples/kernel_matrix_vector")
 
 vector<double> matrix_vector_reference(const vector<double> &m,
                                        const vector<double> &v) {
+
   const size_t N = v.size();
   vector<double> result(v.size());
 #pragma omp parallel for
@@ -33,10 +36,18 @@ vector<double> matrix_vector_reference(const vector<double> &m,
 
 int main(void) {
 
+  std::default_random_engine generator;
+  std::uniform_real_distribution<double> distribution(0.0, 100.0);
+
   size_t repetitions = 100;
-  const size_t N = 8192; // L1 32kB -> max. 4096 double variables
-  vector<double> m(N * N, 2.0);
-  vector<double> v(N, 4.0);
+  size_t N = 8192; // L1 32kB -> max. 4096 double variables
+                   // vector<double> m(N * N, 2.0);
+                   // vector<double> v(N, 4.0);
+
+  vector<double> m(N * N);
+  std::fill(m.begin(), m.end(), distribution(generator));
+  vector<double> v(N);
+  std::fill(v.begin(), v.end(), distribution(generator));
 
   std::cout << "memory used \"m\": " << ((N * N * 8) / 1024) << "kB"
             << std::endl;
@@ -52,6 +63,19 @@ int main(void) {
   matrix_vector.get_builder<gcc>().set_link_flags(
       "-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
   matrix_vector.get_builder<gcc>().set_include_paths("-IVc_install/include");
+
+  autotune::countable_set parameters;
+  autotune::countable_continuous_parameter p1("BLOCKING", 4.0, 2.0, 1.0, 16.0,
+                                              true);
+  parameters.add_parameter(p1);
+  autotune::tuners::bruteforce tuner(autotune::matrix_vector, parameters);
+  tuner.set_repetitions(repetitions);
+  tuner.set_verbose(true);
+  autotune::countable_set optimal_parameters = tuner.tune(N, m, v);
+  autotune::matrix_vector.set_parameter_values(optimal_parameters);
+  std::cout << "optimal_parameters:" << std::endl;
+  optimal_parameters.print_values();
+  // autotune::matrix_vector.set_parameter_values(parameters);
   matrix_vector.compile();
   time_point start = high_resolution_clock::now();
   for (size_t i = 0; i < repetitions; i++) {

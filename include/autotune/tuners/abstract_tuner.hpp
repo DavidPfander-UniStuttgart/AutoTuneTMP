@@ -38,6 +38,7 @@ protected:
   parameter_result_cache<parameter_interface> result_cache;
 
   std::function<void(parameter_interface &)> parameter_adjustment_functor;
+  size_t repetitions = 1;
 
 public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
@@ -122,23 +123,30 @@ public:
     if
       constexpr(!std::is_same<R, void>::value) {
         if (this->has_test()) {
-          bool test_ok = this->test(f(args...));
-          if (!test_ok) {
-            if (verbose) {
-              std::cout << "warning: test for combination failed!" << std::endl;
-            }
-            return std::numeric_limits<double>::max();
-          } else {
-            if (verbose) {
-              std::cout << "test for combination passed" << std::endl;
+          for (size_t i = 0; i < repetitions; i++) {
+            bool test_ok = this->test(f(args...));
+            if (!test_ok) {
+              if (verbose) {
+                std::cout << "warning: test for combination failed!"
+                          << std::endl;
+              }
+              return std::numeric_limits<double>::max();
+            } else {
+              if (verbose) {
+                std::cout << "test for combination passed" << std::endl;
+              }
             }
           }
         } else {
-          f(args...);
+          for (size_t i = 0; i < repetitions; i++) {
+            f(args...);
+          }
         }
       }
     else {
-      f(args...);
+      for (size_t i = 0; i < repetitions; i++) {
+        f(args...);
+      }
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -148,10 +156,26 @@ public:
       if (f.has_kernel_duration_functor()) {
         std::cout << "internal duration: " << f.get_internal_kernel_duration()
                   << std::endl;
-        std::cout << "(duration tuner: " << duration.count() << "s"
+        if (repetitions > 1) {
+          std::cout << "internal duration per repetition: "
+                    << (f.get_internal_kernel_duration() /
+                        static_cast<double>(repetitions))
+                    << std::endl;
+        }
+        std::cout << "(duration tuner: " << duration.count() << "s)"
                   << std::endl;
+        if (repetitions > 1) {
+          std::cout << "(duration tuner per repetition: "
+                    << (duration.count() / static_cast<double>(repetitions))
+                    << "s)" << std::endl;
+        }
       } else {
         std::cout << "duration: " << duration.count() << "s" << std::endl;
+        if (repetitions > 1) {
+          std::cout << "duration tuner per reptition: "
+                    << (duration.count() / static_cast<double>(repetitions))
+                    << "s" << std::endl;
+        }
         std::cout << "------- end eval -------" << std::endl;
       }
     }
@@ -244,5 +268,8 @@ public:
       std::function<void(parameter_interface &)> parameter_adjustment_functor) {
     this->parameter_adjustment_functor = parameter_adjustment_functor;
   }
+
+  // execute kernel multiple times to average across the result
+  void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
 };
 } // namespace autotune

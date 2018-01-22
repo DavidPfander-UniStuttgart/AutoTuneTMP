@@ -32,7 +32,8 @@ private:
 
 public:
   line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-              countable_set &parameters, size_t max_iterations, size_t restarts)
+              countable_set &parameters, size_t max_iterations,
+              size_t restarts = 0)
       : abstract_tuner<countable_set, R, Args...>(f, parameters),
         max_iterations(max_iterations), restarts(restarts) {}
 
