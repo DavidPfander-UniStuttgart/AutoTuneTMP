@@ -7,12 +7,11 @@
 #include "autotune/tuners/neighborhood_search.hpp"
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), smooth_cost_function)
+AUTOTUNE_KERNEL(int(int), smooth_cost_function,
+                "examples/kernel_smooth_cost_function")
 
 int main(void) {
   std::cout << "testing countable set interface" << std::endl;
-  autotune::smooth_cost_function.set_source_dir(
-      "examples/kernel_smooth_cost_function");
   autotune::smooth_cost_function.set_verbose(false);
 
   autotune::countable_set parameters;

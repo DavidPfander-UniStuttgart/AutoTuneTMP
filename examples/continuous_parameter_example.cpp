@@ -7,11 +7,9 @@
 #include "autotune/tuners/line_search.hpp"
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), add_one)
+AUTOTUNE_KERNEL(int(int), add_one, "examples/kernel_minimal")
 
 int main(void) {
-  autotune::add_one.set_verbose(false);
-  autotune::add_one.set_source_dir("examples/kernel_minimal");
 
   // register parameters
   autotune::countable_set parameters;

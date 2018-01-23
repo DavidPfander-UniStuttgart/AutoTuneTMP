@@ -140,7 +140,7 @@ public:
       kernel_name;                                                             \
   } /* namespace autotune */
 
-#define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name)                  \
+#define AUTOTUNE_DEFINE_KERNEL_NO_SRC(kernel_signature, kernel_name)           \
   CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name)                          \
   namespace autotune {                                                         \
   cppjit_kernel<                                                               \
@@ -149,12 +149,7 @@ public:
       kernel_name(#kernel_name, cppjit::kernel_name);                          \
   } /* namespace autotune */
 
-#define AUTOTUNE_DECLARE_DEFINE_KERNEL(signature, kernel_name)                 \
-  AUTOTUNE_DECLARE_KERNEL(signature, kernel_name)                              \
-  AUTOTUNE_DEFINE_KERNEL(signature, kernel_name)
-
-#define AUTOTUNE_DEFINE_KERNEL_SRC(kernel_signature, kernel_name,              \
-                                   kernel_src_dir)                             \
+#define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name, kernel_src_dir)  \
   CPPJIT_DEFINE_KERNEL_SRC(kernel_signature, kernel_name, kernel_src_dir)      \
   namespace autotune {                                                         \
   cppjit_kernel<                                                               \
@@ -163,7 +158,10 @@ public:
       kernel_name(#kernel_name, cppjit::kernel_name);                          \
   } /* namespace autotune */
 
-#define AUTOTUNE_DECLARE_DEFINE_KERNEL_SRC(signature, kernel_name,             \
-                                           kernel_src_dir)                     \
+#define AUTOTUNE_KERNEL_NO_SRC(signature, kernel_name)                         \
   AUTOTUNE_DECLARE_KERNEL(signature, kernel_name)                              \
-  AUTOTUNE_DEFINE_KERNEL_SRC(signature, kernel_name, kernel_src_dir)
+  AUTOTUNE_DEFINE_KERNEL_NO_SRC(signature, kernel_name)
+
+#define AUTOTUNE_KERNEL(signature, kernel_name, kernel_src_dir)                \
+  AUTOTUNE_DECLARE_KERNEL(signature, kernel_name)                              \
+  AUTOTUNE_DEFINE_KERNEL(signature, kernel_name, kernel_src_dir)

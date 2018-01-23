@@ -11,11 +11,11 @@
 #include "autotune/tuners/bisect_search.hpp"
 #include "autotune/tuners/line_search.hpp"
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(
-    double(std::vector<double> &, std::vector<double> &,
-           const std::vector<double> &, const std::vector<double> &,
-           const double &, double &, double &, double &, size_t &, size_t &),
-    SORDiffusion)
+AUTOTUNE_KERNEL(double(std::vector<double> &, std::vector<double> &,
+                       const std::vector<double> &, const std::vector<double> &,
+                       const double &, double &, double &, double &, size_t &,
+                       size_t &),
+                SORDiffusion, "examples/kernel_sor_diffusion")
 
 void InitGrid(std::vector<double> &rhs) {
   for (int y = 0; y < dimY; ++y) {
@@ -133,7 +133,6 @@ int main(void) {
   autotune::SORDiffusion.set_verbose(true);
   auto &builder = autotune::SORDiffusion.get_builder<cppjit::builder::gcc>();
   // builder->set_verbose(true);
-  autotune::SORDiffusion.set_source_dir("examples/kernel_sor_diffusion");
   builder.set_include_paths("-IAutoTuneTMP_install/include "
                             "-IVc_install/include "
                             "-Iboost_install/include");

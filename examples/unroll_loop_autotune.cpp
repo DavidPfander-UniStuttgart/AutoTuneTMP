@@ -6,9 +6,8 @@
 #include <vector>
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL_SRC(void(std::vector<double> &, const size_t),
-                                   unrolling_kernel,
-                                   "examples/kernels_unroll_loop_autotune")
+AUTOTUNE_KERNEL(void(std::vector<double> &, const size_t), unrolling_kernel,
+                "examples/kernels_unroll_loop_autotune")
 
 int main(void) {
   size_t N = 20;

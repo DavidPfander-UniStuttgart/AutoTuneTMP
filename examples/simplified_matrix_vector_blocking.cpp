@@ -12,10 +12,8 @@ using namespace cppjit::builder;
 #include "autotune/tuners/bruteforce.hpp"
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL_SRC(vector<double>(const vector<double> &,
-                                                  const vector<double> &),
-                                   matrix_vector,
-                                   "examples/kernel_simplified_matrix_vector")
+AUTOTUNE_KERNEL(vector<double>(const vector<double> &, const vector<double> &),
+                matrix_vector, "examples/kernel_simplified_matrix_vector")
 
 int main(void) {
   size_t N = 8192;

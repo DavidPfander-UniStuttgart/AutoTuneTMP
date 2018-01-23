@@ -7,11 +7,10 @@
 #include "autotune/tuners/randomizable_set.hpp"
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), smooth_cost_function)
+AUTOTUNE_KERNEL(int(int), smooth_cost_function,
+                "examples/kernel_smooth_cost_function")
 
 int main(void) {
-  autotune::smooth_cost_function.set_source_dir(
-      "examples/kernel_smooth_cost_function");
 
   autotune::randomizable_set parameters;
   autotune::limited_continuous_parameter p1("PAR_1", 1.0, 1.0, 5.0, true);

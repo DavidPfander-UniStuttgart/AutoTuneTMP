@@ -7,14 +7,13 @@
 #include "autotune/tuners/bruteforce.hpp"
 #include "autotune/tuners/countable_set.hpp"
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(
-    void(size_t, std::vector<double> &, size_t, std::vector<double> &,
-         std::vector<double> &, std::vector<double> &, std::vector<double> &),
-    mult_kernel)
+AUTOTUNE_KERNEL(void(size_t, std::vector<double> &, size_t,
+                     std::vector<double> &, std::vector<double> &,
+                     std::vector<double> &, std::vector<double> &),
+                mult_kernel, "examples/mult_kernel")
 
 int main(void) {
   std::cout << "testing countable set interface" << std::endl;
-  autotune::mult_kernel.set_source_dir("examples/mult_kernel");
   auto &builder = autotune::mult_kernel.get_builder<cppjit::builder::gcc>();
   builder.set_verbose(true);
   builder.set_include_paths(

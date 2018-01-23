@@ -8,14 +8,14 @@
 #include "autotune/tuners/countable_set.hpp"
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), add_one)
+AUTOTUNE_KERNEL(int(int), add_one, "examples/kernel_minimal")
 
 int main(void) {
   std::cout << "testing countable set interface" << std::endl;
-  autotune::add_one.set_source_dir("examples/kernel_minimal");
 
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter<std::string> p1("PAR_1", {"eins", "zwei", "drei"});
+  autotune::fixed_set_parameter<std::string> p1("PAR_1",
+                                                {"eins", "zwei", "drei"});
   parameters.add_parameter(p1);
 
   autotune::countable_continuous_parameter p2("PAR_2", 1.0, 1.0, 1.0, 5.0);
@@ -28,8 +28,7 @@ int main(void) {
 
   int a = 5;
 
-  autotune::tuners::bruteforce tuner(
-      autotune::add_one, parameters);
+  autotune::tuners::bruteforce tuner(autotune::add_one, parameters);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);

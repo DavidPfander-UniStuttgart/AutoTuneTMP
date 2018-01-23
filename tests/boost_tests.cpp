@@ -14,19 +14,25 @@
 #include "autotune/tuners/monte_carlo.hpp"
 #include "autotune/tuners/neighborhood_search.hpp"
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_kernel)
+AUTOTUNE_KERNEL(int(int), run_kernel, "tests/kernel_run_kernel")
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_different_parameter_values)
+AUTOTUNE_KERNEL(int(int), run_different_parameter_values,
+                "tests/kernel_run_different_parameter_values")
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_bruteforce_kernel)
+AUTOTUNE_KERNEL(int(int), run_bruteforce_kernel,
+                "tests/kernel_run_bruteforce_kernel")
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_line_search_kernel)
+AUTOTUNE_KERNEL(int(int), run_line_search_kernel,
+                "tests/kernel_run_line_search_kernel")
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_neighborhood_search_kernel)
+AUTOTUNE_KERNEL(int(int), run_neighborhood_search_kernel,
+                "tests/kernel_run_neighborhood_search_kernel")
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_monte_carlo_kernel)
+AUTOTUNE_KERNEL(int(int), run_full_neighborhood_search_kernel,
+                "tests/kernel_run_full_neighborhood_search_kernel")
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(int(int), run_full_neighborhood_search_kernel)
+AUTOTUNE_KERNEL(int(int), run_monte_carlo_kernel,
+                "tests/kernel_run_monte_carlo_kernel")
 
 AUTOTUNE_DECLARE_DEFINE_GENERALIZED_KERNEL(double(double),
                                            generalized_test_kernel)
@@ -34,7 +40,6 @@ AUTOTUNE_DECLARE_DEFINE_GENERALIZED_KERNEL(double(double),
 BOOST_AUTO_TEST_SUITE(basic_api)
 
 BOOST_AUTO_TEST_CASE(run_kernel) {
-  autotune::run_kernel.set_source_dir("tests/kernel_run_kernel");
   autotune::run_kernel.set_verbose(true);
   int result = autotune::run_kernel(2);
   autotune::run_kernel.clear();
@@ -47,11 +52,9 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values) {
   autotune::fixed_set_parameter<int> p1("PAR_1", {1, 2});
   parameters.add_parameter(p1);
 
-  autotune::run_different_parameter_values.set_source_dir(
-      "tests/kernel_run_different_parameter_values");
   autotune::run_different_parameter_values.set_verbose(true);
   auto &builder = autotune::run_different_parameter_values
-                     .get_builder<cppjit::builder::gcc>();
+                      .get_builder<cppjit::builder::gcc>();
   builder.set_verbose(true);
 
   // run with "PAR_1" set to "1"
@@ -107,11 +110,9 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values_more_automation) {
   autotune::fixed_set_parameter<int> p1("PAR_1", {1, 2});
   parameters.add_parameter(p1);
 
-  autotune::run_different_parameter_values.set_source_dir(
-      "tests/kernel_run_different_parameter_values");
   autotune::run_different_parameter_values.set_verbose(true);
   auto &builder = autotune::run_different_parameter_values
-                     .get_builder<cppjit::builder::gcc>();
+                      .get_builder<cppjit::builder::gcc>();
   builder.set_verbose(true);
 
   // run with "PAR_1" set to "1"
@@ -135,8 +136,6 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(bruteforce)
 
 BOOST_AUTO_TEST_CASE(run_bruteforce) {
-  autotune::run_bruteforce_kernel.set_source_dir(
-      "tests/kernel_run_bruteforce_kernel");
   autotune::run_bruteforce_kernel.set_verbose(true);
   auto &builder =
       autotune::run_bruteforce_kernel.get_builder<cppjit::builder::gcc>();
@@ -174,8 +173,6 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(line_search)
 
 BOOST_AUTO_TEST_CASE(run_line_search) {
-  autotune::run_line_search_kernel.set_source_dir(
-      "tests/kernel_run_line_search_kernel");
   // autotune::run_line_search_kernel.set_verbose(true);
   auto &builder =
       autotune::run_line_search_kernel.get_builder<cppjit::builder::gcc>();
@@ -208,11 +205,9 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(neighborhood_search)
 
 BOOST_AUTO_TEST_CASE(run_neighborhood_search) {
-  autotune::run_neighborhood_search_kernel.set_source_dir(
-      "tests/kernel_run_neighborhood_search_kernel");
   autotune::run_line_search_kernel.set_verbose(true);
   auto &builder = autotune::run_neighborhood_search_kernel
-                     .get_builder<cppjit::builder::gcc>();
+                      .get_builder<cppjit::builder::gcc>();
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
@@ -242,11 +237,9 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(full_neighborhood_search)
 
 BOOST_AUTO_TEST_CASE(run_full_neighborhood_search) {
-  autotune::run_full_neighborhood_search_kernel.set_source_dir(
-      "tests/kernel_run_full_neighborhood_search_kernel");
   autotune::run_line_search_kernel.set_verbose(true);
   auto &builder = autotune::run_full_neighborhood_search_kernel
-                     .get_builder<cppjit::builder::gcc>();
+                      .get_builder<cppjit::builder::gcc>();
   builder.set_verbose(false);
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
@@ -277,8 +270,6 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(monte_carlo_search)
 
 BOOST_AUTO_TEST_CASE(run_monte_carlo) {
-  autotune::run_monte_carlo_kernel.set_source_dir(
-      "tests/kernel_run_monte_carlo_kernel");
   autotune::run_line_search_kernel.set_verbose(true);
   auto &builder =
       autotune::run_monte_carlo_kernel.get_builder<cppjit::builder::gcc>();

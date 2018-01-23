@@ -11,9 +11,8 @@ using time_point = std::chrono::high_resolution_clock::time_point;
 #include "autotune/autotune.hpp"
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL(void(std::vector<double> &,
-                                    std::vector<double> &),
-                               square)
+AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &), square,
+                "examples/jit_only_kernel")
 
 int main(void) {
 
@@ -29,8 +28,6 @@ int main(void) {
 
   std::vector<double> dest_reference(N);
   std::fill(dest_reference.begin(), dest_reference.end(), 4.0);
-
-  autotune::square.set_source_dir("examples/jit_only_kernel");
 
   double duration_slow = 0.0;
 

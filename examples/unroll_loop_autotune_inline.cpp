@@ -5,8 +5,8 @@
 #include <iostream>
 #include <vector>
 
-AUTOTUNE_DECLARE_DEFINE_KERNEL(void(std::vector<double> &, const size_t),
-                               unrolling_kernel)
+AUTOTUNE_KERNEL_NO_SRC(void(std::vector<double> &, const size_t),
+                       unrolling_kernel)
 
 int main(void) {
   constexpr size_t N = 50;
@@ -14,7 +14,8 @@ int main(void) {
   std::vector<double> arr(N);
   std::fill(arr.begin(), arr.end(), 0.0);
 
-  auto &builder = autotune::unrolling_kernel.get_builder<cppjit::builder::gcc>();
+  auto &builder =
+      autotune::unrolling_kernel.get_builder<cppjit::builder::gcc>();
   builder.set_verbose(true);
   builder.set_include_paths("-I src");
 

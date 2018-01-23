@@ -12,14 +12,13 @@ using namespace autotune;
 using namespace cppjit::builder;
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_DECLARE_DEFINE_KERNEL(void(vector<double> &, vector<double> &), square)
+AUTOTUNE_KERNEL(void(vector<double> &, vector<double> &), square,
+                "examples/jit_only_kernel")
 
 int main(void) {
   size_t N = 2048 * 2048; // 32MB
-  vector<double> origin(N, 2.0);
-  vector<double> dest(N);
+  vector<double> origin(N, 2.0), dest(N);
 
-  square.set_source_dir("examples/jit_only_kernel");
   square.get_builder<gcc>().set_cpp_flags("-std=c++17 -O3 "
                                           "-march=native -mtune=native");
   // compiled before first run
