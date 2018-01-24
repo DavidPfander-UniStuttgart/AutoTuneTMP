@@ -14,12 +14,12 @@ private:
   size_t base_offset;
   std::array<size_t, dim> tile_index;
   std::array<size_t, dim> tiles_dir;
-  std::vector<tiling_info_dim> tiling_info;
+  tiling_configuration tiling_info;
   size_t tile_size;
 
 public:
   tile_view(std::vector<T, U> &tiled, size_t (&tile_index)[dim],
-            std::vector<tiling_info_dim> tiling_info)
+            const tiling_configuration &tiling_info)
       : tiled(tiled), tiling_info(tiling_info) {
 
     this->tile_index[0] = tile_index[0];

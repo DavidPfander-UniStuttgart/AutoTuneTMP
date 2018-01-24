@@ -16,7 +16,7 @@ namespace memory_layout {
 // dimension of matrix, dimension of tiles
 template <size_t dim, typename T, typename U>
 std::vector<T, U> make_tiled(std::vector<T, U> &org,
-                             const std::vector<tiling_info_dim> &tiling_info) {
+                             const tiling_configuration &tiling_info) {
   std::vector<T, U> tiled;
   tiled.resize(org.size());
   if (tiling_info.size() != dim) {
@@ -45,38 +45,39 @@ std::vector<T, U> make_tiled(std::vector<T, U> &org,
     untiled_strides[d] = tiling_info[d].stride;
   }
 
-  memory_layout::iterate_tiles<dim>(tiled, tiling_info, [&org, &untiled_strides,
-                                                       &tiling_info, &min, &max,
-                                                       &strides](auto view) {
-    std::array<size_t, dim> &tile_index = view.get_tile_index();
+  memory_layout::iterate_tiles<dim>(
+      tiled, tiling_info,
+      [&org, &untiled_strides, &tiling_info, &min, &max, &strides](auto view) {
+        std::array<size_t, dim> &tile_index = view.get_tile_index();
 
-    std::array<size_t, dim> index_offset;
-    // std::cout << "---------next tile---------" << std::endl;
-    for (size_t d = 0; d < dim; d++) {
-      index_offset[d] = tile_index[d] * tiling_info[d].tile_size_dir;
-      // std::cout << "index_offset[" << d << "] = " << index_offset[d] <<
-      // std::endl;
-    }
-
-    opttmp::loop::dynamic_loop_nest<dim>(
-        min, max, strides,
-        [&view, &org, &tiling_info, &index_offset,
-         &untiled_strides](const std::array<size_t, dim> &inner_index) {
-          std::array<size_t, dim> outer_index;
-          for (size_t d = 0; d < dim; d++) {
-            outer_index[d] = inner_index[d] + index_offset[d];
-            // std::cout << "outer_index[" << d << "] = " << outer_index[d]
-            // << std::endl;
-          }
-          size_t flat_outer_index = flat_index(outer_index, untiled_strides);
-          // std::cout << "flat_outer_index: " << flat_outer_index <<
+        std::array<size_t, dim> index_offset;
+        // std::cout << "---------next tile---------" << std::endl;
+        for (size_t d = 0; d < dim; d++) {
+          index_offset[d] = tile_index[d] * tiling_info[d].tile_size_dir;
+          // std::cout << "index_offset[" << d << "] = " << index_offset[d] <<
           // std::endl;
-          // std::cout << "view[index_offset] = " << view[inner_index] <<
-          // std::endl;
-          view[inner_index] = org[flat_outer_index];
-        });
+        }
 
-  });
+        opttmp::loop::dynamic_loop_nest<dim>(
+            min, max, strides,
+            [&view, &org, &tiling_info, &index_offset,
+             &untiled_strides](const std::array<size_t, dim> &inner_index) {
+              std::array<size_t, dim> outer_index;
+              for (size_t d = 0; d < dim; d++) {
+                outer_index[d] = inner_index[d] + index_offset[d];
+                // std::cout << "outer_index[" << d << "] = " << outer_index[d]
+                // << std::endl;
+              }
+              size_t flat_outer_index =
+                  flat_index(outer_index, untiled_strides);
+              // std::cout << "flat_outer_index: " << flat_outer_index <<
+              // std::endl;
+              // std::cout << "view[index_offset] = " << view[inner_index] <<
+              // std::endl;
+              view[inner_index] = org[flat_outer_index];
+            });
+
+      });
 
   return tiled;
 }
@@ -85,7 +86,7 @@ std::vector<T, U> make_tiled(std::vector<T, U> &org,
 // undo tiling inplace
 template <size_t dim, typename T, typename U>
 std::vector<T, U> undo_tiling(std::vector<T, U> &tiled,
-                              const std::vector<tiling_info_dim> &tiling_info) {
+                              const tiling_configuration &tiling_info) {
   std::vector<T, U> untiled(tiled.size());
   // untiled.resize(tiled.size());
   if (tiling_info.size() != dim) {

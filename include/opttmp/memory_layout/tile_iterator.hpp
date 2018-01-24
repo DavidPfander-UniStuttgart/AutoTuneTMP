@@ -17,7 +17,7 @@ namespace detail {
 template <size_t dim, size_t cur_dim, typename T, typename U, typename F>
 typename std::enable_if<cur_dim == dim, void>::type
 iterate_tile_dim(std::vector<T, U> &tiled,
-                 const std::vector<tiling_info_dim> &tiling_info,
+                 const tiling_configuration &tiling_info,
                  size_t (&tile_index)[dim], F f) {
 
   memory_layout::tile_view<dim, T, U> v(tiled, tile_index, tiling_info);
@@ -27,7 +27,7 @@ iterate_tile_dim(std::vector<T, U> &tiled,
 template <size_t dim, size_t cur_dim, typename T, typename U, typename F>
 typename std::enable_if<cur_dim != dim, void>::type
 iterate_tile_dim(std::vector<T, U> &tiled,
-                 const std::vector<tiling_info_dim> &tiling_info,
+                 const tiling_configuration &tiling_info,
                  size_t (&partial_tile_index)[dim], F f) {
   const tiling_info_dim &cur_info = tiling_info[cur_dim];
   size_t tiles_dim = cur_info.stride / cur_info.tile_size_dir;
@@ -42,7 +42,7 @@ iterate_tile_dim(std::vector<T, U> &tiled,
 
 template <size_t dim, typename T, typename U, typename F>
 void iterate_tiles(std::vector<T, U> &tiled,
-                   const std::vector<tiling_info_dim> &tiling_info, F f) {
+                   const tiling_configuration &tiling_info, F f) {
   size_t tile_index[dim];
   detail::iterate_tile_dim<dim, 0>(tiled, tiling_info, tile_index, f);
 }

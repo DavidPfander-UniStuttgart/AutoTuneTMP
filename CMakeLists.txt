@@ -122,6 +122,10 @@ target_compile_options(simplified_matrix_vector_blocking PUBLIC -fopenmp)
 target_link_libraries(simplified_matrix_vector_blocking AutoTuneTMP AutoTuneTMP Boost::boost -fopenmp)
 install(TARGETS simplified_matrix_vector_blocking DESTINATION examples)
 
+add_executable(matrix_tiling "examples/matrix_tiling.cpp")
+target_link_libraries(matrix_tiling AutoTuneTMP AutoTuneTMP Boost::boost)
+install(TARGETS matrix_tiling DESTINATION examples)
+
 add_executable(continuous_parameter_example "examples/continuous_parameter_example.cpp")
 target_link_libraries(continuous_parameter_example AutoTuneTMP)
 install(TARGETS continuous_parameter_example DESTINATION examples)
