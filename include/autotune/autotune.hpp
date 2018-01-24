@@ -141,7 +141,7 @@ public:
   } /* namespace autotune */
 
 #define AUTOTUNE_DEFINE_KERNEL_NO_SRC(kernel_signature, kernel_name)           \
-  CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name)                          \
+  CPPJIT_DEFINE_KERNEL_NO_SRC(kernel_signature, kernel_name)                   \
   namespace autotune {                                                         \
   cppjit_kernel<                                                               \
       cppjit::detail::function_traits<kernel_signature>::return_type,          \
@@ -150,7 +150,7 @@ public:
   } /* namespace autotune */
 
 #define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name, kernel_src_dir)  \
-  CPPJIT_DEFINE_KERNEL_SRC(kernel_signature, kernel_name, kernel_src_dir)      \
+  CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name, kernel_src_dir)          \
   namespace autotune {                                                         \
   cppjit_kernel<                                                               \
       cppjit::detail::function_traits<kernel_signature>::return_type,          \

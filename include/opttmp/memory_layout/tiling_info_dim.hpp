@@ -11,10 +11,12 @@ private:
   std::vector<tiling_info_dim> infos;
 
 public:
+  tiling_configuration(size_t size) : infos(size) {}
   tiling_configuration(std::initializer_list<tiling_info_dim> infos) {
     this->infos.insert(this->infos.end(), infos.begin(), infos.end());
   }
   tiling_info_dim operator[](size_t i) const { return infos[i]; }
+  tiling_info_dim &operator[](size_t i) { return infos[i]; }
   size_t size() const { return infos.size(); }
 };
 }
