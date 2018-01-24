@@ -38,6 +38,8 @@ protected:
   parameter_result_cache<parameter_interface> result_cache;
 
   std::function<void(parameter_interface &)> parameter_adjustment_functor;
+  std::function<void(parameter_interface &, const parameter_value_set &)> 
+    extendet_parameter_adjustment_functor;
 
   size_t repetitions = 1;
 
@@ -63,13 +65,16 @@ public:
     }
 
     parameter_interface original_parameters = parameters;
-    if (parameter_adjustment_functor) {
+    if (parameter_adjustment_functor || extendet_parameter_adjustment_functor) {
       if (verbose) {
         std::cout << "------ parameters pre-adjustment ------" << std::endl;
         parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
-      parameter_adjustment_functor(parameters);
+      if (parameter_adjustment_functor)
+        parameter_adjustment_functor(parameters);
+      else if (extendet_parameter_adjustment_functor)
+        extendet_parameter_adjustment_functor(parameters, f.get_parameter_values());
     }
 
     parameter_value_set parameter_values = to_parameter_values(parameters);
@@ -181,7 +186,7 @@ public:
       }
     }
 
-    if (parameter_adjustment_functor) {
+    if (parameter_adjustment_functor || extendet_parameter_adjustment_functor) {
       parameters = original_parameters;
     }
 
@@ -268,6 +273,13 @@ public:
   void set_parameter_adjustment_functor(
       std::function<void(parameter_interface &)> parameter_adjustment_functor) {
     this->parameter_adjustment_functor = parameter_adjustment_functor;
+    this->extendet_parameter_adjustment_functor = nullptr;
+  }
+  
+  void set_parameter_adjustment_functor(
+      std::function<void(parameter_interface &, const parameter_value_set &)> parameter_adjustment_functor) {
+    this->parameter_adjustment_functor = nullptr;
+    this->extendet_parameter_adjustment_functor = parameter_adjustment_functor;
   }
 
   // execute kernel multiple times to average across the result
