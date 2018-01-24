@@ -78,7 +78,12 @@ public:
                                               f.get_parameter_values());
     }
 
-    parameter_value_set parameter_values = to_parameter_values(parameters);
+    parameter_value_set parameter_values = f.get_parameter_values();
+    for (size_t parameter_index = 0; parameter_index < parameters.size();
+             parameter_index++) {
+      auto &p = parameters[parameter_index];
+      parameter_values[p->get_name()] = p->get_value();
+    }
     if (!f.precompile_validate_parameters(parameter_values)) {
       if (verbose) {
         std::cout << "------ invalidated eval (precompile) ------" << std::endl;
