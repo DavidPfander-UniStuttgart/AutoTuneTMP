@@ -13,14 +13,15 @@ int main(void) {
   std::uniform_real_distribution<double> distribution(0.0, 100.0);
 
   size_t N = 16;
-  std::vector<double> m(N * N);
+  size_t M = 8;
+  std::vector<double> m(M * N);
   std::fill(m.begin(), m.end(), distribution(generator));
 
-  tiling_configuration conf = {{2, N}, {4, N}};
+  // {blocked_rows, total_rows}, {blocked_columns, total_columns}
+  tiling_configuration conf = {{2, M}, {4, N}};
   std::vector<double> tiled = memory_layout::make_tiled<2>(m, conf);
 
   size_t color = 0;
-
   memory_layout::iterate_tiles<2>(tiled, conf, [&color](auto view) {
     for (size_t i = 0; i < 2; i++) {
       for (size_t j = 0; j < 4; j++) {
@@ -30,10 +31,10 @@ int main(void) {
     color += 1;
   });
 
-  std::vector<double> back = memory_layout::undo_tiling<2>(tiled, conf);
+  auto back = memory_layout::undo_tiling<2>(tiled, conf);
 
   std::cout << "colored matrix:" << std::endl;
-  for (size_t i = 0; i < N; i++) {
+  for (size_t i = 0; i < M; i++) {
     for (size_t j = 0; j < N; j++) {
       if (j > 0) {
         std::cout << " ";

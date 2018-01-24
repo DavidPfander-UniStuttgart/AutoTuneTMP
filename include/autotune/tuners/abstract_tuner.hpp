@@ -110,7 +110,11 @@ public:
 
     f.create_parameter_file();
 
+    auto start_compile = std::chrono::high_resolution_clock::now();
     f.compile();
+    auto end_compile = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_compile =
+        end_compile - start_compile;
 
     if (!f.is_valid_parameter_combination()) {
       if (verbose) {
@@ -193,12 +197,13 @@ public:
 
     if (f.has_kernel_duration_functor()) {
       if (do_measurement) {
-        this->write_measurement(f.get_internal_kernel_duration());
+        this->write_measurement(f.get_internal_kernel_duration(),
+                                duration_compile.count());
       }
       return f.get_internal_kernel_duration();
     } else {
       if (do_measurement) {
-        this->write_measurement(duration.count());
+        this->write_measurement(duration.count(), duration_compile.count());
       }
       return duration.count();
     }
@@ -238,7 +243,7 @@ public:
                                    << "duration" << std::endl;
   }
 
-  void write_measurement(double duration_s) {
+  void write_measurement(double duration_kernel_s, double duration_compile_s) {
     const parameter_value_set &parameter_values = f.get_parameter_values();
     bool first = true;
     for (auto &p : parameter_values) {
@@ -251,8 +256,8 @@ public:
       scenario_kernel_duration_file << p.second;
       scenario_compile_duration_file << p.second;
     }
-    scenario_kernel_duration_file << ", " << duration_s << std::endl;
-    scenario_compile_duration_file << ", " << duration_s << std::endl;
+    scenario_kernel_duration_file << ", " << duration_kernel_s << std::endl;
+    scenario_compile_duration_file << ", " << duration_compile_s << std::endl;
   }
 
   void set_write_measurement(const std::string &scenario_name) {
