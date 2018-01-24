@@ -62,7 +62,7 @@ public:
     parameter_values.clear();
   }
 
-  const parameter_value_set &get_parameter_values() { return parameter_values; }
+  const parameter_value_set &get_parameter_values() const { return parameter_values; }
 
   virtual R operator()(Args... args) = 0;
 

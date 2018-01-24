@@ -16,7 +16,7 @@ parameter_value_set to_parameter_values(parameter_set_type &parameters) {
   return value_set;
 }
 
-inline void print_parameter_values(parameter_value_set &parameter_values) {
+inline void print_parameter_values(const parameter_value_set &parameter_values) {
   std::cout << "parameter name  | ";
   bool first = true;
   for (auto &p : parameter_values) {
