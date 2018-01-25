@@ -110,7 +110,8 @@ public:
 
     if (verbose) {
       std::cout << "------ begin eval ------" << std::endl;
-      parameters.print_values();
+      //parameters.print_values();
+      print_parameter_values(parameter_values);
     }
 
     f.create_parameter_file();
