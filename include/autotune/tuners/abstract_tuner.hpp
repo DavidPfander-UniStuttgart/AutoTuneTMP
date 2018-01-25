@@ -285,8 +285,10 @@ public:
   void set_parameter_adjustment_functor(
       std::function<void(parameter_interface &, const parameter_value_set &)>
           parameter_adjustment_functor) {
-    this->parameter_adjustment_functor = nullptr;
     this->extended_parameter_adjustment_functor = parameter_adjustment_functor;
+    this->parameter_adjustment_functor = [this](parameter_interface &parameters) -> void {
+      this->extended_parameter_adjustment_functor(parameters, this->f.get_parameter_values());
+    };
   }
 
   // execute kernel multiple times to average across the result
