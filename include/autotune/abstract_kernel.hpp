@@ -50,7 +50,7 @@ public:
     }
   }
 
-  void set_parameter_values(parameter_value_set &new_parameter_values) {
+  void set_parameter_values(const parameter_value_set &new_parameter_values) {
     parameters_changed = true;
     for (auto &p : new_parameter_values) {
       parameter_values[p.first] = p.second;
