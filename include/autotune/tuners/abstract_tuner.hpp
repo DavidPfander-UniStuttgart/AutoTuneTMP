@@ -52,7 +52,17 @@ public:
          do_measurement(false), do_write_header(true) {}
 
   double evaluate(bool &did_eval, Args &... args) {
-
+    if (verbose) {
+      parameter_value_set parameter_values = f.get_parameter_values();
+      for (size_t parameter_index = 0; parameter_index < parameters.size();
+               parameter_index++) {
+        auto &p = parameters[parameter_index];
+        parameter_values[p->get_name()] = p->get_value();
+      }
+      std::cout << "------ try eval ------" << std::endl;
+      //parameters.print_values();
+      print_parameter_values(parameter_values);
+    }
     if (!result_cache.contains(parameters)) {
       result_cache.insert(parameters);
     } else {
