@@ -29,6 +29,8 @@ class abstract_tuner
 protected:
   autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
   parameter_interface parameters;
+  parameter_value_set optimal_parameter_values;
+  double optimal_duration;
   bool verbose;
   bool do_measurement;
   bool do_write_header;
@@ -46,8 +48,8 @@ protected:
 public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
-      : f(f), parameters(parameters), verbose(false), do_measurement(false),
-        do_write_header(true) {}
+      : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
+         do_measurement(false), do_write_header(true) {}
 
   double evaluate(bool &did_eval, Args &... args) {
 
@@ -201,18 +203,31 @@ public:
       parameters = original_parameters;
     }
 
+    double final_duration;
     if (f.has_kernel_duration_functor()) {
       if (do_measurement) {
         this->write_measurement(f.get_internal_kernel_duration(),
                                 duration_compile.count());
       }
-      return f.get_internal_kernel_duration();
+      final_duration = f.get_internal_kernel_duration();
     } else {
       if (do_measurement) {
         this->write_measurement(duration.count(), duration_compile.count());
       }
-      return duration.count();
+      final_duration = duration.count();
     }
+    if (optimal_duration < 0.0 || final_duration < optimal_duration) {
+      optimal_duration = final_duration;
+      optimal_parameter_values = parameter_values;
+    }
+    return final_duration;
+  }
+  
+  const parameter_value_set& get_optimal_parameter_values() const {
+    if (optimal_duration < 0.0)
+      return f.get_parameter_values();
+    else
+      return optimal_parameter_values;
   }
 
   void report(const std::string &message, double duration,
