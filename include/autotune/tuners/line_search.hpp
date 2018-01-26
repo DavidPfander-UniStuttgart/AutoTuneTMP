@@ -44,9 +44,9 @@ public:
     parameter_value_set original_values = this->f.get_parameter_values();
 
     // set to initial guess (or whatever the parameter type is doing)
-    for (size_t i = 0; i < this->parameters.size(); i++) {
-      this->parameters[i]->set_min();
-    }
+    //for (size_t i = 0; i < this->parameters.size(); i++) {
+    //  this->parameters[i]->set_min();
+    //}
 
     // evaluate initial guess
     countable_set optimal_parameters = this->parameters;
