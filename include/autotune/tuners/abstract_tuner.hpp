@@ -44,7 +44,9 @@ protected:
   std::function<void(parameter_interface &, const parameter_value_set &)>
       extended_parameter_adjustment_functor;
 
-  size_t repetitions = 1;
+  size_t repetitions;
+
+  bool reset_result_cache;
 
   virtual void tune_impl(Args &... args) = 0;
 
@@ -52,10 +54,13 @@ public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
       : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
-        do_measurement(false), do_write_header(true) {}
+        do_measurement(false), do_write_header(true), repetitions(1),
+        reset_result_cache(true) {}
 
   parameter_interface tune(Args &... args) {
-    reset_result_cache();
+    if (reset_result_cache) {
+      result_cache.clear();
+    }
     optimal_duration = -1.0;
     optimal_parameters = parameters;
 
@@ -366,6 +371,10 @@ public:
   // execute kernel multiple times to average across the result
   void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
 
-  void reset_result_cache() { result_cache.clear(); }
+  void set_reset_result_cache(bool reset_result_cache) {
+    this->reset_result_cache = reset_result_cache;
+  };
+
+  // void reset_result_cache() { result_cache.clear(); }
 };
 } // namespace autotune
