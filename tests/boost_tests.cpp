@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(test_tuner_result_cache) {
   parameters.add_parameter(p2);
   parameters.add_parameter(p3);
 
-  autotune::parameter_result_cache<autotune::countable_set> r;
+  autotune::parameter_result_cache r;
   BOOST_CHECK(!r.contains(parameters));
   r.insert(parameters);
   BOOST_CHECK(r.contains(parameters));
@@ -194,6 +194,8 @@ BOOST_AUTO_TEST_CASE(run_line_search) {
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);
+  std::cout << optimal_parameters[0]->get_value() << std::endl;
+  std::cout << optimal_parameters[1]->get_value() << std::endl;
   bool check1 = optimal_parameters[0]->get_value().compare("\"zwei\"") == 0;
   BOOST_CHECK(check1);
   bool check2 = optimal_parameters[1]->get_value().compare("2") == 0;
@@ -205,7 +207,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(neighborhood_search)
 
 BOOST_AUTO_TEST_CASE(run_neighborhood_search) {
-  autotune::run_line_search_kernel.set_verbose(true);
+  autotune::run_neighborhood_search_kernel.set_verbose(true);
   auto &builder = autotune::run_neighborhood_search_kernel
                       .get_builder<cppjit::builder::gcc>();
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
@@ -237,7 +239,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(full_neighborhood_search)
 
 BOOST_AUTO_TEST_CASE(run_full_neighborhood_search) {
-  autotune::run_line_search_kernel.set_verbose(true);
+  autotune::run_full_neighborhood_search_kernel.set_verbose(true);
   auto &builder = autotune::run_full_neighborhood_search_kernel
                       .get_builder<cppjit::builder::gcc>();
   builder.set_verbose(false);
@@ -270,7 +272,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(monte_carlo_search)
 
 BOOST_AUTO_TEST_CASE(run_monte_carlo) {
-  autotune::run_line_search_kernel.set_verbose(true);
+  autotune::run_monte_carlo_kernel.set_verbose(true);
   auto &builder =
       autotune::run_monte_carlo_kernel.get_builder<cppjit::builder::gcc>();
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");

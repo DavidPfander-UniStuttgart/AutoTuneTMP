@@ -4,50 +4,71 @@
 
 namespace autotune {
 
-template <typename parameter_interface> class node {
+// template <typename parameter_interface>
+class node {
 public:
-  std::map<std::string, node<parameter_interface>> children;
+  std::map<std::string, node> children;
 
-  void insert(parameter_interface &parameters, size_t cur_index) {
-    if (cur_index == parameters.size()) {
+  void insert(parameter_value_set::const_iterator &parameters_it,
+              parameter_value_set::const_iterator &parameters_it_end) {
+    if (parameters_it == parameters_it_end) {
       return;
     }
 
-    auto child_iterator = children.find(parameters[cur_index]->get_value());
+    // auto cur_value = std::next(parameters.begin(), cur_index)->second;
+    auto child_iterator = children.find(parameters_it->second);
     if (child_iterator == children.end()) {
-      auto pair = children.emplace(parameters[cur_index]->get_value(),
-                                   node<parameter_interface>());
+      auto pair = children.emplace(parameters_it->second, node());
       if (std::get<1>(pair)) {
         child_iterator = std::get<0>(pair);
       }
     }
-    child_iterator->second.insert(parameters, cur_index + 1);
+    child_iterator->second.insert(++parameters_it, parameters_it_end);
   }
 
-  bool contains(parameter_interface &candidate, size_t cur_index) {
-    if (candidate.size() == cur_index) {
+  bool contains(parameter_value_set::const_iterator &candidate_it,
+                parameter_value_set::const_iterator &candidate_it_end) {
+    if (candidate_it == candidate_it_end) {
       return true;
     }
-    auto child_iterator = children.find(candidate[cur_index]->get_value());
-    if (child_iterator == children.end()) {
+    // auto cur_value = std::next(candidate.begin(), cur_index)->second;
+    auto child_it = children.find(candidate_it->second);
+    if (child_it == children.end()) {
       return false;
     }
-    return child_iterator->second.contains(candidate, cur_index + 1);
+    return child_it->second.contains(++candidate_it, candidate_it_end);
   }
 };
 
-template <typename parameter_interface>
-class parameter_result_cache : public node<parameter_interface> {
+// template <typename parameter_interface>
+class parameter_result_cache : public node {
 private:
-  using node<parameter_interface>::insert;
-  using node<parameter_interface>::contains;
+  using node::insert;
+  using node::contains;
 
 public:
-  void insert(parameter_interface &parameters) { this->insert(parameters, 0); }
-
-  bool contains(parameter_interface &candidate) {
-    return this->contains(candidate, 0);
+  void insert(const parameter_value_set &parameters) {
+    auto parameters_it = parameters.begin();
+    auto parameters_it_end = parameters.end();
+    this->insert(parameters_it, parameters_it_end);
   }
+
+  template <typename parameter_interface>
+  void insert(const parameter_interface &parameters) {
+    insert(to_parameter_values(parameters));
+  }
+
+  bool contains(const parameter_value_set &candidate) {
+    auto candidate_it = candidate.begin();
+    auto candidate_it_end = candidate.end();
+    return this->contains(candidate_it, candidate_it_end);
+  }
+
+  template <typename parameter_interface>
+  bool contains(const parameter_interface &candidate) {
+    return this->contains(to_parameter_values(candidate));
+  }
+
   void clear() { this->children.clear(); };
 };
 }

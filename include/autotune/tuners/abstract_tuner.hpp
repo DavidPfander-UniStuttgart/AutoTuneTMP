@@ -29,6 +29,7 @@ class abstract_tuner
 protected:
   autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
   parameter_interface parameters;
+  parameter_interface optimal_parameters; // adjusted
   parameter_value_set optimal_parameter_values;
   double optimal_duration;
   bool verbose;
@@ -37,7 +38,7 @@ protected:
   std::ofstream scenario_kernel_duration_file;
   std::ofstream scenario_compile_duration_file;
 
-  parameter_result_cache<parameter_interface> result_cache;
+  parameter_result_cache result_cache;
 
   std::function<void(parameter_interface &)> parameter_adjustment_functor;
   std::function<void(parameter_interface &, const parameter_value_set &)>
@@ -45,36 +46,55 @@ protected:
 
   size_t repetitions = 1;
 
+  virtual void tune_impl(Args &... args) = 0;
+
 public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
       : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
-         do_measurement(false), do_write_header(true) {}
+        do_measurement(false), do_write_header(true) {}
 
-  double evaluate(bool &did_eval, Args &... args) {
+  parameter_interface tune(Args &... args) {
+    reset_result_cache();
+    optimal_duration = -1.0;
+    optimal_parameters = parameters;
+
+    parameter_value_set original_values = this->f.get_parameter_values();
+
+    tune_impl(args...);
+    this->f.set_parameter_values(original_values);
+
+    // should not be necessary
+    // if (this->parameter_adjustment_functor) {
+    //   this->parameter_adjustment_functor(optimal_parameters);
+    // }
+    return optimal_parameters;
+  }
+
+  void evaluate(Args &... args) { // bool &did_eval,
+    // bool did_eval = false;
     if (verbose) {
       parameter_value_set parameter_values = f.get_parameter_values();
       for (size_t parameter_index = 0; parameter_index < parameters.size();
-               parameter_index++) {
+           parameter_index++) {
         auto &p = parameters[parameter_index];
         parameter_values[p->get_name()] = p->get_value();
       }
-      std::cout << "------ try eval ------" << std::endl;
-      //parameters.print_values();
-      print_parameter_values(parameter_values);
+      // std::cout << "------ try eval ------" << std::endl;
+      // print_parameter_values(parameter_values);
     }
-    if (!result_cache.contains(parameters)) {
-      result_cache.insert(parameters);
-    } else {
-      did_eval = false;
+    // if (!result_cache.contains(parameters)) {
+    //   result_cache.insert(parameters);
+    // } else {
+    //   did_eval = false;
 
-      if (verbose) {
-        std::cout << "------ skipped eval ------" << std::endl;
-        parameters.print_values();
-        std::cout << "--------------------------" << std::endl;
-      }
-      return std::numeric_limits<double>::max();
-    }
+    //   if (verbose) {
+    //     std::cout << "------ skipped eval ------" << std::endl;
+    //     parameters.print_values();
+    //     std::cout << "--------------------------" << std::endl;
+    //   }
+    //   return std::numeric_limits<double>::max();
+    // }
 
     parameter_interface original_parameters = parameters;
     if (parameter_adjustment_functor || extended_parameter_adjustment_functor) {
@@ -83,27 +103,42 @@ public:
         parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
-      if (parameter_adjustment_functor)
+      if (parameter_adjustment_functor) {
         parameter_adjustment_functor(parameters);
-      else if (extended_parameter_adjustment_functor)
+      } else if (extended_parameter_adjustment_functor) {
         extended_parameter_adjustment_functor(parameters,
                                               f.get_parameter_values());
+      }
     }
 
     parameter_value_set parameter_values = f.get_parameter_values();
     for (size_t parameter_index = 0; parameter_index < parameters.size();
-             parameter_index++) {
+         parameter_index++) {
       auto &p = parameters[parameter_index];
       parameter_values[p->get_name()] = p->get_value();
     }
+
+    if (!result_cache.contains(parameter_values)) {
+      result_cache.insert(parameter_values);
+    } else {
+      // did_eval = false;
+
+      if (verbose) {
+        std::cout << "------ skipped eval ------" << std::endl;
+        parameters.print_values();
+        std::cout << "--------------------------" << std::endl;
+      }
+      // return std::numeric_limits<double>::max();
+    }
+
     if (!f.precompile_validate_parameters(parameter_values)) {
       if (verbose) {
         std::cout << "------ invalidated eval (precompile) ------" << std::endl;
         parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
-      did_eval = false;
-      return std::numeric_limits<double>::max();
+      // did_eval = false;
+      // return std::numeric_limits<double>::max();
     } else {
       if (verbose) {
         std::cout << "parameter combination passed precompile check"
@@ -118,11 +153,11 @@ public:
       do_write_header = false;
     }
 
-    did_eval = true;
+    // did_eval = true;
 
     if (verbose) {
       std::cout << "------ begin eval ------" << std::endl;
-      //parameters.print_values();
+      // parameters.print_values();
       print_parameter_values(parameter_values);
     }
 
@@ -138,8 +173,8 @@ public:
       if (verbose) {
         std::cout << "invalid parameter combination encountered" << std::endl;
       }
-      did_eval = false;
-      return std::numeric_limits<double>::max();
+      // did_eval = false;
+      // return std::numeric_limits<double>::max();
     } else {
       if (verbose) {
         std::cout << "parameter combination is valid" << std::endl;
@@ -159,7 +194,7 @@ public:
                 std::cout << "warning: test for combination failed!"
                           << std::endl;
               }
-              return std::numeric_limits<double>::max();
+              // return std::numeric_limits<double>::max();
             } else {
               if (verbose) {
                 std::cout << "test for combination passed" << std::endl;
@@ -209,10 +244,6 @@ public:
       }
     }
 
-    if (parameter_adjustment_functor || extended_parameter_adjustment_functor) {
-      parameters = original_parameters;
-    }
-
     double final_duration;
     if (f.has_kernel_duration_functor()) {
       if (do_measurement) {
@@ -229,11 +260,19 @@ public:
     if (optimal_duration < 0.0 || final_duration < optimal_duration) {
       optimal_duration = final_duration;
       optimal_parameter_values = parameter_values;
+      optimal_parameters = parameters;
+      this->report_verbose("new best kernel", optimal_duration,
+                           this->parameters);
     }
-    return final_duration;
+
+    if (parameter_adjustment_functor || extended_parameter_adjustment_functor) {
+      parameters = original_parameters;
+    }
+
+    // return final_duration;
   }
-  
-  const parameter_value_set& get_optimal_parameter_values() const {
+
+  const parameter_value_set &get_optimal_parameter_values() const {
     if (optimal_duration < 0.0)
       return f.get_parameter_values();
     else
@@ -317,12 +356,16 @@ public:
       std::function<void(parameter_interface &, const parameter_value_set &)>
           parameter_adjustment_functor) {
     this->extended_parameter_adjustment_functor = parameter_adjustment_functor;
-    this->parameter_adjustment_functor = [this](parameter_interface &parameters) -> void {
-      this->extended_parameter_adjustment_functor(parameters, this->f.get_parameter_values());
+    this->parameter_adjustment_functor =
+        [this](parameter_interface &parameters) -> void {
+      this->extended_parameter_adjustment_functor(
+          parameters, this->f.get_parameter_values());
     };
   }
 
   // execute kernel multiple times to average across the result
   void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
+
+  void reset_result_cache() { result_cache.clear(); }
 };
 } // namespace autotune

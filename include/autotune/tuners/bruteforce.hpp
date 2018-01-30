@@ -15,13 +15,13 @@ public:
              countable_set &parameters)
       : abstract_tuner<countable_set, R, Args...>(f, parameters) {}
 
-  countable_set tune(Args &... args) {
+private:
+  void tune_impl(Args &... args) override {
 
-    this->result_cache.clear();
+    // this->result_cache.clear();
+    // parameter_value_set original_values = this->f.get_parameter_values();
 
-    parameter_value_set original_values = this->f.get_parameter_values();
-
-    bool is_valid = true;
+    // bool is_valid = true;
 
     size_t total_combinations = 1.0;
     for (size_t i = 0; i < this->parameters.size(); i++) {
@@ -45,16 +45,16 @@ public:
                 << " (out of " << total_combinations << ")" << std::endl;
     }
     combination_counter += 1;
-    bool first = true;
+    // bool first = true;
 
-    double optimal_duration = this->evaluate(is_valid, args...);
-    countable_set optimal_parameters;
-    if (is_valid) {
-      first = false;
-      optimal_parameters = this->parameters;
-      this->report_verbose("new best kernel", optimal_duration,
-                           this->parameters);
-    }
+    this->evaluate(args...);
+    // countable_set optimal_parameters;
+    // if (is_valid) {
+    //   first = false;
+    //   optimal_parameters = this->parameters;
+    //   this->report_verbose("new best kernel", optimal_duration,
+    //                        this->parameters);
+    // }
 
     size_t current_index = 0;
     while (true) {
@@ -78,14 +78,14 @@ public:
                     << " (out of " << total_combinations << ")" << std::endl;
         }
         combination_counter += 1;
-        double duration = this->evaluate(is_valid, args...);
-        if (is_valid && (first || duration < optimal_duration)) {
-          first = false;
-          optimal_duration = duration;
-          optimal_parameters = this->parameters;
-          this->report_verbose("new best kernel", optimal_duration,
-                               this->parameters);
-        }
+        this->evaluate(args...);
+        // if (is_valid && (first || duration < optimal_duration)) {
+        //   first = false;
+        //   optimal_duration = duration;
+        //   optimal_parameters = this->parameters;
+        //   this->report_verbose("new best kernel", optimal_duration,
+        //                        this->parameters);
+        // }
 
       } else {
         // no valid more values, try next parameter "above"
@@ -93,11 +93,11 @@ public:
       }
     }
 
-    this->f.set_parameter_values(original_values);
-    if (this->parameter_adjustment_functor) {
-      this->parameter_adjustment_functor(optimal_parameters);
-    }
-    return optimal_parameters;
+    // this->f.set_parameter_values(original_values);
+    // if (this->parameter_adjustment_functor) {
+    //   this->parameter_adjustment_functor(optimal_parameters);
+    // }
+    // return optimal_parameters;
   }
 };
 } // namespace tuners

@@ -19,13 +19,14 @@ public:
       : abstract_tuner<limited_set, R, Args...>(f, parameters),
         iterations(iterations) {}
 
-  limited_set tune(Args &... args) {
+private:
+  void tune_impl(Args &... args) override {
 
-    this->result_cache.clear();
+    // this->result_cache.clear();
 
-    parameter_value_set original_values = this->f.get_parameter_values();
+    // parameter_value_set original_values = this->f.get_parameter_values();
 
-    limited_set optimal_parameters = this->parameters;
+    // limited_set optimal_parameters = this->parameters;
 
     std::vector<double> min(this->parameters.size());
     std::vector<double> max(this->parameters.size());
@@ -51,18 +52,18 @@ public:
         auto &p = this->parameters[p_idx];
         if (!mid_eval[p_idx].second) {
           p->set_value(mid[p_idx]);
-          mid_eval[p_idx].first =
-              this->evaluate(mid_eval[p_idx].second, args...);
+          // mid_eval[p_idx].first =
+          this->evaluate(args...);
         }
         if (!min_eval[p_idx].second) {
           p->set_value(0.5 * (min[p_idx] + mid[p_idx]));
-          min_eval[p_idx].first =
-              this->evaluate(min_eval[p_idx].second, args...);
+          // min_eval[p_idx].first =
+          this->evaluate(args...);
         }
         if (!max_eval[p_idx].second) {
           p->set_value(0.5 * (max[p_idx] + mid[p_idx]));
-          max_eval[p_idx].first =
-              this->evaluate(max_eval[p_idx].second, args...);
+          // max_eval[p_idx].first =
+          this->evaluate(args...);
         }
         double opt_val = 0.5 * (min[p_idx] + mid[p_idx]);
         std::pair<double, bool> opt = min_eval[p_idx];
@@ -96,14 +97,14 @@ public:
             max_eval[p_idx].second = false;
           }
           p->set_value(mid[p_idx]);
-          optimal_parameters = this->parameters;
+          // optimal_parameters = this->parameters;
         }
         p->set_value(mid[p_idx]);
       }
     }
 
-    this->f.set_parameter_values(original_values);
-    return optimal_parameters;
+    // this->f.set_parameter_values(original_values);
+    // return optimal_parameters;
   }
 };
 } // namespace tuners
