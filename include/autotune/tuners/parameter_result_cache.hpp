@@ -15,6 +15,8 @@ public:
       return;
     }
 
+    // std::cout << parameters_it->second << " ";
+
     // auto cur_value = std::next(parameters.begin(), cur_index)->second;
     auto child_iterator = children.find(parameters_it->second);
     if (child_iterator == children.end()) {
@@ -36,6 +38,7 @@ public:
     if (child_it == children.end()) {
       return false;
     }
+    // std::cout << candidate_it->second << " ";
     return child_it->second.contains(++candidate_it, candidate_it_end);
   }
 };
@@ -50,7 +53,9 @@ public:
   void insert(const parameter_value_set &parameters) {
     auto parameters_it = parameters.begin();
     auto parameters_it_end = parameters.end();
+    // std::cout << "insert: ";
     this->insert(parameters_it, parameters_it_end);
+    // std::cout << std::endl;
   }
 
   template <typename parameter_interface>
@@ -61,7 +66,9 @@ public:
   bool contains(const parameter_value_set &candidate) {
     auto candidate_it = candidate.begin();
     auto candidate_it_end = candidate.end();
+    // std::cout << "contains: ";
     return this->contains(candidate_it, candidate_it_end);
+    // std::cout << std::endl;
   }
 
   template <typename parameter_interface>
