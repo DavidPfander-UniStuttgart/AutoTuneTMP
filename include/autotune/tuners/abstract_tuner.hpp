@@ -113,7 +113,7 @@ public:
       if (verbose) {
         std::cout << "------ parameters pre-adjustment (value functor) ------"
                   << std::endl;
-        parameters.print_values();
+        // parameters.print_values();
         print_parameter_values(parameter_values);
         std::cout << "--------------------------" << std::endl;
       }
