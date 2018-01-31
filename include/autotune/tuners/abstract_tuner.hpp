@@ -63,6 +63,7 @@ public:
     }
     optimal_duration = -1.0;
     optimal_parameters = parameters;
+    optimal_parameter_values = this->f.get_parameter_values();
 
     parameter_value_set original_values = this->f.get_parameter_values();
 
