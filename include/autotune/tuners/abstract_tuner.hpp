@@ -133,7 +133,10 @@ public:
 
     // parameter_value_set parameter_values = f.get_parameter_values();
     if (!result_cache.contains(parameter_values)) {
-      print_parameter_values(parameter_values);
+      if (verbose) {
+        std::cout << "------ add to cache ------" << std::endl;
+        print_parameter_values(parameter_values);
+      }
       result_cache.insert(parameter_values);
     } else {
       // did_eval = false;
