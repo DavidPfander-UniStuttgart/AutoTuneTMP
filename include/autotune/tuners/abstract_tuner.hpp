@@ -46,7 +46,7 @@ protected:
 
   size_t repetitions;
 
-  bool reset_result_cache;
+  bool clear_tuner;
 
   virtual void tune_impl(Args &... args) = 0;
 
@@ -55,15 +55,16 @@ public:
                  parameter_interface &parameters)
       : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
         do_measurement(false), do_write_header(true), repetitions(1),
-        reset_result_cache(true) {}
+        clear_tuner(true) {}
 
   parameter_interface tune(Args &... args) {
-    if (reset_result_cache) {
+    // if first run or auto clear is active
+    if (clear_tuner || optimal_duration < 0) {
       result_cache.clear();
+      optimal_duration = -1.0;
+      optimal_parameters = parameters;
+      optimal_parameter_values = this->f.get_parameter_values();
     }
-    optimal_duration = -1.0;
-    optimal_parameters = parameters;
-    optimal_parameter_values = this->f.get_parameter_values();
 
     parameter_value_set original_values = this->f.get_parameter_values();
 
@@ -385,8 +386,9 @@ public:
   // execute kernel multiple times to average across the result
   void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
 
-  void set_reset_result_cache(bool reset_result_cache) {
-    this->reset_result_cache = reset_result_cache;
+  // reset cache and optima for each run;
+  void auto_clear(bool auto_clear) {
+    this->clear_tuner = auto_clear;
   };
 
   // void reset_result_cache() { result_cache.clear(); }
