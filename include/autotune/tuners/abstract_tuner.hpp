@@ -92,20 +92,20 @@ public:
       auto &p = parameters[parameter_index];
       parameter_values[p->get_name()] = p->get_value();
     }
-    parameter_interface original_parameters = parameters;
+    parameter_interface evaluate_parameters = parameters;
 
     // adjust parameters by parameter set
     if (parameter_adjustment_functor) {
       if (verbose) {
         std::cout << "------ parameters pre-adjustment ------" << std::endl;
-        parameters.print_values();
+        evaluate_parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
       if (parameter_adjustment_functor) {
-        parameter_adjustment_functor(parameters);
-        for (size_t parameter_index = 0; parameter_index < parameters.size();
+        parameter_adjustment_functor(evaluate_parameters);
+        for (size_t parameter_index = 0; parameter_index < evaluate_parameters.size();
              parameter_index++) {
-          auto &p = parameters[parameter_index];
+          auto &p = evaluate_parameters[parameter_index];
           parameter_values[p->get_name()] = p->get_value();
         }
       }
@@ -144,7 +144,7 @@ public:
 
       if (verbose) {
         std::cout << "------ skipped eval ------" << std::endl;
-        parameters.print_values();
+        evaluate_parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
       // return std::numeric_limits<double>::max();
@@ -154,7 +154,7 @@ public:
     if (!f.precompile_validate_parameters(parameter_values)) {
       if (verbose) {
         std::cout << "------ invalidated eval (precompile) ------" << std::endl;
-        parameters.print_values();
+        evaluate_parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
       // did_eval = false;
@@ -167,6 +167,7 @@ public:
       }
     }
 
+    parameter_value_set original_kernel_parameters = f.get_parameter_values();
     f.set_parameter_values(parameter_values);
 
     if (do_measurement && do_write_header) {
@@ -196,6 +197,7 @@ public:
       }
       // did_eval = false;
       // return std::numeric_limits<double>::max();
+      f.set_parameter_values(original_kernel_parameters);
       return;
     } else {
       if (verbose) {
@@ -217,6 +219,7 @@ public:
                           << std::endl;
               }
               // return std::numeric_limits<double>::max();
+              f.set_parameter_values(original_kernel_parameters);
               return;
             } else {
               if (verbose) {
@@ -239,6 +242,8 @@ public:
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
 
+    f.set_parameter_values(original_kernel_parameters);
+    
     if (verbose) {
       if (f.has_kernel_duration_functor()) {
         std::cout << "internal duration: " << f.get_internal_kernel_duration()
@@ -283,15 +288,10 @@ public:
     if (optimal_duration < 0.0 || final_duration < optimal_duration) {
       optimal_duration = final_duration;
       optimal_parameter_values = parameter_values;
-      optimal_parameters = parameters;
+      optimal_parameters = evaluate_parameters;
       this->report_verbose("new best kernel", optimal_duration,
-                           this->parameters);
+                            evaluate_parameters);
     }
-
-    if (parameter_adjustment_functor) {
-      parameters = original_parameters;
-    }
-
     // return final_duration;
   }
 
