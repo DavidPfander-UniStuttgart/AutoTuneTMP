@@ -122,6 +122,14 @@ public:
         parameter_values_adjustment_functor(parameter_values);
       }
     }
+    
+    if (verbose) {
+      std::cout << "------ post-adjustment values ------"
+                << std::endl;
+      // parameters.print_values();
+      print_parameter_values(parameter_values);
+      std::cout << "--------------------------" << std::endl;
+    }
 
     // parameter_value_set parameter_values = f.get_parameter_values();
     if (!result_cache.contains(parameter_values)) {
