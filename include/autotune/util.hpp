@@ -30,20 +30,19 @@ inline int64_t round_to_nearest(int64_t value, int64_t factor) {
 inline int64_t round_to_nearest_bounded(int64_t value, int64_t factor,
                                         double min, double max) {
   int64_t remainder = value % factor;
-  std::cout << "value: " << value << " factor: " << factor
-            << " remainder: " << remainder << std::endl;
+  //std::cout << "value: " << value << " factor: " << factor
+  //          << " remainder: " << remainder << std::endl;
   int64_t lower = value - remainder;
   int64_t upper = value + (factor - remainder);
 
-  if (static_cast<double>(remainder) / static_cast<double>(factor) <=
-      0.5 * static_cast<double>(factor)) {
-    if (lower >= min && lower <= max) {
+  if (2*remainder <= factor) {
+    if (static_cast<double>(lower) >= min && static_cast<double>(lower) <= max) {
       return lower;
     } else {
       return min;
     }
   } else {
-    if (lower >= min && lower <= max) {
+    if (static_cast<double>(upper) >= min && static_cast<double>(upper) <= max) {
       return upper;
     } else {
       return max;

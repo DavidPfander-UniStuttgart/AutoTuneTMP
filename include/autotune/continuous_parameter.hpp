@@ -108,7 +108,7 @@ public:
 
   double get_min() const { return min; }
 
-  double get_max() const { return min; }
+  double get_max() const { return max; }
 
   size_t count_values() const {
     if (multiply) {

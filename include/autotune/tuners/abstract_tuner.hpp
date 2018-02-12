@@ -46,7 +46,7 @@ protected:
 
   size_t repetitions;
 
-  bool reset_result_cache;
+  bool clear_tuner;
 
   virtual void tune_impl(Args &... args) = 0;
 
@@ -55,14 +55,16 @@ public:
                  parameter_interface &parameters)
       : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
         do_measurement(false), do_write_header(true), repetitions(1),
-        reset_result_cache(true) {}
+        clear_tuner(true) {}
 
   parameter_interface tune(Args &... args) {
-    if (reset_result_cache) {
+    // if first run or auto clear is active
+    if (clear_tuner || optimal_duration < 0) {
       result_cache.clear();
+      optimal_duration = -1.0;
+      optimal_parameters = parameters;
+      optimal_parameter_values = this->f.get_parameter_values();
     }
-    optimal_duration = -1.0;
-    optimal_parameters = parameters;
 
     parameter_value_set original_values = this->f.get_parameter_values();
 
@@ -90,20 +92,20 @@ public:
       auto &p = parameters[parameter_index];
       parameter_values[p->get_name()] = p->get_value();
     }
-    parameter_interface original_parameters = parameters;
+    parameter_interface evaluate_parameters = parameters;
 
     // adjust parameters by parameter set
     if (parameter_adjustment_functor) {
       if (verbose) {
         std::cout << "------ parameters pre-adjustment ------" << std::endl;
-        parameters.print_values();
+        evaluate_parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
       if (parameter_adjustment_functor) {
-        parameter_adjustment_functor(parameters);
-        for (size_t parameter_index = 0; parameter_index < parameters.size();
+        parameter_adjustment_functor(evaluate_parameters);
+        for (size_t parameter_index = 0; parameter_index < evaluate_parameters.size();
              parameter_index++) {
-          auto &p = parameters[parameter_index];
+          auto &p = evaluate_parameters[parameter_index];
           parameter_values[p->get_name()] = p->get_value();
         }
       }
@@ -121,17 +123,28 @@ public:
         parameter_values_adjustment_functor(parameter_values);
       }
     }
+    
+    if (verbose) {
+      std::cout << "------ post-adjustment values ------"
+                << std::endl;
+      // parameters.print_values();
+      print_parameter_values(parameter_values);
+      std::cout << "--------------------------" << std::endl;
+    }
 
     // parameter_value_set parameter_values = f.get_parameter_values();
     if (!result_cache.contains(parameter_values)) {
-      print_parameter_values(parameter_values);
+      if (verbose) {
+        std::cout << "------ add to cache ------" << std::endl;
+        print_parameter_values(parameter_values);
+      }
       result_cache.insert(parameter_values);
     } else {
       // did_eval = false;
 
       if (verbose) {
         std::cout << "------ skipped eval ------" << std::endl;
-        parameters.print_values();
+        evaluate_parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
       // return std::numeric_limits<double>::max();
@@ -141,7 +154,7 @@ public:
     if (!f.precompile_validate_parameters(parameter_values)) {
       if (verbose) {
         std::cout << "------ invalidated eval (precompile) ------" << std::endl;
-        parameters.print_values();
+        evaluate_parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
       // did_eval = false;
@@ -154,6 +167,7 @@ public:
       }
     }
 
+    parameter_value_set original_kernel_parameters = f.get_parameter_values();
     f.set_parameter_values(parameter_values);
 
     if (do_measurement && do_write_header) {
@@ -183,6 +197,7 @@ public:
       }
       // did_eval = false;
       // return std::numeric_limits<double>::max();
+      f.set_parameter_values(original_kernel_parameters);
       return;
     } else {
       if (verbose) {
@@ -204,6 +219,7 @@ public:
                           << std::endl;
               }
               // return std::numeric_limits<double>::max();
+              f.set_parameter_values(original_kernel_parameters);
               return;
             } else {
               if (verbose) {
@@ -226,6 +242,8 @@ public:
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
 
+    f.set_parameter_values(original_kernel_parameters);
+    
     if (verbose) {
       if (f.has_kernel_duration_functor()) {
         std::cout << "internal duration: " << f.get_internal_kernel_duration()
@@ -270,15 +288,10 @@ public:
     if (optimal_duration < 0.0 || final_duration < optimal_duration) {
       optimal_duration = final_duration;
       optimal_parameter_values = parameter_values;
-      optimal_parameters = parameters;
+      optimal_parameters = evaluate_parameters;
       this->report_verbose("new best kernel", optimal_duration,
-                           this->parameters);
+                            evaluate_parameters);
     }
-
-    if (parameter_adjustment_functor) {
-      parameters = original_parameters;
-    }
-
     // return final_duration;
   }
 
@@ -373,8 +386,9 @@ public:
   // execute kernel multiple times to average across the result
   void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
 
-  void set_reset_result_cache(bool reset_result_cache) {
-    this->reset_result_cache = reset_result_cache;
+  // reset cache and optima for each run;
+  void auto_clear(bool auto_clear) {
+    this->clear_tuner = auto_clear;
   };
 
   // void reset_result_cache() { result_cache.clear(); }
