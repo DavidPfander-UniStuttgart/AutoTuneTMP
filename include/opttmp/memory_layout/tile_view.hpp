@@ -18,7 +18,7 @@ private:
   size_t tile_size;
 
 public:
-  tile_view(std::vector<T, U> &tiled, size_t (&tile_index)[dim],
+  tile_view(std::vector<T, U> &tiled, std::array<size_t, dim> &tile_index,
             const tiling_configuration &tiling_info)
       : tiled(tiled), tiling_info(tiling_info) {
 
@@ -77,4 +77,15 @@ public:
     return inner_flat_index;
   }
 };
+
+template <size_t dim, typename T, typename U>
+tile_view<dim, T, U>
+make_view_from_index(std::array<size_t, dim> index, std::vector<T, U> &tiled,
+                     const tiling_configuration &tiling_info) {
+  std::array<size_t, dim> tile_index;
+  for (size_t d = 0; d < dim; d++) {
+    tile_index[d] = index[d] / tiling_info[d].tile_size_dir;
+  }
+  return tile_view<dim, T, U>(tiled, tile_index, tiling_info);
+}
 }
