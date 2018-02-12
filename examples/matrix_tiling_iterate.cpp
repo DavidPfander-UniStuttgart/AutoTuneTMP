@@ -1,6 +1,7 @@
 #include "opttmp/memory_layout/tile_array.hpp"
 
 #include <iostream>
+#include <omp.h>
 #include <random>
 #include <vector>
 
@@ -21,15 +22,26 @@ int main(void) {
   tiling_configuration conf = {{2, M}, {4, N}};
   std::vector<double> tiled = memory_layout::make_tiled<2>(m, conf);
 
-  size_t color = 0;
-  memory_layout::iterate_tiles<2>(tiled, conf, [&color](auto view) {
-    for (size_t i = 0; i < 2; i++) {
-      for (size_t j = 0; j < 4; j++) {
-        view[i * 4 + j] = color;
-      }
+  size_t block_x_step = 4;
+  size_t block_y_step = 8;
+#pragma omp parallel for collapse(2)
+  for (size_t block_x = 0; block_x < M; block_x += block_x_step) {
+    for (size_t block_y = 0; block_y < N; block_y += block_y_step) {
+      size_t color = 0;
+      memory_layout::iterate_tiles_partial<2>(
+          tiled, {block_x, block_y},
+          {block_x + block_x_step, block_y + block_y_step}, conf,
+          [&color](auto view) {
+            int my_thread_num = omp_get_thread_num();
+            for (size_t i = 0; i < 2; i++) {
+              for (size_t j = 0; j < 4; j++) {
+                view[i * 4 + j] = (10000 * my_thread_num) + color;
+              }
+            }
+            color += 1;
+          });
     }
-    color += 1;
-  });
+  }
 
   auto back = memory_layout::undo_tiling<2>(tiled, conf);
 
