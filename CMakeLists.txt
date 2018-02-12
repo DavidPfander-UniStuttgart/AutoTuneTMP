@@ -126,6 +126,11 @@ add_executable(matrix_tiling "examples/matrix_tiling.cpp")
 target_link_libraries(matrix_tiling AutoTuneTMP AutoTuneTMP Boost::boost)
 install(TARGETS matrix_tiling DESTINATION examples)
 
+add_executable(matrix_tiling_iterate "examples/matrix_tiling_iterate.cpp")
+target_compile_options(matrix_tiling_iterate PUBLIC -fopenmp)
+target_link_libraries(matrix_tiling_iterate AutoTuneTMP AutoTuneTMP Boost::boost -fopenmp)
+install(TARGETS matrix_tiling_iterate DESTINATION examples)
+
 add_executable(continuous_parameter_example "examples/continuous_parameter_example.cpp")
 target_link_libraries(continuous_parameter_example AutoTuneTMP)
 install(TARGETS continuous_parameter_example DESTINATION examples)
