@@ -48,7 +48,7 @@ std::vector<T, U> make_tiled(std::vector<T, U> &org,
   memory_layout::iterate_tiles<dim>(
       tiled, tiling_info,
       [&org, &untiled_strides, &tiling_info, &min, &max, &strides](auto view) {
-        std::array<size_t, dim> &tile_index = view.get_tile_index();
+        const std::array<size_t, dim> &tile_index = view.get_tile_index();
 
         std::array<size_t, dim> index_offset;
         // std::cout << "---------next tile---------" << std::endl;
@@ -118,7 +118,7 @@ std::vector<T, U> undo_tiling(std::vector<T, U> &tiled,
   memory_layout::iterate_tiles<dim>(
       tiled, tiling_info, [&untiled, &untiled_strides, &tiling_info, &min, &max,
                            &strides](auto view) {
-        std::array<size_t, dim> &tile_index = view.get_tile_index();
+        const std::array<size_t, dim> &tile_index = view.get_tile_index();
 
         std::array<size_t, dim> index_offset;
         // std::cout << "---------next tile---------" << std::endl;

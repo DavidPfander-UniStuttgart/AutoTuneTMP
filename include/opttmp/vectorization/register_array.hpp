@@ -48,14 +48,14 @@ public:
 
   // initialize from mem
   template <typename vc_flag>
-  register_array(typename vc_type::value_type *mem, vc_flag t) {
+  register_array(typename vc_type::value_type *const mem, vc_flag t) {
     for (size_t i = 0; i < elements; i++) {
       elems[i] = vc_type(mem + (i * vc_type::size()), t);
     }
   }
 
   template <typename vc_flag>
-  void memstore(typename vc_type::value_type *mem, vc_flag t) {
+  void memstore(typename vc_type::value_type *const mem, vc_flag t) {
     for (size_t i = 0; i < elements; i++) { // additional integer work
       elems[i].memstore(mem + (i * vc_type::size()), t);
     }
