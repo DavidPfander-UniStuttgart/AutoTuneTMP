@@ -241,8 +241,6 @@ public:
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
-
-    f.set_parameter_values(original_kernel_parameters);
     
     if (verbose) {
       if (f.has_kernel_duration_functor()) {
@@ -292,7 +290,8 @@ public:
       this->report_verbose("new best kernel", optimal_duration,
                             evaluate_parameters);
     }
-    // return final_duration;
+
+    f.set_parameter_values(original_kernel_parameters);
   }
 
   const parameter_value_set &get_optimal_parameter_values() const {
