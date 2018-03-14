@@ -3,6 +3,7 @@
 #include "autotune_exception.hpp"
 #include "cppjit/function_traits.hpp"
 #include "parameter_value_set.hpp"
+#include "util.hpp"
 //#include "parameter_set.hpp"
 
 #include <fstream>
@@ -41,13 +42,19 @@ public:
     parameter_values[p.get_name()] = p.get_value();
   }
 
-  template <typename T>
-  void set_parameter_values(const T &parameter_interface) {
+  template <typename... Ts>
+  void set_parameter_values(const Ts &... parameters) {
     parameters_changed = true;
-    for (size_t i = 0; i < parameter_interface.size(); i++) {
-      parameter_values[parameter_interface[i]->get_name()] =
-          parameter_interface[i]->get_value();
-    }
+    auto t = std::make_tuple(std::ref(parameters)...);
+    // for (size_t i = 0; i < parameter_interface.size(); i++) {
+    //   parameter_values[parameter_interface[i]->get_name()] =
+    //       parameter_interface[i]->get_value();
+    // }
+    detail::iterate_tuple(t, [this](auto &ps) {
+      for (size_t i = 0; i < ps.size(); i++) {
+        parameter_values[ps[i]->get_name()] = ps[i]->get_value();
+      }
+    });
   }
 
   void set_parameter_values(const parameter_value_set &new_parameter_values) {
@@ -62,7 +69,9 @@ public:
     parameter_values.clear();
   }
 
-  const parameter_value_set &get_parameter_values() const { return parameter_values; }
+  const parameter_value_set &get_parameter_values() const {
+    return parameter_values;
+  }
 
   virtual R operator()(Args... args) = 0;
 

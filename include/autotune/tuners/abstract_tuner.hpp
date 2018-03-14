@@ -1,25 +1,12 @@
 #pragma once
 
 #include "../abstract_kernel.hpp"
+#include "with_tests.hpp"
 #include "parameter_result_cache.hpp"
 
 #include <chrono>
 
 namespace autotune {
-
-template <typename R, typename... Args> class with_tests {
-private:
-  std::function<bool(R)> t;
-
-public:
-  void setup_test(std::function<bool(R)> t_) { t = t_; };
-
-  bool has_test() { return t ? true : false; }
-
-  bool test(R r) { return t(r); };
-};
-
-template <typename R, typename... Args> class without_tests {};
 
 template <typename parameter_interface, typename R, typename... Args>
 class abstract_tuner
@@ -103,8 +90,8 @@ public:
       }
       if (parameter_adjustment_functor) {
         parameter_adjustment_functor(evaluate_parameters);
-        for (size_t parameter_index = 0; parameter_index < evaluate_parameters.size();
-             parameter_index++) {
+        for (size_t parameter_index = 0;
+             parameter_index < evaluate_parameters.size(); parameter_index++) {
           auto &p = evaluate_parameters[parameter_index];
           parameter_values[p->get_name()] = p->get_value();
         }
@@ -123,10 +110,9 @@ public:
         parameter_values_adjustment_functor(parameter_values);
       }
     }
-    
+
     if (verbose) {
-      std::cout << "------ post-adjustment values ------"
-                << std::endl;
+      std::cout << "------ post-adjustment values ------" << std::endl;
       // parameters.print_values();
       print_parameter_values(parameter_values);
       std::cout << "--------------------------" << std::endl;
@@ -241,7 +227,7 @@ public:
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
-    
+
     if (verbose) {
       if (f.has_kernel_duration_functor()) {
         std::cout << "internal duration: " << f.get_internal_kernel_duration()
@@ -288,11 +274,13 @@ public:
       optimal_parameter_values = parameter_values;
       optimal_parameters = evaluate_parameters;
       this->report_verbose("new best kernel", optimal_duration,
-                            evaluate_parameters);
+                           evaluate_parameters);
     }
 
     f.set_parameter_values(original_kernel_parameters);
   }
+
+  void set_verbose(bool verbose) { this->verbose = verbose; }
 
   const parameter_value_set &get_optimal_parameter_values() const {
     if (optimal_duration < 0.0)
@@ -301,13 +289,48 @@ public:
       return optimal_parameter_values;
   }
 
+  void set_write_measurement(const std::string &scenario_name) {
+    if (do_measurement) {
+      if (scenario_kernel_duration_file.is_open()) {
+        scenario_kernel_duration_file.close();
+      }
+      if (scenario_compile_duration_file.is_open()) {
+        scenario_compile_duration_file.close();
+      }
+    }
+    do_measurement = true;
+    do_write_header = true;
+    scenario_kernel_duration_file.open(scenario_name + "_kernel_duration.csv");
+    scenario_compile_duration_file.open(scenario_name +
+                                        "_compile_duration.csv");
+  }
+
+  void set_parameter_adjustment_functor(
+      std::function<void(parameter_interface &)> parameter_adjustment_functor) {
+    this->parameter_adjustment_functor = parameter_adjustment_functor;
+    this->parameter_values_adjustment_functor = nullptr;
+  }
+
+  void set_parameter_values_adjustment_functor(
+      std::function<void(parameter_value_set &)>
+          parameter_values_adjustment_functor) {
+    this->parameter_values_adjustment_functor =
+        parameter_values_adjustment_functor;
+    this->parameter_adjustment_functor = nullptr;
+  }
+
+  // execute kernel multiple times to average across the result
+  void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
+
+  // reset cache and optima for each run;
+  void set_auto_clear(bool clear_tuner) { this->clear_tuner = clear_tuner; };
+
+private:
   void report(const std::string &message, double duration,
               parameter_interface &parameters) {
     std::cout << message << "; duration: " << duration << std::endl;
     parameters.print_values();
   }
-
-  void set_verbose(bool verbose) { this->verbose = verbose; }
 
   void report_verbose(const std::string &message, double duration,
                       parameter_interface &parameters) {
@@ -351,45 +374,5 @@ public:
     scenario_kernel_duration_file << ", " << duration_kernel_s << std::endl;
     scenario_compile_duration_file << ", " << duration_compile_s << std::endl;
   }
-
-  void set_write_measurement(const std::string &scenario_name) {
-    if (do_measurement) {
-      if (scenario_kernel_duration_file.is_open()) {
-        scenario_kernel_duration_file.close();
-      }
-      if (scenario_compile_duration_file.is_open()) {
-        scenario_compile_duration_file.close();
-      }
-    }
-    do_measurement = true;
-    do_write_header = true;
-    scenario_kernel_duration_file.open(scenario_name + "_kernel_duration.csv");
-    scenario_compile_duration_file.open(scenario_name +
-                                        "_compile_duration.csv");
-  }
-
-  void set_parameter_adjustment_functor(
-      std::function<void(parameter_interface &)> parameter_adjustment_functor) {
-    this->parameter_adjustment_functor = parameter_adjustment_functor;
-    this->parameter_values_adjustment_functor = nullptr;
-  }
-
-  void set_parameter_values_adjustment_functor(
-      std::function<void(parameter_value_set &)>
-          parameter_values_adjustment_functor) {
-    this->parameter_values_adjustment_functor =
-        parameter_values_adjustment_functor;
-    this->parameter_adjustment_functor = nullptr;
-  }
-
-  // execute kernel multiple times to average across the result
-  void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
-
-  // reset cache and optima for each run;
-  void auto_clear(bool auto_clear) {
-    this->clear_tuner = auto_clear;
-  };
-
-  // void reset_result_cache() { result_cache.clear(); }
 };
 } // namespace autotune

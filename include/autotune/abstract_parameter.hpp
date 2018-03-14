@@ -1,7 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <map>
+#include <memory>
 
 // an abstract parameter should never get instantiated
 // only occurs as part of construction of the individual parameter types
@@ -10,11 +10,12 @@ namespace autotune {
 
 template <typename T> class abstract_parameter_wrapper;
 
-class abstract_parameter {public:
+class abstract_parameter {
+public:
   virtual const std::string &get_name() const = 0;
   virtual const std::string get_value() const = 0;
   virtual void set_initial() = 0;
-  //virtual std::shared_ptr<abstract_parameter> clone_wrapper() = 0;
+  // virtual std::shared_ptr<abstract_parameter> clone_wrapper() = 0;
   /*template<typename T> std::shared_ptr<T> clone_wrapper() {
     return std::make_shared<abstract_parameter_wrapper<T>>(*this);
   }*/
@@ -29,9 +30,11 @@ class abstract_parameter {public:
 template <typename T>
 class abstract_parameter_wrapper : public abstract_parameter {
   T p;
+
 public:
   abstract_parameter_wrapper(T p) : p(p) {}
-  abstract_parameter_wrapper(const abstract_parameter_wrapper<T> &other) : p(other.p) {}
+  abstract_parameter_wrapper(const abstract_parameter_wrapper<T> &other)
+      : p(other.p) {}
   virtual const std::string &get_name() const override { return p.get_name(); }
   virtual const std::string get_value() const override { return p.get_value(); }
   virtual void set_initial() override { p.set_initial(); };
