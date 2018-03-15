@@ -93,7 +93,12 @@ public:
     return optimal_parameter_values;
   }
 
-  void set_verbose(bool verbose) { this->verbose = verbose; }
+  void set_verbose(bool verbose) {
+    this->verbose = verbose;
+    for (size_t i = 0; i < tuners.size(); i++) {
+      tuners[i].get().set_verbose(true);
+    }
+  }
 
   void setup_test(std::function<bool(R)> test_functional) {
     for (size_t i = 0; i < this->tuners.size(); i++) {

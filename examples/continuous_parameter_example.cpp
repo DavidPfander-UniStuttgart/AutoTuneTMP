@@ -26,7 +26,7 @@ int main(void) {
 
   size_t line_search_iterations = 5;
   autotune::tuners::line_search tuner(autotune::add_one, parameters,
-                                      line_search_iterations, 1);
+                                      line_search_iterations);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   int a = 5;

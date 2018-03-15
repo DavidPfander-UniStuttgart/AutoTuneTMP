@@ -13,7 +13,6 @@ template <typename R, typename... Args>
 class line_search : public abstract_tuner<countable_set, R, Args...> {
 private:
   size_t max_iterations;
-  size_t restarts;
 
   // void evaluate_parameter_set(countable_set &optimal_parameters,
   //                             double &optimal_duration, Args &... args) {
@@ -33,10 +32,9 @@ private:
 
 public:
   line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-              countable_set &parameters, size_t max_iterations,
-              size_t restarts = 0)
+              countable_set &parameters, size_t max_iterations)
       : abstract_tuner<countable_set, R, Args...>(f, parameters),
-        max_iterations(max_iterations), restarts(restarts) {}
+        max_iterations(max_iterations) {}
 
 private:
   virtual void tune_impl(Args &... args) override {

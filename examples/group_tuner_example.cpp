@@ -39,13 +39,9 @@ int main(void) {
 
   autotune::tuners::neighborhood_search t1(autotune::smooth_cost_function,
                                            parameters_group_1, 1);
-  t1.set_verbose(true);
   autotune::tuners::neighborhood_search t2(autotune::smooth_cost_function,
                                            parameters_group_2, 1);
-  t2.set_verbose(true);
 
-  // autotune::tuners::group_tuner<autotune::countable_set, int, int>
-  // g(autotune::smooth_cost_function, 1, t1, t2);
   autotune::tuners::group_tuner g(autotune::smooth_cost_function, 2, t1, t2);
   g.set_verbose(true);
   int a = 5;

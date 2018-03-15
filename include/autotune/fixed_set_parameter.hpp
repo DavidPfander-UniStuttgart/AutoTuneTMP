@@ -78,6 +78,18 @@ public:
     std::default_random_engine generator(rd());
     cur_index = distribution(generator);
   }
+
+  void set_value_unsafe(const std::string &v) {
+    this->set_min();
+    while (true) {
+      if (this->get_value().compare(v) == 0) {
+        break;
+      }
+      if (!this->next()) {
+        throw;
+      }
+    }
+  }
 };
 
 template <> class fixed_set_parameter<std::string> {
@@ -147,6 +159,18 @@ public:
     std::random_device rd;
     std::default_random_engine generator(rd());
     cur_index = distribution(generator);
+  }
+
+  void set_value_unsafe(const std::string &v) {
+    this->set_min();
+    while (true) {
+      if (this->get_value().compare(v) == 0) {
+        break;
+      }
+      if (!this->next()) {
+        throw;
+      }
+    }
   }
 };
 }

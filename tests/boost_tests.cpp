@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(run_line_search) {
   int a = 5;
 
   autotune::tuners::line_search tuner(autotune::run_line_search_kernel,
-                                      parameters, 5, 1);
+                                      parameters, 5);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);

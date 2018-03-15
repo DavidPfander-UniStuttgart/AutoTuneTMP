@@ -136,6 +136,8 @@ public:
     current = value;
   }
 
+  void set_value_unsafe(const std::string &v) { current = std::stod(v); }
+
   void to_nearest_valid(double factor) {
     if (!multiply) {
       current =
@@ -211,6 +213,8 @@ public:
       current = distribution(generator);
     }
   }
+
+  void set_value_unsafe(const std::string &v) { current = std::stod(v); }
 
   void to_nearest_valid(double factor) {
     current =

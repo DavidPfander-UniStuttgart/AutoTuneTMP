@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../autotune_exception.hpp"
 #include "../abstract_parameter.hpp"
+#include "../autotune_exception.hpp"
 
 namespace autotune {
 
@@ -13,14 +13,15 @@ public:
   virtual bool prev() = 0;
   virtual void set_min() = 0;
   virtual size_t count_values() const = 0;
-  //virtual const std::string &get_name() const = 0;
-  //virtual const std::string get_value() const = 0;
-  //virtual void set_initial() = 0;
+  // virtual const std::string &get_name() const = 0;
+  // virtual const std::string get_value() const = 0;
+  // virtual void set_initial() = 0;
   virtual void set_random_value() = 0;
+  virtual void set_value_unsafe(const std::string &v) = 0;
   virtual std::shared_ptr<countable_parameter> clone_wrapper() = 0;
   template <typename T> T &get_unwrapped_parameter() {
-   auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
-   return derived->unwrapped_parameter();
+    auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
+    return derived->unwrapped_parameter();
   }
 };
 
@@ -45,6 +46,7 @@ public:
   virtual const std::string get_value() const override { return p.get_value(); }
   virtual void set_initial() override { p.set_initial(); };
   virtual void set_random_value() override { return p.set_random_value(); }
+  virtual void set_value_unsafe(const std::string &v) { p.set_value_unsafe(v); }
   virtual std::shared_ptr<countable_parameter> clone_wrapper() override {
     return std::make_shared<countable_parameter_wrapper<T>>(*this);
   }
@@ -94,6 +96,13 @@ public:
     std::shared_ptr<countable_parameter_wrapper<T>> wrapper =
         std::make_shared<countable_parameter_wrapper<T>>(std::move(p));
     this->push_back(wrapper);
+  }
+
+  // must contain parameters of set, ignores additional value pairs
+  void set_values(parameter_value_set parameter_values) {
+    for (auto &p : *this) {
+      p->set_value_unsafe(parameter_values[p->get_name()]);
+    }
   }
 
   void print_values() {

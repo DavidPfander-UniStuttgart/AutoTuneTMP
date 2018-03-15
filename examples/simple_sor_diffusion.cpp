@@ -95,7 +95,7 @@ size_t SORSolve(std::vector<double> &grid, const std::vector<double> &rhs,
 
   size_t line_search_iterations = 4;
   autotune::tuners::line_search tuner(autotune::SORDiffusion, parameters,
-                                      line_search_iterations, 1);
+                                      line_search_iterations);
   tuner.setup_test(test_result);
   autotune::SORDiffusion.set_parameter_values(tuner.tune(
       grid_r, grid_b, rhs_r, rhs_b, eps, res, rate, time, iter, itermax));
