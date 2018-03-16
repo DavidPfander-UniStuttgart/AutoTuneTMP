@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../abstract_kernel.hpp"
-#include "with_tests.hpp"
 #include "parameter_result_cache.hpp"
+#include "with_tests.hpp"
 
 #include <chrono>
 
@@ -71,7 +71,8 @@ public:
     return optimal_parameters;
   }
 
-  void evaluate(Args &... args) {
+  // returns whether evaluate lead to new optimal configuration found
+  bool evaluate(Args &... args) {
     // save original paramters
     parameter_value_set parameter_values = f.get_parameter_values();
     for (size_t parameter_index = 0; parameter_index < parameters.size();
@@ -269,15 +270,18 @@ public:
       }
       final_duration = duration.count();
     }
+    bool is_better = false;
     if (optimal_duration < 0.0 || final_duration < optimal_duration) {
       optimal_duration = final_duration;
       optimal_parameter_values = parameter_values;
       optimal_parameters = evaluate_parameters;
       this->report_verbose("new best kernel", optimal_duration,
                            evaluate_parameters);
+      is_better = true;
     }
 
     f.set_parameter_values(original_kernel_parameters);
+    return is_better;
   }
 
   void set_verbose(bool verbose) { this->verbose = verbose; }
