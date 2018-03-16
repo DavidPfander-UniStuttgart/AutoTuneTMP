@@ -135,7 +135,7 @@ public:
         std::cout << "--------------------------" << std::endl;
       }
       // return std::numeric_limits<double>::max();
-      return;
+      return false;
     }
 
     if (!f.precompile_validate_parameters(parameter_values)) {
@@ -146,7 +146,7 @@ public:
       }
       // did_eval = false;
       // return std::numeric_limits<double>::max();
-      return;
+      return false;
     } else {
       if (verbose) {
         std::cout << "parameter combination passed precompile check"
@@ -185,7 +185,7 @@ public:
       // did_eval = false;
       // return std::numeric_limits<double>::max();
       f.set_parameter_values(original_kernel_parameters);
-      return;
+      return false;
     } else {
       if (verbose) {
         std::cout << "parameter combination is valid" << std::endl;
@@ -207,7 +207,7 @@ public:
               }
               // return std::numeric_limits<double>::max();
               f.set_parameter_values(original_kernel_parameters);
-              return;
+              return false;
             } else {
               if (verbose) {
                 std::cout << "test for combination passed" << std::endl;
