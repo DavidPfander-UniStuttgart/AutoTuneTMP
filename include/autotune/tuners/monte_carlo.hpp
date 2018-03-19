@@ -5,8 +5,6 @@
 #include "abstract_tuner.hpp"
 #include "randomizable_set.hpp"
 
-#include <random>
-
 namespace autotune {
 namespace tuners {
 

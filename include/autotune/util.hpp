@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+#include <random>
 #include <sstream>
 #include <tuple>
 
@@ -64,6 +66,27 @@ void iterate_tuple(std::tuple<Us...> &t, F f) {
     // to silence unused parameter warning in last instantiation
     (void)f;
   }
+}
+
+template <typename T> auto make_uniform_int_generator(T lower, T upper) {
+  std::random_device dev;
+  std::default_random_engine engine(dev());
+  std::uniform_int_distribution<uint32_t> distribution(lower, upper);
+  return std::bind(distribution, engine);
+}
+
+template <typename T> auto make_uniform_real_generator(T lower, T upper) {
+  std::random_device dev;
+  std::default_random_engine engine(dev());
+  std::uniform_real_distribution<uint32_t> distribution(lower, upper);
+  return std::bind(distribution, engine);
+}
+
+inline auto make_bernoulli_generator(double prob = 0.5) {
+  std::random_device dev;
+  std::default_random_engine engine(dev());
+  std::bernoulli_distribution distribution(prob);
+  return std::bind(distribution, engine);
 }
 }
 }

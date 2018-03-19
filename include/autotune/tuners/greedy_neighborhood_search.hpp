@@ -13,21 +13,24 @@ class greedy_neighborhood_search
     : public abstract_tuner<countable_set, R, Args...> {
 private:
   size_t iterations;
+  size_t changes_per_iteration;
 
 public:
   greedy_neighborhood_search(
       autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
-      countable_set &parameters, size_t iterations)
+      countable_set &parameters, size_t iterations,
+      size_t changes_per_iteration)
       : abstract_tuner<countable_set, R, Args...>(f, parameters),
-        iterations(iterations) {}
+        iterations(iterations), changes_per_iteration(changes_per_iteration) {}
 
 private:
   void tune_impl(Args &... args) override {
 
-    std::default_random_engine generator;
-    std::bernoulli_distribution distribution_dir(0.5);
-    std::uniform_int_distribution<size_t> distribution_para(
-        0, this->parameters.size() - 1);
+    auto gen_dir = detail::make_bernoulli_generator();
+    auto gen_changes =
+        detail::make_uniform_int_generator(1ul, changes_per_iteration);
+    auto gen_para =
+        detail::make_uniform_int_generator(0ul, this->parameters.size() - 1ul);
 
     this->evaluate(args...);
 
@@ -38,46 +41,18 @@ private:
       }
       countable_set base_parameters = this->optimal_parameters;
 
-      bool is_better = false;
+      size_t changes = gen_changes();
 
-      size_t d = distribution_para(generator);
+      for (size_t j = 0; j < changes; j++) {
+        size_t par_index = gen_para();
 
-      if (distribution_dir(generator)) {
-        // test next
-        this->parameters = base_parameters;
-        if (this->parameters[d]->next()) {
-          is_better = this->evaluate(args...);
-          if (is_better) {
-            break;
-          }
-        }
-        // test previous
-        this->parameters = base_parameters;
-        if (this->parameters[d]->prev()) {
-          is_better = this->evaluate(args...);
-          if (is_better) {
-            break;
-          }
-        }
-      } else {
-        // test previous
-        this->parameters = base_parameters;
-        if (this->parameters[d]->prev()) {
-          is_better = this->evaluate(args...);
-          if (is_better) {
-            break;
-          }
-        }
-        // test next
-        this->parameters = base_parameters;
-        if (this->parameters[d]->next()) {
-          is_better = this->evaluate(args...);
-          if (is_better) {
-            break;
-          }
+        if (gen_dir()) {
+          this->parameters[par_index]->next();
+        } else {
+          this->parameters[par_index]->prev();
         }
       }
-
+      this->evaluate(args...);
       this->parameters = this->optimal_parameters;
     }
   }

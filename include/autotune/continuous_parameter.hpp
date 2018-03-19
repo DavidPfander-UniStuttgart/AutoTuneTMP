@@ -5,7 +5,6 @@
 #include <cmath>
 #include <functional>
 #include <iomanip>
-#include <random>
 
 namespace autotune {
 
@@ -121,12 +120,9 @@ public:
 
   void set_random_value() {
     size_t num_values = count_values();
+    auto random_gen = detail::make_uniform_int_generator(0ul, num_values - 1ul);
 
-    std::uniform_real_distribution<double> distribution(0, num_values - 1);
-    std::random_device rd;
-    std::default_random_engine generator(rd());
-
-    size_t value_index = distribution(generator);
+    size_t value_index = random_gen();
 
     double value = get_min();
     for (size_t i = 0; i < value_index; i++) {

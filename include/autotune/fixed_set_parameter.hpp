@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <random>
 #include <vector>
 
 #include "parameter_value_set.hpp"
@@ -71,12 +70,9 @@ public:
   }
 
   void set_random_value() {
-    // randomize index
-    std::uniform_int_distribution<size_t> distribution(0,
-                                                       this->values.size() - 1);
-    std::random_device rd;
-    std::default_random_engine generator(rd());
-    cur_index = distribution(generator);
+    auto random_gen =
+        detail::make_uniform_int_generator(0ul, this->values.size() - 1ul);
+    cur_index = random_gen();
   }
 
   void set_value_unsafe(const std::string &v) {
