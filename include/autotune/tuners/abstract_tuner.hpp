@@ -80,6 +80,8 @@ public:
       auto &p = parameters[parameter_index];
       parameter_values[p->get_name()] = p->get_value();
     }
+    // create a copy, so that adjustment can be done
+    // (without changing the configured parameters)
     parameter_interface evaluate_parameters = parameters;
 
     // adjust parameters by parameter set
@@ -328,6 +330,8 @@ public:
 
   // reset cache and optima for each run;
   void set_auto_clear(bool clear_tuner) { this->clear_tuner = clear_tuner; };
+
+  parameter_interface &get_parameters() { return parameters; }
 
 private:
   void report(const std::string &message, double duration,

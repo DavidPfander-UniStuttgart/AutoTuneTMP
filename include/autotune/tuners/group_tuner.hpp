@@ -24,31 +24,12 @@ class group_tuner {
   bool verbose;
 
 public:
-  // group_tuner(
-  //     autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-  //     size_t group_repeat,
-  //     std::initializer_list<abstract_tuner<parameter_interface, R, Args...>
-  //     *>
-  //         tuners)
-  //     : f(f), group_repeat(group_repeat) {
-  //   // (this->tuners.push_back(tuners), ...);
-  //   for (auto &t : tuners) {
-  //     this->tuners.push_back(t);
-  //   }
-  //   // detail::iterate_tuple(this->tuners,
-  //   //                       [](auto &t) { t.set_auto_clear(false); });
-  // }
-
-  // template argument only used to circumvent limitation of c++ "Us" all match
-  // "R"
-  // only way to implement a variable number of arguments
-  // need to mention abstract_tuner to properly automatically infer
-  // parameter_interface
   template <typename... Us>
   group_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
               size_t group_repeat,
               abstract_tuner<parameter_interface, Us, Args...> &... tuners)
       : f(f), group_repeat(group_repeat), verbose(false) {
+    // collect tuners
     (this->tuners.push_back(tuners), ...);
 
     // make sure that parameter value caching across "tune" calls is enabled
@@ -59,6 +40,12 @@ public:
 
   parameter_value_set tune(Args &... args) {
     parameter_value_set original_values = this->f.get_parameter_values();
+
+    // setup parameters in kernel, so that kernel is aware of all parameters
+    // during tuning
+    for (size_t i = 0; i < tuners.size(); i++) {
+      f.set_parameter_values(tuners[i].get().get_parameters());
+    }
 
     for (size_t group_restart = 0; group_restart < group_repeat;
          group_restart++) {
@@ -80,6 +67,7 @@ public:
         if (verbose) {
           std::cout << "tuner duration: " << tuning_duration << std::endl;
         }
+        // propagate current optimal parameters to other tuners
         f.set_parameter_values(tuners[i].get().get_optimal_parameter_values());
       }
     }

@@ -8,19 +8,24 @@
 AUTOTUNE_KERNEL(int(int), smooth_cost_function,
                 "examples/kernel_smooth_cost_function")
 
+using namespace autotune;
+
 int main(void) {
 
   autotune::smooth_cost_function.set_verbose(true);
-  // autotune::smooth_cost_function.get_builder<cppjit::builder::gcc>()
-  //     .set_verbose(true);
-
-  autotune::countable_continuous_parameter p1("PAR_1", 3, 1, 1, 5);
-  autotune::countable_continuous_parameter p2("PAR_2", 2, 1, 1, 5);
 
   autotune::countable_set parameters_group_1;
   autotune::countable_set parameters_group_2;
-  parameters_group_1.add_parameter(p1);
-  parameters_group_2.add_parameter(p2);
+  parameters_group_1.emplace_parameter<countable_continuous_parameter>(
+      "PAR_1", 3, 1, 1, 5);
+
+  parameters_group_2.emplace_parameter<countable_continuous_parameter>(
+      "PAR_2", 2, 1, 1, 5);
+  parameters_group_2[0].set_adjust_functor(
+      [](auto &self, auto &p2, auto &p3) {
+        l1_x.to_nearest_valid(x_reg.get_raw_value());
+      },
+      parameters_group_1[0]);
 
   iterate_parameter_groups([](auto &parameter) { parameter->set_min(); },
                            parameters_group_1, parameters_group_2);
@@ -31,11 +36,6 @@ int main(void) {
                   << " value: " << parameter->get_value() << std::endl;
       },
       parameters_group_1, parameters_group_2);
-
-  // make sure that all parameters are known to the kernel
-  // TODO: should not be necessary -> improve!
-  autotune::smooth_cost_function.set_parameter_values(parameters_group_1,
-                                                      parameters_group_2);
 
   autotune::tuners::neighborhood_search t1(autotune::smooth_cost_function,
                                            parameters_group_1, 1);
