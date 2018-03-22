@@ -21,21 +21,9 @@ int main(void) {
 
   parameters_group_2.emplace_parameter<countable_continuous_parameter>(
       "PAR_2", 2, 1, 1, 5);
-  parameters_group_2[0].set_adjust_functor(
-      [](auto &self, auto &p2, auto &p3) {
-        l1_x.to_nearest_valid(x_reg.get_raw_value());
-      },
-      parameters_group_1[0]);
 
   iterate_parameter_groups([](auto &parameter) { parameter->set_min(); },
                            parameters_group_1, parameters_group_2);
-
-  iterate_parameter_groups(
-      [](auto &parameter) {
-        std::cout << parameter->get_name()
-                  << " value: " << parameter->get_value() << std::endl;
-      },
-      parameters_group_1, parameters_group_2);
 
   autotune::tuners::neighborhood_search t1(autotune::smooth_cost_function,
                                            parameters_group_1, 1);

@@ -173,6 +173,16 @@ target_link_libraries(group_tuner_example AutoTuneTMP)
 target_compile_options(group_tuner_example PUBLIC -fopenmp)
 install(TARGETS group_tuner_example DESTINATION examples)
 
+add_executable(group_tuner_dep_example "examples/group_tuner_dep_example.cpp")
+target_link_libraries(group_tuner_dep_example AutoTuneTMP)
+target_compile_options(group_tuner_dep_example PUBLIC -fopenmp)
+install(TARGETS group_tuner_dep_example DESTINATION examples)
+
+add_executable(group_tuner_simple_dep_example "examples/group_tuner_simple_dep_example.cpp")
+target_link_libraries(group_tuner_simple_dep_example AutoTuneTMP)
+target_compile_options(group_tuner_simple_dep_example PUBLIC -fopenmp)
+install(TARGETS group_tuner_simple_dep_example DESTINATION examples)
+
 add_executable(boost_tests "tests/boost_tests.cpp")
 target_link_libraries(boost_tests PUBLIC AutoTuneTMP Boost::boost Boost::unit_test_framework)
 

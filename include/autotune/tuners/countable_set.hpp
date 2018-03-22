@@ -23,6 +23,8 @@ public:
     auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
     return derived->unwrapped_parameter();
   }
+
+  virtual void *get_void_ptr() = 0;
 };
 
 // interface-wrapper generating template
@@ -51,11 +53,14 @@ public:
     return std::make_shared<countable_parameter_wrapper<T>>(*this);
   }
   T &unwrapped_parameter() { return p; }
+  virtual void *get_void_ptr() override { return static_cast<void *>(&p); }
 };
 
 class countable_set : std::vector<std::shared_ptr<countable_parameter>> {
 
 public:
+  using parameter_type = countable_parameter;
+
   using std::vector<std::shared_ptr<countable_parameter>>::operator[];
   using std::vector<std::shared_ptr<countable_parameter>>::size;
 
