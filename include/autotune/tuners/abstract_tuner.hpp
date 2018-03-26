@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../abstract_kernel.hpp"
+#include "../constraint_graph.hpp"
+#include "../simple_constraints.hpp"
 #include "parameter_result_cache.hpp"
 #include "with_tests.hpp"
 
@@ -30,6 +32,10 @@ protected:
   std::function<void(parameter_interface &)> parameter_adjustment_functor;
   std::function<void(parameter_value_set &)>
       parameter_values_adjustment_functor;
+
+  std::shared_ptr<simple_constraints> simple_constraints_wrapper;
+  std::shared_ptr<constraint_graph> constraint_graph_wrapper;
+  // std::function<void(constraint &)> constraints_functor;
 
   size_t repetitions;
 
@@ -332,6 +338,16 @@ public:
   void set_auto_clear(bool clear_tuner) { this->clear_tuner = clear_tuner; };
 
   parameter_interface &get_parameters() { return parameters; }
+
+  void set_simple_constraints(
+      autotune::simple_constraints &simple_constraints_wrapper) {
+    this->simple_constraints_wrapper = &simple_constraints_wrapper;
+  }
+
+  void
+  set_constraint_graph(autotune::simple_constraints &constraint_graph_wrapper) {
+    this->constraint_graph_wrapper = &constraint_graph_wrapper;
+  }
 
 private:
   void report(const std::string &message, double duration,
