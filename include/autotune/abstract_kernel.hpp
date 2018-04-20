@@ -42,14 +42,11 @@ public:
     parameter_values[p.get_name()] = p.get_value();
   }
 
+  // for arbitrary parameter interfaces and tuned groups of parameters
   template <typename... Ts>
   void set_parameter_values(const Ts &... parameters) {
     parameters_changed = true;
     auto t = std::make_tuple(std::ref(parameters)...);
-    // for (size_t i = 0; i < parameter_interface.size(); i++) {
-    //   parameter_values[parameter_interface[i]->get_name()] =
-    //       parameter_interface[i]->get_value();
-    // }
     detail::iterate_tuple(t, [this](auto &ps) {
       for (size_t i = 0; i < ps.size(); i++) {
         parameter_values[ps[i]->get_name()] = ps[i]->get_value();

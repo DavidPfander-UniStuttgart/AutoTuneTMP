@@ -183,6 +183,11 @@ target_link_libraries(group_tuner_simple_dep_example AutoTuneTMP)
 target_compile_options(group_tuner_simple_dep_example PUBLIC -fopenmp)
 install(TARGETS group_tuner_simple_dep_example DESTINATION examples)
 
+add_executable(thread_pool_example "examples/thread_pool_example.cpp")
+target_link_libraries(thread_pool_example AutoTuneTMP -pthread)
+target_compile_options(thread_pool_example PUBLIC -fopenmp)
+install(TARGETS thread_pool_example DESTINATION examples)
+
 add_executable(boost_tests "tests/boost_tests.cpp")
 target_link_libraries(boost_tests PUBLIC AutoTuneTMP Boost::boost Boost::unit_test_framework)
 

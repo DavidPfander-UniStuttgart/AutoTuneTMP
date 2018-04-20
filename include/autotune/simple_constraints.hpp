@@ -14,14 +14,19 @@ namespace autotune {
 class simple_constraints {
 private:
   std::function<void(parameter_superset &)> functor;
+  parameter_superset super;
 
 public:
   simple_constraints(std::function<void(parameter_superset &)> functor)
       : functor(functor) {}
 
-  template <typename... Ts> void apply_dependencies(Ts... parameter_sets) {
-    parameter_superset super(parameter_sets...);
-    functor(super);
+  template <typename parameter_interface>
+  void add_parameters(parameter_interface &set) {
+    super.add_parameters(set);
   }
+
+  void adjust() { functor(super); }
+
+  void clear() { super = parameter_superset(); }
 };
 }
