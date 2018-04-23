@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <functional>
 #include <iostream>
+#include <list>
 
 // // template <size_t... indices> void actor(std::index_sequence<indices...>)
 // {}
@@ -172,14 +173,50 @@ public:
 int a = 2;
 int b = 1;
 
+class abstract_executor {
+public:
+  virtual void operator()() = 0;
+};
+
+template <typename... Args> class delayed_executor : abstract_executor {
+private:
+  std::function<void(Args...)> f;
+  std::tuple<Args...> copied_arguments;
+
+  template <size_t... indices>
+  void tuple_unwrapped(std::index_sequence<indices...>) {
+    f(std::get<indices>(std::move(copied_arguments))...);
+  }
+
+public:
+  delayed_executor(std::function<void(Args...)> f, Args... args)
+      : f(f), copied_arguments(std::move(args)...) {}
+
+  virtual void operator()() override {
+    tuple_unwrapped(std::make_index_sequence<sizeof...(Args)>{});
+  }
+};
+
 template <size_t num_threads> class simple_thread_pool {
 private:
+  // signal that are thread is ready for new work (used together with
+  // thread_ready)
   std::array<std::condition_variable, num_threads> cv_thread;
+  // signal that are thread is ready for new work (used together with cv_thread)
   std::array<bool, num_threads> thread_ready;
+  // used to signal that threads can finish
   std::array<bool, num_threads> thread_finish;
-  fixed_atomic_queue<size_t> q;
+  fixed_atomic_queue<size_t> q; // stores indices of threads that are ready
   std::vector<std::thread> threads;
+  // used to singal the host that new work is to be distributed
   std::mutex mutex_host;
+  // stores work to be performed by a working thread in the future
+  std::list<std::unique_ptr<abstract_executor>> work_list;
+  std::array<std::unique_ptr<abstract_executor>, num_threads> assigned_work;
+  // lock whenever the work_list is modified
+  std::mutex mutex_work;
+
+  bool host_finish = false;
 
   void worker_main(size_t i) {
     std::mutex mtx_thread;
@@ -205,7 +242,8 @@ private:
         print_mutex.lock();
         std::cout << "thread: " << i << " -> executes kernel" << std::endl;
         print_mutex.unlock();
-        kernel(a, b);
+
+        (*(assigned_work[i]))();
       }
       // advertise that the thread now idles
       print_mutex.lock();
@@ -224,72 +262,97 @@ public:
     std::fill(thread_finish.begin(), thread_finish.end(), false);
   }
   void start() {
+    // TODO: how to the reset the class? cv variable? host_finish?
+
     for (size_t i = 0; i < num_threads; i++) {
       threads.emplace_back(&simple_thread_pool<num_threads>::worker_main, this,
                            i);
     }
 
-    print_mutex.lock();
-    std::cout << "host: starting to schedule work" << std::endl;
-    print_mutex.unlock();
+    // print_mutex.lock();
+    // std::cout << "host: starting to schedule work" << std::endl;
+    // print_mutex.unlock();
 
-    // std::mutex mtx_host;
-    for (size_t invocations = 0; invocations < 7; invocations += 1) {
-      print_mutex.lock();
-      std::cout << "before wait_ready" << std::endl;
-      print_mutex.unlock();
-      q.wait_ready(mutex_host);
-      // removes thread from queue, but not yet signaled that work is ready
-      print_mutex.lock();
-      std::cout << "thread ready, popping" << std::endl;
-      print_mutex.unlock();
-      size_t next_worker = q.pop();
+    // while (!host_finish) {
+    //   print_mutex.lock();
+    //   std::cout << "before wait_ready" << std::endl;
+    //   print_mutex.unlock();
+    //   q.wait_ready(mutex_host);
+    //   // removes thread from queue, but not yet signaled that work is ready
+    //   print_mutex.lock();
+    //   std::cout << "thread ready, popping" << std::endl;
+    //   print_mutex.unlock();
 
-      //
-      // configure work here
-      //
-      print_mutex.lock();
-      std::cout << "host: thread '" << next_worker
-                << "' should now process iteration: " << invocations
-                << std::endl;
-      print_mutex.unlock();
-      cv_thread[next_worker].notify_all(); // TODO: verify order!
-      thread_ready[next_worker] = true;
-    }
+    //   // which thread is ready?
+    //   size_t next_worker = q.pop();
 
-    print_mutex.lock();
-    std::cout << "host: sending finished signal to all threads" << std::endl;
-    print_mutex.unlock();
-    size_t finished_threads = 0;
-    while (finished_threads < num_threads) {
-      // wait for thread become ready for new work
-      while (!q.peek()) {
-      }
-      // removes thread from queue, but not yet signaled that work is ready
-      size_t next_worker = q.pop();
-      thread_finish[next_worker] = true;
-      cv_thread[next_worker].notify_all(); // TODO: verify order!
-      thread_ready[next_worker] = true;
-      std::cout << "host: signal sent to thread: " << next_worker << std::endl;
-      finished_threads += 1;
-    }
-    print_mutex.lock();
-    std::cout << "host: now joining" << std::endl;
-    print_mutex.unlock();
+    //   // configure work here
+    //   mutex_work.lock();
+    //   std::unique_ptr<abstract_executor> worker_exe(
+    //       std::move(work_list.front()));
+    //   work_list.pop_front();
+    //   mutex_work.unlock();
+    //   assigned_work[next_worker] = std::move(worker_exe);
 
-    for (size_t i = 0; i < num_threads; i++) {
-      print_mutex.lock();
-      std::cout << "host: joining thread: " << i << std::endl;
-      print_mutex.unlock();
-      threads[i].join();
-    }
-    print_mutex.lock();
-    std::cout << "host: done joining" << std::endl;
-    print_mutex.unlock();
+    //   print_mutex.lock();
+    //   std::cout << "host: thread '" << next_worker << "' got work assigned"
+    //             << std::endl;
+    //   print_mutex.unlock();
+    //   cv_thread[next_worker].notify_all(); // TODO: verify order!
+    //   thread_ready[next_worker] = true;
+    // }
+
+    // print_mutex.lock();
+    // std::cout << "host: sending finished signal to all threads" << std::endl;
+    // print_mutex.unlock();
+    // size_t finished_threads = 0;
+    // while (finished_threads < num_threads) {
+    //   // wait for thread become ready for new work
+    //   while (!q.peek()) {
+    //   }
+    //   // removes thread from queue, but not yet signaled that work is ready
+    //   size_t next_worker = q.pop();
+    //   thread_finish[next_worker] = true;
+    //   cv_thread[next_worker].notify_all(); // TODO: verify order!
+    //   thread_ready[next_worker] = true;
+    //   std::cout << "host: signal sent to thread: " << next_worker << std::endl;
+    //   finished_threads += 1;
+    // }
+    // print_mutex.lock();
+    // std::cout << "host: now joining" << std::endl;
+    // print_mutex.unlock();
+
+    // for (size_t i = 0; i < num_threads; i++) {
+    //   print_mutex.lock();
+    //   std::cout << "host: joining thread: " << i << std::endl;
+    //   print_mutex.unlock();
+    //   threads[i].join();
+    // }
+    // print_mutex.lock();
+    // std::cout << "host: done joining" << std::endl;
+    // print_mutex.unlock();
+  }
+
+  void stop() { host_finish = true; }
+
+  template <typename... Args>
+  void enqueue_work(std::function<void(Args...)> f, Args... args) {
+    std::unique_lock<std::mutex> lock(mutex_work);
+    work_list.push_back(
+        std::move(std::make_unique<delayed_executor>(f, args...)));
   }
 };
 
 int main(void) {
-  simple_thread_pool<8> pool;
-  pool.start();
+
+  std::function<void(int32_t)> my_function = [](int32_t a) {
+    std::cout << "hello from my_function: " << a << std::endl;
+  };
+
+  delayed_executor exe(my_function, 3);
+
+  exe();
+
+  // simple_thread_pool<2> pool;
+  // pool.start();
 }
