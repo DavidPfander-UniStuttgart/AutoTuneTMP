@@ -2,7 +2,7 @@
 
 #include "../abstract_kernel.hpp"
 #include "../constraint_graph.hpp"
-#include "../simple_constraints.hpp"
+// #include "../simple_constraints.hpp"
 #include "parameter_result_cache.hpp"
 #include "with_tests.hpp"
 
@@ -17,9 +17,9 @@ class abstract_tuner
                               without_tests<R, Args...>>::type {
 protected:
   autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
-  parameter_interface parameters;         // TODO: copy?
+  // always-unadjusted, state managed by tuner impl.!
+  parameter_interface parameters;
   parameter_interface optimal_parameters; // adjusted
-  parameter_value_set optimal_parameter_values;
   double optimal_duration;
   bool verbose;
   bool do_measurement;
@@ -33,9 +33,8 @@ protected:
   std::function<void(parameter_value_set &)>
       parameter_values_adjustment_functor;
 
-  std::shared_ptr<simple_constraints> simple_constraints_wrapper;
-  std::shared_ptr<constraint_graph> constraint_graph_wrapper;
-  // std::function<void(constraint &)> constraints_functor;
+  // std::shared_ptr<simple_constraints> simple_constraints_wrapper;
+  // std::shared_ptr<constraint_graph> constraint_graph_wrapper;
 
   size_t repetitions;
 
@@ -56,7 +55,6 @@ public:
       result_cache.clear();
       optimal_duration = -1.0;
       optimal_parameters = parameters;
-      optimal_parameter_values = this->f.get_parameter_values();
     }
 
     parameter_value_set original_values = this->f.get_parameter_values();
@@ -64,15 +62,8 @@ public:
     tune_impl(args...);
     this->f.set_parameter_values(original_values);
 
-    // TODO: API change to parameters hold meta-information only, and not values
     if (this->parameter_adjustment_functor) {
       this->parameter_adjustment_functor(optimal_parameters);
-    }
-    if (parameter_values_adjustment_functor) {
-      // TODO: HACK! FIX after deadline! reason see above
-      if (optimal_parameter_values.size() == optimal_parameters.size()) {
-        throw;
-      }
     }
     return optimal_parameters;
   }
@@ -106,19 +97,28 @@ public:
         }
       }
     }
-    // adjust parameters by values
-    if (parameter_values_adjustment_functor) {
-      if (verbose) {
-        std::cout << "------ parameters pre-adjustment (value functor) ------"
-                  << std::endl;
-        // parameters.print_values();
-        print_parameter_values(parameter_values);
-        std::cout << "--------------------------" << std::endl;
-      }
-      if (parameter_values_adjustment_functor) {
-        parameter_values_adjustment_functor(parameter_values);
-      }
-    }
+    // // adjust parameters by values
+    // if (parameter_values_adjustment_functor) {
+    //   if (verbose) {
+    //     std::cout << "------ parameters pre-adjustment (value functor)
+    //     ------"
+    //               << std::endl;
+    //     // parameters.print_values();
+    //     print_parameter_values(parameter_values);
+    //     std::cout << "--------------------------" << std::endl;
+    //   }
+    //   if (parameter_values_adjustment_functor) {
+    //     parameter_values_adjustment_functor(parameter_values);
+    //   }
+    // }
+    // // adjust parameters by simple constraints (useful for group tuners!)
+    // if (simple_constraints_wrapper) {
+    //   simple_constraints_wrapper->adjust();
+    // }
+    // // adjust parameters by constraint graph (useful for group tuners!)
+    // if (constraint_graph_wrapper) {
+    //   constraint_graph_wrapper->adjust();
+    // }
 
     if (verbose) {
       std::cout << "------ post-adjustment values ------" << std::endl;
@@ -135,14 +135,12 @@ public:
       }
       result_cache.insert(parameter_values);
     } else {
-      // did_eval = false;
 
       if (verbose) {
         std::cout << "------ skipped eval ------" << std::endl;
         evaluate_parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
-      // return std::numeric_limits<double>::max();
       return false;
     }
 
@@ -152,8 +150,6 @@ public:
         evaluate_parameters.print_values();
         std::cout << "--------------------------" << std::endl;
       }
-      // did_eval = false;
-      // return std::numeric_limits<double>::max();
       return false;
     } else {
       if (verbose) {
@@ -169,8 +165,6 @@ public:
       this->write_header();
       do_write_header = false;
     }
-
-    // did_eval = true;
 
     if (verbose) {
       std::cout << "------ begin eval ------" << std::endl;
@@ -190,8 +184,6 @@ public:
       if (verbose) {
         std::cout << "invalid parameter combination encountered" << std::endl;
       }
-      // did_eval = false;
-      // return std::numeric_limits<double>::max();
       f.set_parameter_values(original_kernel_parameters);
       return false;
     } else {
@@ -213,7 +205,6 @@ public:
                 std::cout << "warning: test for combination failed!"
                           << std::endl;
               }
-              // return std::numeric_limits<double>::max();
               f.set_parameter_values(original_kernel_parameters);
               return false;
             } else {
@@ -281,7 +272,6 @@ public:
     bool is_better = false;
     if (optimal_duration < 0.0 || final_duration < optimal_duration) {
       optimal_duration = final_duration;
-      optimal_parameter_values = parameter_values;
       optimal_parameters = evaluate_parameters;
       this->report_verbose("new best kernel", optimal_duration,
                            evaluate_parameters);
@@ -293,13 +283,6 @@ public:
   }
 
   void set_verbose(bool verbose) { this->verbose = verbose; }
-
-  const parameter_value_set &get_optimal_parameter_values() const {
-    if (optimal_duration < 0.0)
-      return f.get_parameter_values();
-    else
-      return optimal_parameter_values;
-  }
 
   void set_write_measurement(const std::string &scenario_name) {
     if (do_measurement) {
@@ -334,20 +317,35 @@ public:
   // execute kernel multiple times to average across the result
   void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
 
-  // reset cache and optima for each run;
+  // reset cache and optimal for each run (group tuner disables this)
   void set_auto_clear(bool clear_tuner) { this->clear_tuner = clear_tuner; };
 
   parameter_interface &get_parameters() { return parameters; }
 
-  void set_simple_constraints(
-      autotune::simple_constraints &simple_constraints_wrapper) {
-    this->simple_constraints_wrapper = &simple_constraints_wrapper;
-  }
+  // void
+  // set_simple_constraints(autotune::simple_constraints &my_simple_constraints)
+  // {
+  //   this->simple_constraints_wrapper =
+  //       std::shared_ptr<autotune::simple_constraints>(&my_simple_constraints);
+  // }
 
-  void
-  set_constraint_graph(autotune::simple_constraints &constraint_graph_wrapper) {
-    this->constraint_graph_wrapper = &constraint_graph_wrapper;
-  }
+  // void set_constraint_graph(autotune::constraint_graph &my_constraint_graph)
+  // {
+  //   this->constraint_graph_wrapper =
+  //       std::shared_ptr<autotune::constraint_graph>(&my_constraint_graph);
+  // }
+
+  // void
+  // set_constraint_graph(autotune::simple_constraints
+  // &constraint_graph_wrapper) {
+  //   this->constraint_graph_wrapper = &constraint_graph_wrapper;
+  // }
+
+  // void
+  // adjust_through_group_tuner(group_tuner<parameter_interface, R, Args...> &g)
+  // {
+  //   group_tuner_for_adjust = &g;
+  // }
 
 private:
   void report(const std::string &message, double duration,

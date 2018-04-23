@@ -88,5 +88,15 @@ inline auto make_bernoulli_generator(double prob = 0.5) {
   std::bernoulli_distribution distribution(prob);
   return std::bind(distribution, engine);
 }
+
+template <typename T_left, typename T_right, typename... T_other_right>
+struct is_all_same : std::false_type {};
+
+template <typename T_left>
+struct is_all_same<T_left, T_left> : std::true_type {};
+
+template <typename T_left, typename... T_other_right>
+struct is_all_same<T_left, T_left, T_other_right...>
+    : is_all_same<T_left, T_other_right...> {};
 }
 }

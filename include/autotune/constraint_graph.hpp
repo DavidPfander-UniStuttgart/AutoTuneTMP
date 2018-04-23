@@ -61,6 +61,7 @@ private:
   std::map<std::string, std::set<std::string>> conditions;
   std::map<std::string, std::function<void(parameter_superset &)>> functors;
   std::vector<std::string> ordered_deps;
+  parameter_superset super;
 
   // void check_disjunct(const std::initializer_list<std::string> &left,
   //                     const std::initializer_list<std::string> &right) {
@@ -143,9 +144,24 @@ private:
   }
 
 public:
-  template <typename... Ts> void apply_dependencies(Ts... parameter_sets) {
-    parameter_superset super(parameter_sets...);
+  // template <typename... Ts> void apply_dependencies(Ts... parameter_sets) {
+  //   parameter_superset super(parameter_sets...);
 
+  //   // create dependency graph from conditions
+  //   create_graph();
+
+  //   for (size_t i = 0; i < ordered_deps.size(); i++) {
+  //     std::cout << "applying dep: " << ordered_deps[i] << std::endl;
+  //     functors[ordered_deps[i]](super);
+  //   }
+  // }
+
+  template <typename parameter_interface>
+  void add_parameters(parameter_interface &set) {
+    super.add_parameters(set);
+  }
+
+  void adjust() {
     // create dependency graph from conditions
     create_graph();
 
@@ -154,6 +170,8 @@ public:
       functors[ordered_deps[i]](super);
     }
   }
+
+  void clear() { super = parameter_superset(); }
 
   // parameters satisfied afterwards, parameters depending, functional to fix
   // parameters

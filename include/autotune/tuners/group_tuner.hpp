@@ -2,17 +2,17 @@
 
 #include <chrono>
 
+#include "../constraint_graph.hpp"
+#include "../simple_constraints.hpp"
 #include "../util.hpp"
 #include "abstract_tuner.hpp"
 #include "with_tests.hpp"
 
 namespace autotune {
-namespace tuners {
 
-// template <typename parameter_interface, typename R, typename... Args>
-// group_tuners(
-//     std::initializer_list<abstract_tuner<parameter_interface, R, Args...> *>
-//         tuners) {}
+// class simple_constraints;
+
+namespace tuners {
 
 template <typename parameter_interface, typename R, typename... Args>
 class group_tuner {
@@ -23,12 +23,18 @@ class group_tuner {
   size_t group_repeat;
   bool verbose;
 
+  std::shared_ptr<simple_constraints> simple_constraints_wrapper;
+  std::shared_ptr<constraint_graph> constraint_graph_wrapper;
+
 public:
-  template <typename... Us>
+  template <typename... Rs>
   group_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
               size_t group_repeat,
-              abstract_tuner<parameter_interface, Us, Args...> &... tuners)
+              abstract_tuner<parameter_interface, Rs, Args...> &... tuners)
       : f(f), group_repeat(group_repeat), verbose(false) {
+
+    static_assert(detail::is_all_same<R, Rs...>::value);
+
     // collect tuners
     (this->tuners.push_back(tuners), ...);
 
@@ -59,7 +65,8 @@ public:
         }
         std::chrono::high_resolution_clock::time_point start =
             std::chrono::high_resolution_clock::now();
-        tuners[i].get().tune(args...);
+        parameter_interface tuner_optimal_parameters =
+            tuners[i].get().tune(args...);
         std::chrono::high_resolution_clock::time_point end =
             std::chrono::high_resolution_clock::now();
         double tuning_duration =
@@ -68,7 +75,7 @@ public:
           std::cout << "tuner duration: " << tuning_duration << std::endl;
         }
         // propagate current optimal parameters to other tuners
-        f.set_parameter_values(tuners[i].get().get_optimal_parameter_values());
+        f.set_parameter_values(tuner_optimal_parameters);
       }
     }
 
@@ -93,6 +100,49 @@ public:
       this->tuners.setup_test(test_functional);
     }
   };
+
+  // void
+  // set_simple_constraints(autotune::simple_constraints &my_simple_constraints)
+  // {
+  //   this->simple_constraints_wrapper =
+  //       std::shared_ptr<simple_constraints>(&my_simple_constraints);
+
+  //   for (size_t i = 0; i < this->tuners.size(); i++) {
+  //     this->simple_constraints_wrapper->add_parameters(
+  //         this->tuners[i].get().get_parameters());
+  //   }
+
+  //   for (size_t i = 0; i < this->tuners.size(); i++) {
+  //     this->tuners[i].get().set_simple_constraints(
+  //         *this->simple_constraints_wrapper);
+  //   }
+  // }
+
+  // void
+  // set_constraint_graph(autotune::constraint_graph &constraint_graph_wrapper)
+  // {
+  //   this->constraint_graph_wrapper =
+  //       std::shared_ptr<autotune::constraint_graph>(&constraint_graph_wrapper);
+
+  //   for (size_t i = 0; i < this->tuners.size(); i++) {
+  //     this->constraint_graph_wrapper->add_parameters(
+  //         this->tuners[i].get().get_parameters());
+  //   }
+
+  //   for (size_t i = 0; i < this->tuners.size(); i++) {
+  //     this->tuners[i].get().set_constraint_graph(
+  //         *this->constraint_graph_wrapper);
+  //   }
+  // }
+
+  // void adjust_through_group_tuner() {
+  //   if (simple_constraints_wrapper) {
+  //     simple_constraints_wrapper->apply_dependencies(tuners);
+  //   }
+  //   if (constraint_graph_wrapper) {
+  //     constraint_graph_wrapper->apply_dependencies(tuners);
+  //   }
+  // }
 };
 }
 }
