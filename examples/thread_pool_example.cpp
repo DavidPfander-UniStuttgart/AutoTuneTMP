@@ -11,7 +11,6 @@
 std::mutex print_mutex;
 
 int a = 2;
-int b = 1;
 
 int main(void) {
   std::function<void(autotune::thread_meta, int32_t)> my_function =
@@ -25,8 +24,8 @@ int main(void) {
     std::cout << "hello from my_function: " << a << std::endl;
   };
 
-  // delayed_executor exe(my_function, 3);
-  // exe();
+  autotune::detail::delayed_executor exe(my_function_without_meta, 3);
+  exe();
 
   autotune::simple_thread_pool<2> pool;
   pool.start();
