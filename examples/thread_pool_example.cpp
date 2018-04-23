@@ -93,8 +93,9 @@ void kernel(int a, int b) {
   std::cout << (b + a) << std::endl;
 }
 
-template <typename T> class fixed_atomic_queue {
-private:
+template <typename T>
+class fixed_atomic_queue {
+ private:
   std::mutex mutex;
   size_t max_elements;
   std::vector<T> queue;
@@ -103,16 +104,15 @@ private:
   size_t count;
   std::condition_variable cv_ready;
 
-public:
+ public:
   fixed_atomic_queue(size_t max_elements)
-      : max_elements(max_elements), queue(max_elements), front_index(0),
-        insert_index(0), count(0) {
+      : max_elements(max_elements), queue(max_elements), front_index(0), insert_index(0), count(0) {
     std::fill(queue.begin(), queue.end(), 666);
   }
   void push(const T &element) {
     std::unique_lock l(mutex);
     if (count == max_elements) {
-      throw; // is full!
+      throw;  // is full!
     }
     queue[insert_index] = element;
     std::cout << "cur insert_index: " << insert_index << std::endl;
@@ -132,11 +132,10 @@ public:
       std::cout << queue[i];
     }
     std::cout << std::endl;
-    std::cout << "front_index:" << front_index
-              << " insert_index: " << insert_index << std::endl;
+    std::cout << "front_index:" << front_index << " insert_index: " << insert_index << std::endl;
 
     if (count == 0) {
-      throw; // is empty!
+      throw;  // is empty!
     }
     T temp = std::move(queue[front_index]);
     queue[front_index] = 666;
@@ -161,8 +160,8 @@ public:
 
     if (has_element) {
       std::cout << "is_empty: false, count: " << count << std::endl;
-      return; // TODO: bug, someone can make it empty while I return, have to
-              // reserve it
+      return;  // TODO: bug, someone can make it empty while I return, have to
+               // reserve it
     }
     std::cout << "wait_ready: before wait call" << std::endl;
     std::unique_lock<std::mutex> l_m(mutex_host);
@@ -174,12 +173,13 @@ int a = 2;
 int b = 1;
 
 class abstract_executor {
-public:
+ public:
   virtual void operator()() = 0;
 };
 
-template <typename... Args> class delayed_executor : abstract_executor {
-private:
+template <typename... Args>
+class delayed_executor : abstract_executor {
+ private:
   std::function<void(Args...)> f;
   std::tuple<Args...> copied_arguments;
 
@@ -188,7 +188,7 @@ private:
     f(std::get<indices>(std::move(copied_arguments))...);
   }
 
-public:
+ public:
   delayed_executor(std::function<void(Args...)> f, Args... args)
       : f(f), copied_arguments(std::move(args)...) {}
 
@@ -197,8 +197,9 @@ public:
   }
 };
 
-template <size_t num_threads> class simple_thread_pool {
-private:
+template <size_t num_threads>
+class simple_thread_pool {
+ private:
   // signal that are thread is ready for new work (used together with
   // thread_ready)
   std::array<std::condition_variable, num_threads> cv_thread;
@@ -206,7 +207,7 @@ private:
   std::array<bool, num_threads> thread_ready;
   // used to signal that threads can finish
   std::array<bool, num_threads> thread_finish;
-  fixed_atomic_queue<size_t> q; // stores indices of threads that are ready
+  fixed_atomic_queue<size_t> q;  // stores indices of threads that are ready
   std::vector<std::thread> threads;
   // used to singal the host that new work is to be distributed
   std::mutex mutex_host;
@@ -216,47 +217,63 @@ private:
   // lock whenever the work_list is modified
   std::mutex mutex_work;
 
+  
+
   bool host_finish = false;
 
   void worker_main(size_t i) {
     std::mutex mtx_thread;
     while (true) {
-      // wait for ready signal from host thread
-      // condition variable + signal used to avoid spin lock
-      if (!thread_ready[i]) {
-        std::unique_lock<std::mutex> lock(mtx_thread);
-        cv_thread[i].wait(lock);
+      mutex_work.lock();
+      std::unique_ptr<abstract_executor> exe;
+      if (work_list.size() > 0) {
+        exe = std::move(work_list.front());
       }
-      // signal received, no longer ready
-      // update of thread ready can be delayed, as thread is no longer
-      // enqueued
-      thread_ready[i] = false;
-      // check for finishing up, else execute kernel
-      if (thread_finish[i]) {
-        print_mutex.lock();
-        std::cout << "thread: " << i << " -> got finish signal, breaking"
-                  << std::endl;
-        print_mutex.unlock();
-        break;
-      } else {
-        print_mutex.lock();
-        std::cout << "thread: " << i << " -> executes kernel" << std::endl;
-        print_mutex.unlock();
 
-        (*(assigned_work[i]))();
+      work_list.pop_front();
+      mutex_work.unlock();
+
+      if (exe) {
+        (*exe)();
+      } else {
+	
       }
-      // advertise that the thread now idles
-      print_mutex.lock();
-      std::cout << "thread: " << i << " -> now enqueing again" << std::endl;
-      print_mutex.unlock();
-      q.push(i); // notifies host in the end
+
+      // // wait for ready signal from host thread
+      // // condition variable + signal used to avoid spin lock
+      // if (!thread_ready[i]) {
+      //   std::unique_lock<std::mutex> lock(mtx_thread);
+      //   cv_thread[i].wait(lock);
+      // }
+      // // signal received, no longer ready
+      // // update of thread ready can be delayed, as thread is no longer
+      // // enqueued
+      // thread_ready[i] = false;
+      // // check for finishing up, else execute kernel
+      // if (thread_finish[i]) {
+      //   print_mutex.lock();
+      //   std::cout << "thread: " << i << " -> got finish signal, breaking" << std::endl;
+      //   print_mutex.unlock();
+      //   break;
+      // } else {
+      //   print_mutex.lock();
+      //   std::cout << "thread: " << i << " -> executes kernel" << std::endl;
+      //   print_mutex.unlock();
+
+      //   (*(assigned_work[i]))();
+      // }
+      // // advertise that the thread now idles
+      // print_mutex.lock();
+      // std::cout << "thread: " << i << " -> now enqueing again" << std::endl;
+      // print_mutex.unlock();
+      // q.push(i);  // notifies host in the end
     }
     print_mutex.lock();
     std::cout << "thread: " << i << " -> finished" << std::endl;
     print_mutex.unlock();
   }
 
-public:
+ public:
   simple_thread_pool() : q(num_threads) {
     std::fill(thread_ready.begin(), thread_ready.end(), true);
     std::fill(thread_finish.begin(), thread_finish.end(), false);
@@ -265,8 +282,7 @@ public:
     // TODO: how to the reset the class? cv variable? host_finish?
 
     for (size_t i = 0; i < num_threads; i++) {
-      threads.emplace_back(&simple_thread_pool<num_threads>::worker_main, this,
-                           i);
+      threads.emplace_back(&simple_thread_pool<num_threads>::worker_main, this, i);
     }
 
     // print_mutex.lock();
@@ -338,13 +354,11 @@ public:
   template <typename... Args>
   void enqueue_work(std::function<void(Args...)> f, Args... args) {
     std::unique_lock<std::mutex> lock(mutex_work);
-    work_list.push_back(
-        std::move(std::make_unique<delayed_executor>(f, args...)));
+    work_list.push_back(std::move(std::make_unique<delayed_executor>(f, args...)));
   }
 };
 
 int main(void) {
-
   std::function<void(int32_t)> my_function = [](int32_t a) {
     std::cout << "hello from my_function: " << a << std::endl;
   };
