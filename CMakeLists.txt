@@ -188,6 +188,11 @@ target_link_libraries(thread_pool_example AutoTuneTMP -pthread)
 target_compile_options(thread_pool_example PUBLIC -fopenmp)
 install(TARGETS thread_pool_example DESTINATION examples)
 
+add_executable(grid_executor_example "examples/grid_executor_example.cpp")
+target_link_libraries(grid_executor_example AutoTuneTMP -pthread)
+target_compile_options(grid_executor_example PUBLIC -fopenmp)
+install(TARGETS grid_executor_example DESTINATION examples)
+
 add_executable(boost_tests "tests/boost_tests.cpp")
 target_link_libraries(boost_tests PUBLIC AutoTuneTMP Boost::boost Boost::unit_test_framework)
 

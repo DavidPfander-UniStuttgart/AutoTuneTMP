@@ -1,5 +1,5 @@
-#include "autotune/thread_pool.hpp"
 #include "autotune/execution_wrapper.hpp"
+#include "autotune/thread_pool.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -29,15 +29,24 @@ int main(void) {
   autotune::detail::delayed_executor exe(my_function_without_meta, 3);
   exe();
 
-  autotune::simple_thread_pool<2> pool;
-  pool.start();
+  autotune::detail::thread_safe_queue<size_t> safe_q;
+  safe_q.push_back(8);
 
-  pool.enqueue_work(my_function, 1);
-  pool.enqueue_work(my_function, 2);
-  pool.enqueue_work(my_function, 3);
-  pool.enqueue_work(my_function_without_meta, 666);
-  pool.enqueue_work(my_function, 4);
-  pool.enqueue_work(my_function, 5);
+  // autotune::simple_thread_pool<2> pool;
+  // pool.start();
 
-  pool.finish();
+  // pool.enqueue_work(my_function, 1);
+  // pool.enqueue_work(my_function, 2);
+  // pool.enqueue_work(my_function, 3);
+  // pool.enqueue_work(my_function_without_meta, 666);
+  // pool.enqueue_work(my_function, 4);
+  // for (size_t i = 0; i < 1000000; i++) {
+  //   pool.enqueue_work(my_function, 5);
+  // }
+
+  // print_mutex.lock();
+  // std::cout << "finished queuing work" << std::endl;
+  // print_mutex.unlock();
+
+  // pool.finish();
 }
