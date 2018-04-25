@@ -21,24 +21,6 @@ public:
 
 template <size_t num_threads> class grid_executor {
 private:
-  // template <typename... Args>
-  // void thread_worker(std::function<void(Args...)> f, grid_spec spec,
-  //                    thread_meta base) {
-  //   // [&spec, f, meta_base, grid_z, grid_y, grid_x]() {
-  //   for (size_t block_z = 0; block_z < spec.block_z; block_z++) {
-  //     for (size_t block_y = 0; block_y < spec.block_y; block_y++) {
-  //       for (size_t block_x = 0; block_x < spec.block_x;
-  //            block_x += types_width) {
-  //         thread_meta meta = base;
-  //         meta.z = base.z + block_z;
-  //         meta.y = base.y + block_y;
-  //         meta.x = base.x + block_x;
-  //         f(meta);
-  //       }
-  //     }
-  //   }
-  // }
-
 public:
   using float_type = float;
   using double_type = double;
@@ -78,10 +60,6 @@ public:
           meta_base.x = grid_x * spec.block_x;
 
           pool.enqueue_work(thread_wrapper, spec, meta_base);
-
-          // pool.enqueue_work(&grid_executor<num_threads>::thread_worker, this,
-          // f,
-          //                   spec, meta_base);
         }
       }
     }
