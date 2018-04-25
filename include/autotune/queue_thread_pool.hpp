@@ -1,5 +1,6 @@
 #pragma once
 
+#include "execution_wrapper.hpp"
 #include "thread_safe_queue.hpp"
 
 #include <condition_variable>
