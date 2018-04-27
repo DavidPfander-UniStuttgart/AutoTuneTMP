@@ -6,16 +6,20 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <functional>
 #include <iostream>
 #include <list>
 
+#include <Vc/Vc>
+using Vc::double_v;
+
 std::mutex print_mutex;
 
 int a = 2;
 
-void print_matrix(std::vector<double> m, size_t N) {
+template <typename T> void print_matrix(std::vector<T> &m, size_t N) {
   for (size_t i = 0; i < N; i++) {
     for (size_t j = 0; j < N; j++) {
       if (j > 0)
@@ -23,6 +27,49 @@ void print_matrix(std::vector<double> m, size_t N) {
       std::cout << m[i * N + j];
     }
     std::cout << std::endl;
+  }
+}
+
+template <typename T, typename U>
+void naive_matrix_multiplication(std::vector<T> &A, std::vector<T> &B,
+                                 std::vector<U> &C, size_t N) {
+  for (size_t x = 0; x < N; x++) {
+    for (size_t y = 0; y < N; y++) {
+      for (size_t k = 0; k < N; k++) {
+        C[x * N + y] += A[x * N + k] * B[k * N + y];
+      }
+    }
+  }
+}
+
+template <typename T, typename U>
+bool compare_matrices(std::vector<T> &m, std::vector<U> &n, size_t N) {
+  for (size_t x = 0; x < N; x++) {
+    for (size_t y = 0; y < N; y++) {
+      if (m[x * N + y] - n[x * N + y] >= 1E-9) {
+        // throw "matrix not equal";
+        std::cout << "error: " << m[x * N + y] << " != " << n[x * N + y]
+                  << std::endl;
+        return false;
+      }
+    }
+  }
+  std::cout << "matrices are equal" << std::endl;
+  return true;
+}
+
+template <typename T>
+void add_atomically(std::vector<T> &m, size_t base_index,
+                    double_v value_to_add) {
+  for (size_t i = 0; i < double_v::size(); i++) {
+    // vector width many atomic updates
+    while (true) {
+      double org = m[base_index + i];
+      double new_val = org + value_to_add[i];
+      if (m[base_index + i].compare_exchange_weak(org, new_val)) {
+        break;
+      }
+    }
   }
 }
 
@@ -139,43 +186,103 @@ int main(void) {
 
   // pool.finish();
 
-  const size_t N = 4;
+  const size_t N = 2048;
+  const size_t z_block_size = 64;
+  const size_t x_y_block_size = 16; // 256
+  bool compare_with_naive = false;
+  if (N < double_v::size()) {
+    throw "matrix too small for configured vector width, make \"N\" larger!";
+  }
+  if (z_block_size < double_v::size()) {
+    throw "\"z_block_size\" too small for configured vector width, make "
+          "\"z_block_size\" larger!";
+  }
+  if (z_block_size < double_v::size()) {
+    throw "\"x_y_block_size\" too small for configured vector width, make "
+          "\"x_y_block_size\" larger!";
+  }
+
   std::vector<double> A(N * N);
-  std::fill(A.begin(), A.end(), 1.0);
+  double fillup = 0.0;
+  std::generate(A.begin(), A.end(), [&fillup]() {
+    fillup += 1.0;
+    return fillup;
+  });
 
   std::vector<double> B(N * N);
-  std::fill(B.begin(), B.end(), 2.0);
-  std::vector<double> C(N * N);
+  fillup = 0.5;
+  std::fill(B.begin(), B.end(), 1.0);
+  // std::generate(B.begin(), B.end(), [&fillup]() {
+  //   fillup += 1;
+  //   return fillup;
+  // });
+  std::vector<std::atomic<double>> C(N * N);
   std::fill(C.begin(), C.end(), 0.0);
 
-  std::cout << "A:" << std::endl;
-  print_matrix(A, N);
-  std::cout << "B:" << std::endl;
-  print_matrix(B, N);
+  // std::cout << "A:" << std::endl;
+  // print_matrix(A, N);
+  // std::cout << "B:" << std::endl;
+  // print_matrix(B, N);
 
-  std::function<void(autotune::thread_meta)> mult_kernel = [&A, &B, &C, &N](
-      autotune::thread_meta meta) {
-    // size_t base_x = meta.x;
-    // size_t base_y = meta.y;
-    print_mutex.lock();
-    std::cout << "working on (" << meta.x << ", " << meta.y << ")" << std::endl;
-    print_mutex.unlock();
-    for (size_t i = 0; i < N; i++) {
-      C[meta.x * N + meta.y] += A[meta.x * N + i] * B[i * N + meta.y];
-    }
-  };
+  std::function<void(autotune::thread_meta)> mult_kernel =
+      [&A, &B, &C,
+       &N, // &result_mutex
+       z_block_size](autotune::thread_meta meta) {
+        double_v C_comp(0.0);
+        size_t z_base = meta.z * z_block_size;
+        for (size_t i = z_base; i < z_base + z_block_size; i++) {
+          double_v A_comp(A[meta.y * N + i]);
+          double_v B_comp(&B[i * N + meta.x], Vc::flags::element_aligned);
+          C_comp += A_comp * B_comp;
+        }
 
-  autotune::grid_executor<1> grid_exe;
+        add_atomically(C, meta.y * N + meta.x, C_comp);
+      };
+
+  autotune::grid_executor<8, double_v::size()> grid_exe;
   autotune::grid_spec spec;
-  // span a 2x2 grid, with block sizes 10x10 (overall 20x20)
-  spec.grid_z = 1;
-  spec.grid_y = 2;
-  spec.grid_x = 2;
+  // span a 3d grid
   spec.block_z = 1;
-  spec.block_y = 2;
-  spec.block_x = 2;
-  grid_exe(mult_kernel, spec);
+  spec.block_y = x_y_block_size;
+  spec.block_x = x_y_block_size;
+  // spec.grid_z = 1;
+  spec.grid_z = N / z_block_size;
+  spec.grid_y = N / spec.block_y;
+  spec.grid_x = N / spec.block_x;
 
-  std::cout << "C:" << std::endl;
-  print_matrix(C, N);
+  std::chrono::high_resolution_clock::time_point start_stamp =
+      std::chrono::high_resolution_clock::now();
+  grid_exe(mult_kernel, spec);
+  std::chrono::high_resolution_clock::time_point stop_stamp =
+      std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> time_span =
+      std::chrono::duration_cast<std::chrono::duration<double>>(stop_stamp -
+                                                                start_stamp);
+  double duration = time_span.count();
+
+  double flop = 2 * N * N * N * 1E-9;
+  std::cout << "Gflop: " << flop << std::endl;
+  std::cout << "duration: " << duration << "s" << std::endl;
+  std::cout << "Gflop/s: " << (flop / duration) << std::endl;
+
+  if (compare_with_naive) {
+    std::vector<double> C_ref(N * N);
+    std::fill(C_ref.begin(), C_ref.end(), 0.0);
+
+    std::chrono::high_resolution_clock::time_point start_stamp_naive =
+        std::chrono::high_resolution_clock::now();
+    naive_matrix_multiplication(A, B, C_ref, N);
+    std::chrono::high_resolution_clock::time_point stop_stamp_naive =
+        std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> time_span_naive =
+        std::chrono::duration_cast<std::chrono::duration<double>>(
+            stop_stamp_naive - start_stamp_naive);
+    double duration_naive = time_span_naive.count();
+    compare_matrices(C, C_ref, N);
+    std::cout << "duration naive: " << duration_naive << "s" << std::endl;
+    std::cout << "Gflop/s naive: " << (flop / duration_naive) << std::endl;
+  }
+
+  // std::cout << "C:" << std::endl;
+  // print_matrix(C, N);
 }

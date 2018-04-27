@@ -19,16 +19,10 @@ public:
   size_t block_x;
 };
 
-template <size_t num_threads> class grid_executor {
+template <size_t num_threads, size_t vector_width> class grid_executor {
 private:
 public:
-  using float_type = float;
-  using double_type = double;
-  using int32_type = int32_t;
-  using uint32_type = uint32_t;
-  using int64_type = int64_t;
-  using uint64_type = uint64_t;
-  static constexpr size_t types_width = 1;
+  // static constexpr size_t types_width = 1;
 
   template <typename... Args>
   void operator()(std::function<void(Args...)> f, grid_spec spec) {
@@ -39,7 +33,7 @@ public:
           for (size_t block_z = 0; block_z < spec.block_z; block_z++) {
             for (size_t block_y = 0; block_y < spec.block_y; block_y++) {
               for (size_t block_x = 0; block_x < spec.block_x;
-                   block_x += types_width) {
+                   block_x += vector_width) {
                 thread_meta meta = meta_base;
                 meta.z += block_z;
                 meta.y += block_y;
