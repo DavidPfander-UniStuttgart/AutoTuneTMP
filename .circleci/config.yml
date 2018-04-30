@@ -1,0 +1,25 @@
+version: 2
+jobs:
+   build:
+     docker:
+       - image: ubuntu:18.04
+     steps:
+       - checkout
+       - run: lscpu
+       - run: apt update && apt install -y git wget build-essential gcc
+       - run: mkdir -p ~/.ssh; ssh-keyscan github.com >> ~/.ssh/known_hosts
+       - run: git checkout master; git branch --set-upstream-to=origin/master master
+       - restore_cache:
+           key: dep-install-cache-v2
+           paths:
+             - /root/project/boost
+             - /root/project/boost_install
+             - /root/project/cppjit
+       - run: ./build-all.sh circle
+       - run: ./build/boost_tests --log_level=test_suite
+       - save_cache:
+           key: dep-install-cache-v2
+           paths:
+             - /root/project/boost
+             - /root/project/boost_install
+             - /root/project/cppjit

@@ -16,8 +16,8 @@ AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &), square,
 
 int main(void) {
 
-  auto &builder = autotune::square.get_builder<cppjit::builder::gcc>();
-  builder.set_verbose(true);
+  autotune::square.set_verbose(true);
+  // builder.set_verbose(true);
 
   size_t N = 2048 * 2048; // 32MB
   size_t repetitions = 100;
@@ -30,7 +30,7 @@ int main(void) {
   std::fill(dest_reference.begin(), dest_reference.end(), 4.0);
 
   double duration_slow = 0.0;
-
+  auto &builder = autotune::square.get_builder<cppjit::builder::gcc>();
   {
     builder.set_cpp_flags("-std=c++17");
     autotune::square.compile();

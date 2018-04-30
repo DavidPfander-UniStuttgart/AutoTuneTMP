@@ -13,10 +13,11 @@ int main(void) {
 
   std::vector<double> arr(N);
   std::fill(arr.begin(), arr.end(), 0.0);
+  autotune::unrolling_kernel.set_verbose(true);
 
   auto &builder =
       autotune::unrolling_kernel.get_builder<cppjit::builder::gcc>();
-  builder.set_verbose(true);
+  // builder.set_verbose(true);
   builder.set_include_paths("-I src");
 
   // autotune::unrolling_kernel.add_parameter(

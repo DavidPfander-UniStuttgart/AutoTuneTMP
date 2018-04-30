@@ -53,9 +53,9 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values) {
   parameters.add_parameter(p1);
 
   autotune::run_different_parameter_values.set_verbose(true);
-  auto &builder = autotune::run_different_parameter_values
-                      .get_builder<cppjit::builder::gcc>();
-  builder.set_verbose(true);
+  // auto &builder = autotune::run_different_parameter_values
+  //                     .get_builder<cppjit::builder::gcc>();
+  // builder.set_verbose(true);
 
   // run with "PAR_1" set to "1"
   autotune::run_different_parameter_values.set_parameter_values(parameters);
@@ -111,9 +111,9 @@ BOOST_AUTO_TEST_CASE(run_different_parameter_values_more_automation) {
   parameters.add_parameter(p1);
 
   autotune::run_different_parameter_values.set_verbose(true);
-  auto &builder = autotune::run_different_parameter_values
-                      .get_builder<cppjit::builder::gcc>();
-  builder.set_verbose(true);
+  // auto &builder = autotune::run_different_parameter_values
+  //                     .get_builder<cppjit::builder::gcc>();
+  // builder.set_verbose(true);
 
   // run with "PAR_1" set to "1"
   autotune::run_different_parameter_values.set_parameter_values(parameters);
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(run_bruteforce) {
   autotune::run_bruteforce_kernel.set_verbose(true);
   auto &builder =
       autotune::run_bruteforce_kernel.get_builder<cppjit::builder::gcc>();
-  builder.set_verbose(true);
+  // builder.set_verbose(true);
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(run_full_neighborhood_search) {
   autotune::run_full_neighborhood_search_kernel.set_verbose(true);
   auto &builder = autotune::run_full_neighborhood_search_kernel
                       .get_builder<cppjit::builder::gcc>();
-  builder.set_verbose(false);
+  // builder.set_verbose(false);
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
@@ -351,6 +351,7 @@ BOOST_AUTO_TEST_CASE(run_generalized_kernel) {
   tuner.set_verbose(true);
   double a = 3;
   autotune::countable_set optimal_parameters = tuner.tune(a);
+
   // bool check1 = optimal_parameters[0]->get_value().compare("\"eins\"") == 0;
   // BOOST_CHECK(check1);
   // bool check2 = optimal_parameters[1]->get_value().compare("2.000000") == 0;

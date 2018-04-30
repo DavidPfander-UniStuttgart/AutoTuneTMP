@@ -14,8 +14,9 @@ AUTOTUNE_KERNEL(void(size_t, std::vector<double> &, size_t,
 
 int main(void) {
   std::cout << "testing countable set interface" << std::endl;
+  autotune::mult_kernel.set_verbose(true);
   auto &builder = autotune::mult_kernel.get_builder<cppjit::builder::gcc>();
-  builder.set_verbose(true);
+  // builder.set_verbose(true);
   builder.set_include_paths(
       "-I/home/pfandedd/git/AutoTuneTMP/AutoTuneTMP_install_debug/include "
       "-I/home/pfandedd/git/AutoTuneTMP/Vc_install/include "

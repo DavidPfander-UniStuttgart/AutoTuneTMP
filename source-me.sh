@@ -10,7 +10,7 @@ if [[ -z "$CONFIGURATION_DONE" ]]; then
     else
         # circle uses special parallelism settings in the build scripts to maximize performance per scripts
         # all threads ins't always possible, because of memory limititations (4G)
-        export PARALLEL_BUILD=4
+        export PARALLEL_BUILD=2
     fi
     echo "parallel build (-j for make): $PARALLEL_BUILD"
 

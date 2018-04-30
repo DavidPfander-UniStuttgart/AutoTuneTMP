@@ -34,6 +34,8 @@ vector<double> matrix_vector_reference(const vector<double> &m,
 
 int main(void) {
 
+  matrix_vector.set_verbose(true);
+
   std::default_random_engine generator;
   std::uniform_real_distribution<double> distribution(0.0, 100.0);
 
@@ -54,7 +56,7 @@ int main(void) {
             << ((N * N * 8 + 2 * N * 8) / 1024) << "kB" << std::endl;
   vector<double> result;
 
-  matrix_vector.get_builder<gcc>().set_verbose(true);
+  // matrix_vector.get_builder<gcc>().set_verbose(true);
   matrix_vector.get_builder<gcc>().set_cpp_flags(
       "-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
       "-march=native -mtune=native -fstrict-aliasing ");

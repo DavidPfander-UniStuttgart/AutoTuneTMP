@@ -2,12 +2,10 @@
 set -x
 set -e
 
-export BOOST_ROOT=/home/pfandedd/caro_boost_test
-
 if [ ! -d "boost" ]; then
-    wget 'http://downloads.sourceforge.net/project/boost/boost/1.62.0/boost_1_62_0.tar.bz2'
-    tar xf boost_1_62_0.tar.bz2
-    mv boost_1_62_0 boost
+    wget 'http://downloads.sourceforge.net/project/boost/boost/1.65.0/boost_1_65_0.tar.bz2'
+    tar xf boost_1_65_0.tar.bz2
+    mv boost_1_65_0 boost
     # # configure for gcc 7
     # if [[ "$MATRIX_MULTIPLICATION_TARGET" != "knl" ]]; then
     # 	echo "using gcc : 7.1 : /usr/bin/g++-7  ; " > boost/tools/build/src/user-config.jam
@@ -17,7 +15,7 @@ fi
 if [ ! -d "boost_install/" ]; then
     echo "building boost"
     cd boost
-    ./bootstrap.sh --prefix="$BOOST_ROOT"
+    ./bootstrap.sh --prefix="$BOOST_ROOT" -with-libraries=program_options,filesystem,system,test
     ./b2 -j${PARALLEL_BUILD} variant=release install
     cd ..
 fi
