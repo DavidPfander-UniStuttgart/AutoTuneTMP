@@ -106,13 +106,18 @@ public:
     const std::string &compile_dir = builder->get_compile_dir();
     std::ofstream parameter_file(compile_dir + "parameters.hpp");
     parameter_file << "#pragma once" << std::endl;
-    parameter_file << "#define AUTOTUNE_EXPORT extern \"C\"" << std::endl;
+    parameter_file << "#include \"autotune_kernel.hpp\"" << std::endl;
+
     for (auto &p : this->parameter_values) {
       parameter_file << "#define " << p.first << " " << p.second << "\n";
-      // std::cout << "#define " << p.first << " " << p.second << std::endl;
-      // parameter_file << parameters[i]->to_parameter_source_line();
     }
     parameter_file.close();
+    std::ofstream autotune_kernel_file(compile_dir + "autotune_kernel.hpp");
+    autotune_kernel_file << "#pragma once" << std::endl;
+    autotune_kernel_file << "#include \"cppjit_kernel.hpp\"" << std::endl;
+    autotune_kernel_file << "#define AUTOTUNE_EXPORT CPPJIT_EXPORT"
+                         << std::endl;
+    autotune_kernel_file.close();
   }
 
   void set_builder(std::shared_ptr<cppjit::builder::builder> builder_) {
