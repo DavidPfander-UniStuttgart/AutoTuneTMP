@@ -31,6 +31,14 @@ public:
   abstract_kernel(const std::string &kernel_name)
       : verbose(false), kernel_name(kernel_name), parameters_changed(true) {}
 
+  abstract_kernel(
+      const abstract_kernel<R, cppjit::detail::pack<Args...>> &other)
+      : verbose(other.verbose), kernel_name(other.kernel_name),
+        kernel_duration_functor(other.kernel_duration_functor),
+        parameters_changed(true),
+        precompile_validate_parameters_functor(
+            other.precompile_validate_parameters_functor) {}
+
   virtual void set_verbose(bool verbose) { this->verbose = verbose; }
 
   bool is_verbose() { return verbose; }

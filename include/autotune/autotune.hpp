@@ -33,6 +33,14 @@ public:
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
         internal_kernel(internal_kernel) {}
 
+  // cppjit_kernel(const cppjit_kernel<R, cppjit::detail::pack<Args...>>
+  // &other): internal_kernel(other.internal_kernel) {
+
+  // }
+
+  cppjit_kernel(const cppjit_kernel<R, cppjit::detail::pack<Args...>> &) =
+      delete;
+
   void set_source_inline(const std::string &source_) {
     internal_kernel.set_source_inline(source_);
   }
