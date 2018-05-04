@@ -99,10 +99,14 @@ public:
     if (!has_source() || has_inline_source()) {
       throw autotune_exception("no source available");
     }
+
     std::shared_ptr<cppjit::builder::builder> builder = get_builder();
-    const std::string &source_dir = builder->get_source_dir();
-    std::ofstream parameter_file(source_dir + "parameters.hpp");
+    // needed, otherwise cannot create parameter file at the right place
+    builder->make_compile_dir();
+    const std::string &compile_dir = builder->get_compile_dir();
+    std::ofstream parameter_file(compile_dir + "parameters.hpp");
     parameter_file << "#pragma once" << std::endl;
+    parameter_file << "#define AUTOTUNE_EXPORT extern \"C\"" << std::endl;
     for (auto &p : this->parameter_values) {
       parameter_file << "#define " << p.first << " " << p.second << "\n";
       // std::cout << "#define " << p.first << " " << p.second << std::endl;
@@ -127,6 +131,11 @@ public:
     abstract_kernel<R, cppjit::detail::pack<Args...>>::clear();
     internal_kernel.clear();
     this->verbose = false;
+  }
+
+  virtual void set_verbose(bool verbose) override {
+    this->verbose = verbose;
+    internal_kernel.set_verbose(verbose);
   }
 };
 }

@@ -28,7 +28,7 @@ void loop_exchange(const loop_spec &outer, const loop_spec &inner, F body) {
         body(i + ii, j);
 }
 
-extern "C" vector<double> matrix_vector(const vector<double> &m,
+AUTOTUNE_EXPORT vector<double> matrix_vector(const vector<double> &m,
                                         const vector<double> &v) {
   const size_t N = v.size();
   vector<double> result(N, 0.0);

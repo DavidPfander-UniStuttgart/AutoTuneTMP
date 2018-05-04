@@ -217,7 +217,7 @@ void RBSORCycle(double *grid_r, double *grid_b, const double *rhs_r,
 }
 
 // iter*(dimX*dimY*12)  + iter/INNER_LOOP*(dimX*dimY*12)
-extern "C" double SORDiffusion(std::vector<double> &grid_r,
+AUTOTUNE_EXPORT double SORDiffusion(std::vector<double> &grid_r,
                                std::vector<double> &grid_b,
                                const std::vector<double> &rhs_r,
                                const std::vector<double> &rhs_b,

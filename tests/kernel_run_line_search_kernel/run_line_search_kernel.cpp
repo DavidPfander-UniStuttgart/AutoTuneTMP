@@ -15,7 +15,7 @@ constexpr bool is_equal(const char *a, const char *b) {
   }
 }
 
-extern "C" int run_line_search_kernel(int a) {
+AUTOTUNE_EXPORT int run_line_search_kernel(int a) {
   std::cout << "PAR_1: " << PAR_1 << std::endl;
   std::cout << "PAR_2: " << PAR_2 << std::endl;
   if

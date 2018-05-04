@@ -31,7 +31,7 @@ public:
   abstract_kernel(const std::string &kernel_name)
       : verbose(false), kernel_name(kernel_name), parameters_changed(true) {}
 
-  void set_verbose(bool verbose) { this->verbose = verbose; }
+  virtual void set_verbose(bool verbose) { this->verbose = verbose; }
 
   bool is_verbose() { return verbose; }
 

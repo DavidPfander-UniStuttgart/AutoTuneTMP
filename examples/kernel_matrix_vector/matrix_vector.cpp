@@ -43,7 +43,7 @@ void loop_exchange(const loop_spec &outer, const loop_spec &inner, F pre,
   }
 }
 
-extern "C" vector<double> matrix_vector(const size_t N, const vector<double> &m,
+AUTOTUNE_EXPORT vector<double> matrix_vector(const size_t N, const vector<double> &m,
                                         const vector<double> &v) {
   vector<double> result(v.size(), 0.0);
 

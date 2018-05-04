@@ -14,7 +14,7 @@ using Vc::double_v;
 // #pragma message KERNEL_OMP_THREADS
 // #pragma message DATA_BLOCKING
 
-extern "C" void
+AUTOTUNE_EXPORT void
 mult_kernel(size_t dims, std::vector<double> &dataset_SoA, size_t dataset_size,
             std::vector<double> &level_list, std::vector<double> &index_list,
             std::vector<double> &alpha, std::vector<double> &result_padded) {

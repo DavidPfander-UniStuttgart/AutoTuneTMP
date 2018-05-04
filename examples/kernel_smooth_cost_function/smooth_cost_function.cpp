@@ -5,7 +5,7 @@
 
 #include "parameters.hpp"
 
-extern "C" int smooth_cost_function(int a) {
+AUTOTUNE_EXPORT int smooth_cost_function(int a) {
   // use quadratic cost function
   double value = std::fabs(static_cast<double>(PAR_1) - 2.0) +
                  std::fabs(static_cast<double>(PAR_2) - 3.0);

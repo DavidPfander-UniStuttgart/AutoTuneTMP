@@ -15,7 +15,7 @@ constexpr bool is_equal(const char *a, const char *b) {
   }
 }
 
-extern "C" int run_bruteforce_kernel(int a) {
+AUTOTUNE_EXPORT int run_bruteforce_kernel(int a) {
   if
     constexpr(is_equal(PAR_1, "eins") && PAR_2 == 2) {
       std::cout << "fast kernel" << std::endl;

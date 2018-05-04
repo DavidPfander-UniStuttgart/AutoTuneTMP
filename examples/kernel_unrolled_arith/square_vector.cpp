@@ -9,7 +9,7 @@ using namespace std;
 
 constexpr size_t dims = 5;
 
-extern "C" void square_vector(vector<double> &origin, vector<double> &dest) {
+AUTOTUNE_EXPORT void square_vector(vector<double> &origin, vector<double> &dest) {
   // transform(origin.begin(), origin.end(), origin.begin(), dest.begin(),
   //           multiplies<double>());
   const size_t it_size = origin.size();

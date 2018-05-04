@@ -14,7 +14,7 @@ const std::vector<double> map = {
     150, 150, 150, 150, 150, //
 };
 
-extern "C" int run_full_neighborhood_search_kernel(int a) {
+AUTOTUNE_EXPORT int run_full_neighborhood_search_kernel(int a) {
   // use quadratic cost function
   // double value = std::fabs(static_cast<double>(PAR_1) - 2.0) +
   //                std::fabs(static_cast<double>(PAR_2) - 3.0);
