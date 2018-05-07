@@ -77,11 +77,6 @@ int main(void) {
     throw autotune::autotune_exception(
         "\"x_y_block_size\" does not divide vector size!");
   }
-  // if (z_block_size < double_v::size()) {
-  //   throw autotune::autotune_exception(
-  //       "\"x_y_block_size\" too small for configured vector width, make "
-  //       "\"x_y_block_size\" larger!");
-  // }
 
   std::vector<double> A(N * N);
   double fillup = 0.0;

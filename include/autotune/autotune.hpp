@@ -29,23 +29,16 @@ private:
 public:
   cppjit_kernel(const std::string &kernel_name)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
-        internal_kernel(kernel_name) {
-    std::cout << "in cppjit_kernel ctor1" << std::endl;
-  }
+        internal_kernel(kernel_name) {}
 
   cppjit_kernel(const std::string &kernel_name,
                 const std::string &kernel_src_dir)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
-        internal_kernel(kernel_name, kernel_src_dir) {
-    std::cout << "in cppjit_kernel ctor2" << std::endl;
-  }
+        internal_kernel(kernel_name, kernel_src_dir) {}
 
   cppjit_kernel(cppjit_kernel<R, cppjit::detail::pack<Args...>> &other)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(other),
-        internal_kernel(other.internal_kernel) {
-    std::cout << "in cppjit_kernel ctor copy" << std::endl;
-    throw;
-  }
+        internal_kernel(other.internal_kernel) {}
 
   void set_source_inline(const std::string &source_) {
     internal_kernel.set_source_inline(source_);

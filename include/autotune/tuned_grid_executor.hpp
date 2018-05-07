@@ -39,32 +39,35 @@ public:
   void operator()(Args... args) {
     autotune::queue_thread_pool<num_threads> pool;
 
-    std::function<void(grid_spec, thread_meta)> thread_wrapper =
-        [this, &args...](grid_spec spec, thread_meta meta_base) {
+    std::function<void(grid_spec, thread_meta)> thread_wrapper = [this,
+                                                                  &args...](
+        grid_spec spec, thread_meta meta_base) {
 
-          if (!kernel.is_compiled()) {
-            kernel.compile();
+      cppjit_kernel<void, cppjit::detail::pack<Args...>> kernel_clone(kernel);
+
+      if (!kernel_clone.is_compiled()) {
+        kernel_clone.compile();
+      }
+      void *uncasted_function = kernel_clone.load_other_symbol("set_meta");
+      void (*set_meta_pointer)(thread_meta) =
+          reinterpret_cast<decltype(set_meta_pointer)>(uncasted_function);
+
+      for (size_t block_z = 0; block_z < spec.block_z; block_z++) {
+        for (size_t block_y = 0; block_y < spec.block_y; block_y++) {
+          for (size_t block_x = 0; block_x < spec.block_x;
+               block_x += vector_width) {
+            thread_meta meta = meta_base;
+            meta.z += block_z;
+            meta.y += block_y;
+            meta.x += block_x;
+
+            set_meta_pointer(meta);
+
+            kernel_clone(args...);
           }
-          void *uncasted_function = kernel.load_other_symbol("set_meta");
-          void (*set_meta_pointer)(thread_meta) =
-              reinterpret_cast<decltype(set_meta_pointer)>(uncasted_function);
-
-          for (size_t block_z = 0; block_z < spec.block_z; block_z++) {
-            for (size_t block_y = 0; block_y < spec.block_y; block_y++) {
-              for (size_t block_x = 0; block_x < spec.block_x;
-                   block_x += vector_width) {
-                thread_meta meta = meta_base;
-                meta.z += block_z;
-                meta.y += block_y;
-                meta.x += block_x;
-
-                set_meta_pointer(meta);
-
-                kernel(args...);
-              }
-            }
-          }
-        };
+        }
+      }
+    };
 
     pool.start();
     for (size_t grid_z = 0; grid_z < spec.grid_z; grid_z++) {

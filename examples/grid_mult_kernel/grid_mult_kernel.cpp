@@ -27,12 +27,12 @@ AUTOTUNE_EXPORT void grid_mult_kernel(std::vector<double> &A,
                                       std::vector<std::atomic<double>> &C,
                                       size_t N, size_t z_block_size) {
   autotune::thread_meta meta = get_meta();
-  std::cout << "meta.z: " << meta.z << std::endl;
-  std::cout << "meta.y: " << meta.y << std::endl;
-  std::cout << "meta.x: " << meta.x << std::endl;
+  // std::cout << "meta.z: " << meta.z << std::endl;
+  // std::cout << "meta.y: " << meta.y << std::endl;
+  // std::cout << "meta.x: " << meta.x << std::endl;
 
-  std::cout << "info: vector size IN KERNEL is: " << double_v::size()
-            << std::endl;
+  // std::cout << "info: vector size IN KERNEL is: " << double_v::size()
+  //           << std::endl;
 
   double_v C_comp(0.0);
   size_t z_base = meta.z * z_block_size;
