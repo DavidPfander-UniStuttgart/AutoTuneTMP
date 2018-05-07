@@ -24,22 +24,17 @@ template <typename R, typename... Args>
 class cppjit_kernel<R, cppjit::detail::pack<Args...>>
     : public abstract_kernel<R, cppjit::detail::pack<Args...>> {
 private:
-  cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel;
+  cppjit::kernel<R, cppjit::detail::pack<Args...>> internal_kernel;
 
 public:
-  cppjit_kernel(
-      const std::string &kernel_name,
-      cppjit::kernel<R, cppjit::detail::pack<Args...>> &internal_kernel)
+  cppjit_kernel(const std::string &kernel_name)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
-        internal_kernel(internal_kernel) {}
+        internal_kernel(kernel_name) {}
 
-  // cppjit_kernel(const cppjit_kernel<R, cppjit::detail::pack<Args...>>
-  // &other): internal_kernel(other.internal_kernel) {
-
-  // }
-
-  cppjit_kernel(const cppjit_kernel<R, cppjit::detail::pack<Args...>> &) =
-      delete;
+  cppjit_kernel(const std::string &kernel_name,
+                const std::string &kernel_src_dir)
+      : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
+        internal_kernel(kernel_name, kernel_src_dir) {}
 
   void set_source_inline(const std::string &source_) {
     internal_kernel.set_source_inline(source_);
@@ -154,7 +149,6 @@ public:
 }
 
 #define AUTOTUNE_DECLARE_KERNEL(kernel_signature, kernel_name)                 \
-  CPPJIT_DECLARE_KERNEL(kernel_signature, kernel_name)                         \
   namespace autotune {                                                         \
   extern cppjit_kernel<                                                        \
       cppjit::detail::function_traits<kernel_signature>::return_type,          \
@@ -163,21 +157,19 @@ public:
   } /* namespace autotune */
 
 #define AUTOTUNE_DEFINE_KERNEL_NO_SRC(kernel_signature, kernel_name)           \
-  CPPJIT_DEFINE_KERNEL_NO_SRC(kernel_signature, kernel_name)                   \
   namespace autotune {                                                         \
   cppjit_kernel<                                                               \
       cppjit::detail::function_traits<kernel_signature>::return_type,          \
       cppjit::detail::function_traits<kernel_signature>::args_type>            \
-      kernel_name(#kernel_name, cppjit::kernel_name);                          \
+      kernel_name(#kernel_name);                                               \
   } /* namespace autotune */
 
 #define AUTOTUNE_DEFINE_KERNEL(kernel_signature, kernel_name, kernel_src_dir)  \
-  CPPJIT_DEFINE_KERNEL(kernel_signature, kernel_name, kernel_src_dir)          \
   namespace autotune {                                                         \
   cppjit_kernel<                                                               \
       cppjit::detail::function_traits<kernel_signature>::return_type,          \
       cppjit::detail::function_traits<kernel_signature>::args_type>            \
-      kernel_name(#kernel_name, cppjit::kernel_name);                          \
+      kernel_name(#kernel_name, kernel_src_dir);                               \
   } /* namespace autotune */
 
 #define AUTOTUNE_KERNEL_NO_SRC(signature, kernel_name)                         \
