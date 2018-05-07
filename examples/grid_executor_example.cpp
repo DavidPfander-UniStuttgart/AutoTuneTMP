@@ -1,4 +1,5 @@
 #include "autotune/grid_executor.hpp"
+#include "autotune/autotune_exception.hpp"
 #include "autotune/execution_wrapper.hpp"
 #include "autotune/queue_thread_pool.hpp"
 #include "autotune/thread_pool.hpp"
@@ -193,13 +194,9 @@ int main(void) {
   if (N < double_v::size()) {
     throw "matrix too small for configured vector width, make \"N\" larger!";
   }
-  if (z_block_size < double_v::size()) {
-    throw "\"z_block_size\" too small for configured vector width, make "
-          "\"z_block_size\" larger!";
-  }
-  if (z_block_size < double_v::size()) {
-    throw "\"x_y_block_size\" too small for configured vector width, make "
-          "\"x_y_block_size\" larger!";
+  if (x_y_block_size % double_v::size() != 0) {
+    throw autotune::autotune_exception(
+        "\"x_y_block_size\" does not divide vector size!");
   }
 
   std::vector<double> A(N * N);

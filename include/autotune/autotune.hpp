@@ -29,12 +29,23 @@ private:
 public:
   cppjit_kernel(const std::string &kernel_name)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
-        internal_kernel(kernel_name) {}
+        internal_kernel(kernel_name) {
+    std::cout << "in cppjit_kernel ctor1" << std::endl;
+  }
 
   cppjit_kernel(const std::string &kernel_name,
                 const std::string &kernel_src_dir)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
-        internal_kernel(kernel_name, kernel_src_dir) {}
+        internal_kernel(kernel_name, kernel_src_dir) {
+    std::cout << "in cppjit_kernel ctor2" << std::endl;
+  }
+
+  cppjit_kernel(cppjit_kernel<R, cppjit::detail::pack<Args...>> &other)
+      : abstract_kernel<R, cppjit::detail::pack<Args...>>(other),
+        internal_kernel(other.internal_kernel) {
+    std::cout << "in cppjit_kernel ctor copy" << std::endl;
+    throw;
+  }
 
   void set_source_inline(const std::string &source_) {
     internal_kernel.set_source_inline(source_);
@@ -47,6 +58,16 @@ public:
   bool has_source() { return internal_kernel.has_source(); }
 
   bool has_inline_source() { return internal_kernel.has_inline_source(); }
+
+  void *load_other_symbol(const std::string &symbol_name) {
+    auto builder = internal_kernel.get_builder();
+    void *uncasted_function = builder->load_other_symbol(symbol_name);
+    if (uncasted_function == nullptr) {
+      throw autotune_exception(std::string("unable to load symbol: \"") +
+                               symbol_name + std::string("\""));
+    }
+    return uncasted_function;
+  }
 
   virtual bool is_valid_parameter_combination() override {
     auto builder = internal_kernel.get_builder();
@@ -118,6 +139,7 @@ public:
     std::ofstream autotune_kernel_file(compile_dir + "autotune_kernel.hpp");
     autotune_kernel_file << "#pragma once" << std::endl;
     autotune_kernel_file << "#include \"cppjit_kernel.hpp\"" << std::endl;
+    autotune_kernel_file << "#include \"parameters.hpp\"" << std::endl;
     autotune_kernel_file << "#define AUTOTUNE_EXPORT CPPJIT_EXPORT"
                          << std::endl;
     autotune_kernel_file.close();

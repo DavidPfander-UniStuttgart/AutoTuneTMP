@@ -7,7 +7,7 @@
 #include <iostream>
 #include <thread>
 
-extern std::mutex print_mutex;
+// extern std::mutex print_mutex;
 
 namespace autotune {
 
