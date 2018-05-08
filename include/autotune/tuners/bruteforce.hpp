@@ -18,11 +18,6 @@ public:
 private:
   void tune_impl(Args &... args) override {
 
-    // this->result_cache.clear();
-    // parameter_value_set original_values = this->f.get_parameter_values();
-
-    // bool is_valid = true;
-
     size_t total_combinations = 1.0;
     for (size_t i = 0; i < this->parameters.size(); i++) {
       total_combinations *= this->parameters[i]->count_values();
@@ -45,16 +40,7 @@ private:
                 << " (out of " << total_combinations << ")" << std::endl;
     }
     combination_counter += 1;
-    // bool first = true;
-
     this->evaluate(args...);
-    // countable_set optimal_parameters;
-    // if (is_valid) {
-    //   first = false;
-    //   optimal_parameters = this->parameters;
-    //   this->report_verbose("new best kernel", optimal_duration,
-    //                        this->parameters);
-    // }
 
     size_t current_index = 0;
     while (true) {
@@ -79,25 +65,12 @@ private:
         }
         combination_counter += 1;
         this->evaluate(args...);
-        // if (is_valid && (first || duration < optimal_duration)) {
-        //   first = false;
-        //   optimal_duration = duration;
-        //   optimal_parameters = this->parameters;
-        //   this->report_verbose("new best kernel", optimal_duration,
-        //                        this->parameters);
-        // }
 
       } else {
         // no valid more values, try next parameter "above"
         current_index += 1;
       }
     }
-
-    // this->f.set_parameter_values(original_values);
-    // if (this->parameter_adjustment_functor) {
-    //   this->parameter_adjustment_functor(optimal_parameters);
-    // }
-    // return optimal_parameters;
   }
 };
 } // namespace tuners

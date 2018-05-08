@@ -100,21 +100,6 @@ int main(void) {
   // std::cout << "B:" << std::endl;
   // print_matrix(B, N);
 
-  // std::function<void(autotune::thread_meta)> mult_kernel =
-  //     [&A, &B, &C,
-  //      &N, // &result_mutex
-  //      z_block_size](autotune::thread_meta meta) {
-  //       double_v C_comp(0.0);
-  //       size_t z_base = meta.z * z_block_size;
-  //       for (size_t i = z_base; i < z_base + z_block_size; i++) {
-  //         double_v A_comp(A[meta.y * N + i]);
-  //         double_v B_comp(&B[i * N + meta.x], Vc::flags::element_aligned);
-  //         C_comp += A_comp * B_comp;
-  //       }
-
-  //       add_atomically(C, meta.y * N + meta.x, C_comp);
-  //     };
-
   autotune::grid_mult_kernel.get_builder<cppjit::builder::gcc>().set_cpp_flags(
       "-std=c++17 -march=native -mtune=native -g ");
   autotune::grid_mult_kernel.get_builder<cppjit::builder::gcc>().set_link_flags(
@@ -131,12 +116,14 @@ int main(void) {
   spec.grid_z = N / z_block_size;
   spec.grid_y = N / spec.block_y;
   spec.grid_x = N / spec.block_x;
+
+  autotune::countable_set parameters;
+
   // TODO: increase threads!!!
   autotune::tuned_grid_executor<
-      1, double_v::size(), std::vector<double> &, std::vector<double> &,
+      2, double_v::size(), std::vector<double> &, std::vector<double> &,
       std::vector<std::atomic<double>> &, size_t, size_t>
-      // autotune::tuned_grid_executor<8, double_v::size()>
-      tuned_grid_exe(autotune::grid_mult_kernel, spec);
+      tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
   std::chrono::high_resolution_clock::time_point start_stamp =
       std::chrono::high_resolution_clock::now();
