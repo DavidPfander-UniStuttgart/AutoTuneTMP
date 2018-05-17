@@ -77,7 +77,7 @@ public:
   }
 
   virtual R operator()(Args... args) override {
-    if (this->parameters_changed) {
+    if (!is_compiled()) {
       compile();
     }
     return internal_kernel(std::forward<Args>(args)...);
@@ -86,7 +86,7 @@ public:
   // very useful overload for the kernel tuners, so that they don't have to
   // track source-related arguments
   void compile(const std::string &source_dir) {
-    if (this->parameters_changed) {
+    if (!is_compiled()) {
       create_parameter_file();
       this->parameters_changed = false;
     }
@@ -94,7 +94,7 @@ public:
   }
 
   void compile_inline(const std::string &source) {
-    if (this->parameters_changed) {
+    if (!is_compiled()) {
       create_parameter_file();
       this->parameters_changed = false;
     }
@@ -102,7 +102,7 @@ public:
   }
 
   virtual void compile() override {
-    if (this->parameters_changed) {
+    if (!is_compiled()) {
       create_parameter_file();
       this->parameters_changed = false;
     }
@@ -110,6 +110,10 @@ public:
   }
 
   virtual bool is_compiled() override {
+    std::cout << "parameters_changed: " << this->parameters_changed
+              << std::endl;
+    std::cout << "internal_kernel.is_compiled(): "
+              << internal_kernel.is_compiled() << std::endl;
     return !this->parameters_changed && internal_kernel.is_compiled();
   }
 

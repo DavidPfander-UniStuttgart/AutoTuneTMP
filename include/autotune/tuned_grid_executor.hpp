@@ -69,9 +69,12 @@ public:
           dynamic_cast<kernel_type<void, cppjit::detail::pack<Args...>> *>(
               kernel.clone()));
 
+      std::cout << "before compile" << std::endl;
       if (!kernel_clone->is_compiled()) {
         kernel_clone->compile();
       }
+      std::cout << "after compile" << std::endl;
+
       // void (*set_meta_pointer)(thread_meta) = nullptr;
       // if (std::shared_ptr<cppjit_kernel<void, cppjit::detail::pack<Args...>>>
       // casted =
@@ -128,6 +131,7 @@ public:
               std::cout << "before meta.y: " << meta.y << std::endl;
               std::cout << "before meta.x: " << meta.x << std::endl;
               kernel_clone->set_meta(meta);
+              std::cout << "right before call" << std::endl;
               (*kernel_clone)(args...);
             }
 

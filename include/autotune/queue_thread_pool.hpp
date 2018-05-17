@@ -45,11 +45,11 @@ private:
 
       if (exe) {
         // if work was found, execute it
-        thread_meta meta;
-        meta.x = i;
-        meta.y = 0;
-        meta.z = 0;
-        exe->set_meta(meta);
+        // thread_meta meta;
+        // meta.x = i;
+        // meta.y = 0;
+        // meta.z = 0;
+        // exe->set_meta(meta);
         // std::cout << "doing work in t: " << i << std::endl;
         (*exe)();
       } else {

@@ -9,7 +9,7 @@
 
 #include "execution_wrapper.hpp"
 
-extern std::mutex print_mutex;
+// extern std::mutex print_mutex;
 
 namespace autotune {
 
@@ -35,31 +35,31 @@ private:
 
       // check for work
       std::unique_ptr<detail::abstract_executor> exe;
-      print_mutex.lock();
-      std::cout << "look for work (waiting for mutex)" << std::endl;
-      print_mutex.unlock();
+      // print_mutex.lock();
+      // std::cout << "look for work (waiting for mutex)" << std::endl;
+      // print_mutex.unlock();
       mutex_threads.lock();
-      print_mutex.lock();
-      std::cout << "look for work (holding mutex)" << std::endl;
-      print_mutex.unlock();
+      // print_mutex.lock();
+      // std::cout << "look for work (holding mutex)" << std::endl;
+      // print_mutex.unlock();
       if (work_list.size() > 0) {
         // work found
         // std::unique_lock<std::mutex> lock(mutex_work);
         exe = std::move(work_list.front());
         work_list.pop_front();
       }
-      print_mutex.lock();
-      std::cout << "look for work (releasing mutex)" << std::endl;
-      print_mutex.unlock();
+      // print_mutex.lock();
+      // std::cout << "look for work (releasing mutex)" << std::endl;
+      // print_mutex.unlock();
       mutex_threads.unlock();
 
       if (exe) {
         // if work was found, execute it
-        thread_meta meta;
-        meta.x = i;
-        meta.y = 0;
-        meta.z = 0;
-        exe->set_meta(meta);
+        // thread_meta meta;
+        // meta.x = i;
+        // meta.y = 0;
+        // meta.z = 0;
+        // exe->set_meta(meta);
         (*exe)();
       } else {
         // no work was found, wait for work or finish signal
@@ -147,15 +147,15 @@ public:
     auto work_temp = std::unique_ptr<detail::abstract_executor>(
         new detail::delayed_executor_meta<Args...>(f, args...));
     std::unique_lock<std::mutex> lock(mutex_threads);
-    print_mutex.lock();
-    std::cout << "enqueue work with meta (holding mutex)" << std::endl;
-    print_mutex.unlock();
+    // print_mutex.lock();
+    // std::cout << "enqueue work with meta (holding mutex)" << std::endl;
+    // print_mutex.unlock();
     work_list.push_back(std::move(work_temp));
     threads_wait_cv.notify_one();
-    print_mutex.lock();
-    std::cout << "ONE thread notified" << std::endl;
-    std::cout << "enqueue work with meta (releasing mutex)" << std::endl;
-    print_mutex.unlock();
+    // print_mutex.lock();
+    // std::cout << "ONE thread notified" << std::endl;
+    // std::cout << "enqueue work with meta (releasing mutex)" << std::endl;
+    // print_mutex.unlock();
   }
 };
 }
