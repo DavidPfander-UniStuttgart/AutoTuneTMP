@@ -1,9 +1,3 @@
-// #include "autotune/grid_executor.hpp"
-// #include "autotune/execution_wrapper.hpp"
-// #include "autotune/queue_thread_pool.hpp"
-// #include "autotune/thread_pool.hpp"
-// #include "autotune/thread_safe_queue.hpp"
-
 #include "autotune/autotune.hpp"
 
 // defines kernel, put in single compilation unit

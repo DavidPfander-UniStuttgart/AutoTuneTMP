@@ -19,11 +19,9 @@ AUTOTUNE_KERNEL(int(int), run_kernel, "tests/kernel_run_kernel")
 AUTOTUNE_KERNEL(int(int), run_different_parameter_values,
                 "tests/kernel_run_different_parameter_values")
 
-AUTOTUNE_KERNEL(int(int), run_bruteforce_kernel,
-                "tests/kernel_run_bruteforce_kernel")
+AUTOTUNE_KERNEL(int(int), run_bruteforce_kernel, "tests/kernel_run_bruteforce_kernel")
 
-AUTOTUNE_KERNEL(int(int), run_line_search_kernel,
-                "tests/kernel_run_line_search_kernel")
+AUTOTUNE_KERNEL(int(int), run_line_search_kernel, "tests/kernel_run_line_search_kernel")
 
 AUTOTUNE_KERNEL(int(int), run_neighborhood_search_kernel,
                 "tests/kernel_run_neighborhood_search_kernel")
@@ -31,11 +29,9 @@ AUTOTUNE_KERNEL(int(int), run_neighborhood_search_kernel,
 AUTOTUNE_KERNEL(int(int), run_full_neighborhood_search_kernel,
                 "tests/kernel_run_full_neighborhood_search_kernel")
 
-AUTOTUNE_KERNEL(int(int), run_monte_carlo_kernel,
-                "tests/kernel_run_monte_carlo_kernel")
+AUTOTUNE_KERNEL(int(int), run_monte_carlo_kernel, "tests/kernel_run_monte_carlo_kernel")
 
-AUTOTUNE_DECLARE_DEFINE_GENERALIZED_KERNEL(double(double),
-                                           generalized_test_kernel)
+AUTOTUNE_GENERALIZED_KERNEL(double(double), generalized_test_kernel)
 
 BOOST_AUTO_TEST_SUITE(basic_api)
 
@@ -47,7 +43,6 @@ BOOST_AUTO_TEST_CASE(run_kernel) {
 }
 
 BOOST_AUTO_TEST_CASE(run_different_parameter_values) {
-
   autotune::countable_set parameters;
   autotune::fixed_set_parameter<int> p1("PAR_1", {1, 2});
   parameters.add_parameter(p1);
@@ -105,7 +100,6 @@ BOOST_AUTO_TEST_CASE(test_tuner_result_cache) {
 }
 
 BOOST_AUTO_TEST_CASE(run_different_parameter_values_more_automation) {
-
   autotune::countable_set parameters;
   autotune::fixed_set_parameter<int> p1("PAR_1", {1, 2});
   parameters.add_parameter(p1);
@@ -137,8 +131,7 @@ BOOST_AUTO_TEST_SUITE(bruteforce)
 
 BOOST_AUTO_TEST_CASE(run_bruteforce) {
   autotune::run_bruteforce_kernel.set_verbose(true);
-  auto &builder =
-      autotune::run_bruteforce_kernel.get_builder<cppjit::builder::gcc>();
+  auto &builder = autotune::run_bruteforce_kernel.get_builder<cppjit::builder::gcc>();
   // builder.set_verbose(true);
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
@@ -154,8 +147,7 @@ BOOST_AUTO_TEST_CASE(run_bruteforce) {
 
   std::function<bool(int)> test_result = [](int) -> bool { return true; };
 
-  autotune::tuners::bruteforce tuner(autotune::run_bruteforce_kernel,
-                                     parameters);
+  autotune::tuners::bruteforce tuner(autotune::run_bruteforce_kernel, parameters);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
 
@@ -174,13 +166,11 @@ BOOST_AUTO_TEST_SUITE(line_search)
 
 BOOST_AUTO_TEST_CASE(run_line_search) {
   // autotune::run_line_search_kernel.set_verbose(true);
-  auto &builder =
-      autotune::run_line_search_kernel.get_builder<cppjit::builder::gcc>();
+  auto &builder = autotune::run_line_search_kernel.get_builder<cppjit::builder::gcc>();
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter<std::string> p1("PAR_1",
-                                                {"eins", "zwei", "drei"});
+  autotune::fixed_set_parameter<std::string> p1("PAR_1", {"eins", "zwei", "drei"});
   parameters.add_parameter(p1);
   autotune::countable_continuous_parameter p2("PAR_2", 1.0, 1.0, 1.0, 3.0);
   parameters.add_parameter(p2);
@@ -189,8 +179,7 @@ BOOST_AUTO_TEST_CASE(run_line_search) {
 
   int a = 5;
 
-  autotune::tuners::line_search tuner(autotune::run_line_search_kernel,
-                                      parameters, 5);
+  autotune::tuners::line_search tuner(autotune::run_line_search_kernel, parameters, 5);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);
@@ -208,8 +197,7 @@ BOOST_AUTO_TEST_SUITE(neighborhood_search)
 
 BOOST_AUTO_TEST_CASE(run_neighborhood_search) {
   autotune::run_neighborhood_search_kernel.set_verbose(true);
-  auto &builder = autotune::run_neighborhood_search_kernel
-                      .get_builder<cppjit::builder::gcc>();
+  auto &builder = autotune::run_neighborhood_search_kernel.get_builder<cppjit::builder::gcc>();
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::countable_set parameters;
@@ -222,8 +210,8 @@ BOOST_AUTO_TEST_CASE(run_neighborhood_search) {
 
   int a = 5;
 
-  autotune::tuners::neighborhood_search tuner(
-      autotune::run_neighborhood_search_kernel, parameters, 5);
+  autotune::tuners::neighborhood_search tuner(autotune::run_neighborhood_search_kernel, parameters,
+                                              5);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);
@@ -240,8 +228,7 @@ BOOST_AUTO_TEST_SUITE(full_neighborhood_search)
 
 BOOST_AUTO_TEST_CASE(run_full_neighborhood_search) {
   autotune::run_full_neighborhood_search_kernel.set_verbose(true);
-  auto &builder = autotune::run_full_neighborhood_search_kernel
-                      .get_builder<cppjit::builder::gcc>();
+  auto &builder = autotune::run_full_neighborhood_search_kernel.get_builder<cppjit::builder::gcc>();
   // builder.set_verbose(false);
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
@@ -255,8 +242,8 @@ BOOST_AUTO_TEST_CASE(run_full_neighborhood_search) {
 
   int a = 5;
 
-  autotune::tuners::full_neighborhood_search tuner(
-      autotune::run_full_neighborhood_search_kernel, parameters, 10);
+  autotune::tuners::full_neighborhood_search tuner(autotune::run_full_neighborhood_search_kernel,
+                                                   parameters, 10);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);
@@ -273,8 +260,7 @@ BOOST_AUTO_TEST_SUITE(monte_carlo_search)
 
 BOOST_AUTO_TEST_CASE(run_monte_carlo) {
   autotune::run_monte_carlo_kernel.set_verbose(true);
-  auto &builder =
-      autotune::run_monte_carlo_kernel.get_builder<cppjit::builder::gcc>();
+  auto &builder = autotune::run_monte_carlo_kernel.get_builder<cppjit::builder::gcc>();
   builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
 
   autotune::randomizable_set parameters;
@@ -287,8 +273,7 @@ BOOST_AUTO_TEST_CASE(run_monte_carlo) {
 
   int a = 5;
 
-  autotune::tuners::monte_carlo tuner(autotune::run_monte_carlo_kernel,
-                                      parameters, 10);
+  autotune::tuners::monte_carlo tuner(autotune::run_monte_carlo_kernel, parameters, 10);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::randomizable_set optimal_parameters = tuner.tune(a);
@@ -304,17 +289,13 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(generalized_kernel)
 
 BOOST_AUTO_TEST_CASE(run_generalized_kernel) {
-
   std::string in_kernel_parameter_1;
   std::string in_kernel_parameter_2;
 
   autotune::generalized_test_kernel.set_kernel_functor(
       [&in_kernel_parameter_1, &in_kernel_parameter_2](double a) -> double {
-
-        std::cout << "in_kernel_parameter_1: " << in_kernel_parameter_1
-                  << std::endl;
-        std::cout << "in_kernel_parameter_2: " << in_kernel_parameter_2
-                  << std::endl;
+        std::cout << "in_kernel_parameter_1: " << in_kernel_parameter_1 << std::endl;
+        std::cout << "in_kernel_parameter_2: " << in_kernel_parameter_2 << std::endl;
         if (in_kernel_parameter_1.compare("\"zwei\"") == 0 &&
             in_kernel_parameter_2.compare("3") == 0) {
           std::cout << "fast kernel" << std::endl;
@@ -327,24 +308,22 @@ BOOST_AUTO_TEST_CASE(run_generalized_kernel) {
         return a + 3;
       });
   autotune::generalized_test_kernel.set_create_parameter_file_functor(
-      [&in_kernel_parameter_1, &in_kernel_parameter_2](
-          autotune::parameter_value_set &parameter_values) {
+      [&in_kernel_parameter_1,
+       &in_kernel_parameter_2](autotune::parameter_value_set &parameter_values) {
         in_kernel_parameter_1 = parameter_values["PAR_1"];
         in_kernel_parameter_2 = parameter_values["PAR_2"];
       });
   autotune::generalized_test_kernel.set_verbose(true);
 
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter<std::string> p1("PAR_1",
-                                                {"eins", "zwei", "drei"});
+  autotune::fixed_set_parameter<std::string> p1("PAR_1", {"eins", "zwei", "drei"});
   parameters.add_parameter(p1);
   autotune::countable_continuous_parameter p2("PAR_2", 1.0, 1.0, 1.0, 5.0);
   parameters.add_parameter(p2);
 
   BOOST_CHECK(autotune::generalized_test_kernel(3) == 6);
 
-  autotune::tuners::bruteforce tuner(autotune::generalized_test_kernel,
-                                     parameters);
+  autotune::tuners::bruteforce tuner(autotune::generalized_test_kernel, parameters);
 
   std::function<bool(double)> test_result = [](double) -> bool { return true; };
   tuner.setup_test(test_result);

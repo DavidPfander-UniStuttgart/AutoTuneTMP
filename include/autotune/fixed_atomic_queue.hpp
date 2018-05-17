@@ -4,7 +4,7 @@
 #include <condition_variable>
 #include <iostream>
 
-extern std::mutex print_mutex;
+// extern std::mutex print_mutex;
 
 namespace autotune {
 namespace detail {
@@ -38,7 +38,7 @@ public:
   }
   T pop() {
     std::unique_lock l(mutex);
-    std::unique_lock l2(print_mutex);
+    // std::unique_lock l2(print_mutex);
     std::cout << "queue state: ";
     for (size_t i = 0; i < max_elements; i++) {
       if (i > 0) {

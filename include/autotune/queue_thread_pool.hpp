@@ -50,6 +50,7 @@ private:
         meta.y = 0;
         meta.z = 0;
         exe->set_meta(meta);
+	// std::cout << "doing work in t: " << i << std::endl;
         (*exe)();
       } else {
         // no work was found, wait for work or finish signal
@@ -128,23 +129,22 @@ public:
     // print_mutex.unlock();
   }
 
-  // // enqueue function with void return that accepts thread metadata as its
-  // first
-  // // argument. Arguments have to be copyable
-  // template <typename... Args>
-  // void enqueue_work(std::function<void(thread_meta, Args...)> f, Args...
-  // args) {
-  //   auto work_temp = std::unique_ptr<detail::abstract_executor>(
-  //       new detail::delayed_executor_meta<Args...>(f, args...));
-  //   // print_mutex.lock();
-  //   // std::cout << "enqueue work with meta (holding mutex)" << std::endl;
-  //   // print_mutex.unlock();
-  //   safe_q.push_back(std::move(work_temp));
-  //   threads_wait_cv.notify_one();
-  //   // print_mutex.lock();
-  //   // std::cout << "ONE thread notified" << std::endl;
-  //   // std::cout << "enqueue work with meta (releasing mutex)" << std::endl;
-  //   // print_mutex.unlock();
-  // }
+  // // // enqueue function with void return that accepts thread metadata as its first
+  // // // argument. Arguments have to be copyable
+  // // template <typename... Args>
+  // // void enqueue_work(std::function<void(thread_meta, Args...)> f, Args...
+  // // args) {
+  // //   auto work_temp = std::unique_ptr<detail::abstract_executor>(
+  // //       new detail::delayed_executor_meta<Args...>(f, args...));
+  // //   // print_mutex.lock();
+  // //   // std::cout << "enqueue work with meta (holding mutex)" << std::endl;
+  // //   // print_mutex.unlock();
+  // //   safe_q.push_back(std::move(work_temp));
+  // //   threads_wait_cv.notify_one();
+  // //   // print_mutex.lock();
+  // //   // std::cout << "ONE thread notified" << std::endl;
+  // //   // std::cout << "enqueue work with meta (releasing mutex)" << std::endl;
+  // //   // print_mutex.unlock();
+  // // }
 };
 }

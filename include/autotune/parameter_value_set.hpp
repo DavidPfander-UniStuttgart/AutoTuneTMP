@@ -2,6 +2,7 @@
 
 #include <map>
 #include <sstream>
+#include <iostream>
 
 namespace autotune {
 
