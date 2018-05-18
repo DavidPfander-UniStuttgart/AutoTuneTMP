@@ -165,6 +165,9 @@ public:
     return new cppjit_kernel<R, cppjit::detail::pack<Args...>>(*this);
   }
 
+  // important: will forget data in case of a recompile
+  // due to data being stored within shared object which is unloaded and
+  // replaced
   virtual void set_meta(thread_meta meta) override {
     if (!is_compiled()) {
       compile();
