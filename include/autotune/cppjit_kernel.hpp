@@ -86,26 +86,20 @@ public:
   // very useful overload for the kernel tuners, so that they don't have to
   // track source-related arguments
   void compile(const std::string &source_dir) {
-    if (!is_compiled()) {
-      create_parameter_file();
-      this->parameters_changed = false;
-    }
+    create_parameter_file();
+    this->parameters_changed = false;
     internal_kernel.compile(source_dir);
   }
 
   void compile_inline(const std::string &source) {
-    if (!is_compiled()) {
-      create_parameter_file();
-      this->parameters_changed = false;
-    }
+    create_parameter_file();
+    this->parameters_changed = false;
     internal_kernel.compile_inline(source);
   }
 
   virtual void compile() override {
-    if (!is_compiled()) {
-      create_parameter_file();
-      this->parameters_changed = false;
-    }
+    create_parameter_file();
+    this->parameters_changed = false;
     internal_kernel.compile();
   }
 
@@ -172,6 +166,9 @@ public:
   }
 
   virtual void set_meta(thread_meta meta) override {
+    if (!is_compiled()) {
+      compile();
+    }
     if (!set_meta_pointer) {
       void *uncasted_function = load_other_symbol("set_meta");
       set_meta_pointer =

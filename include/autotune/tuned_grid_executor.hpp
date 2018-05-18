@@ -69,12 +69,6 @@ public:
           dynamic_cast<kernel_type<void, cppjit::detail::pack<Args...>> *>(
               kernel.clone()));
 
-      std::cout << "before compile" << std::endl;
-      if (!kernel_clone->is_compiled()) {
-        kernel_clone->compile();
-      }
-      std::cout << "after compile" << std::endl;
-
       // void (*set_meta_pointer)(thread_meta) = nullptr;
       // if (std::shared_ptr<cppjit_kernel<void, cppjit::detail::pack<Args...>>>
       // casted =
@@ -101,6 +95,11 @@ public:
       if (!found) {
         cur_parameters = tuner.get_best();
         kernel_clone->set_parameter_values(cur_parameters);
+      }
+
+      std::cout << "before compile" << std::endl;
+      if (!kernel_clone->is_compiled()) {
+        kernel_clone->compile();
       }
 
       std::chrono::high_resolution_clock::time_point start_stamp =

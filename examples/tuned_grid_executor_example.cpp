@@ -127,7 +127,7 @@ int main(void) {
   //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
   autotune::tuned_grid_executor<
-      1, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
+      16, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
       std::vector<double> &, std::vector<std::atomic<double>> &, size_t, size_t>
       tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
