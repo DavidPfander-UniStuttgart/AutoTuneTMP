@@ -3,7 +3,7 @@
 #include <iostream>
 #include <thread>
 
-#include "parameters.hpp"
+#include "autotune_kernel.hpp"
 
 AUTOTUNE_EXPORT int run_monte_carlo_kernel(int a) {
   if

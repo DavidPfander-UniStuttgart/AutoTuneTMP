@@ -88,7 +88,7 @@ class abstract_tuner
 
   bool evaluate(Args &... args) {
     parameter_value_set original_kernel_values = f.get_parameter_values();
-    apply_adjusted_parameters(f, parameters);
+    apply_parameters(f, parameters);  // does adjustment if applicable
     bool found =
         detail::evaluate_parameters<parameter_interface, R, Args...>(*this, f, parameters, args...);
     f.set_parameter_values(original_kernel_values);
@@ -106,7 +106,7 @@ class abstract_tuner
     for (size_t i = 0; i < parameters.size(); i++) {
       std::unique_ptr<autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>> clone(f.clone());
       // clone->set_parameter_values(parameters[i]);
-      apply_adjusted_parameters(*clone, parameters[i]);
+      apply_parameters(*clone, parameters[i]);  // does adjustment if applicable
       kernels.push_back(std::move(clone));
     }
 
@@ -260,24 +260,30 @@ class abstract_tuner
 
   size_t get_repetitions() { return repetitions; }
 
-  void apply_adjusted_parameters(
-      autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
-      const parameter_interface &parameters) {
-    parameter_interface adjusted = parameters;
-    if (verbose) {
-      std::cout << "------ parameters pre-adjustment ------" << std::endl;
-      adjusted.print_values();
-      std::cout << "--------------------------" << std::endl;
-    }
+  void apply_parameters(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
+                        const parameter_interface &parameters) {
+    if (parameter_adjustment_functor) {
+      parameter_interface adjusted = parameters;
+      if (verbose) {
+        std::cout << "------ parameters pre-adjustment ------" << std::endl;
+        adjusted.print_values();
+        std::cout << "--------------------------" << std::endl;
+      }
 
-    parameter_adjustment_functor(adjusted);
+      parameter_adjustment_functor(adjusted);
 
-    if (verbose) {
-      std::cout << "------ post-adjustment values ------" << std::endl;
-      adjusted.print_values();
-      std::cout << "--------------------------" << std::endl;
+      if (verbose) {
+        std::cout << "------ post-adjustment values ------" << std::endl;
+        adjusted.print_values();
+        std::cout << "--------------------------" << std::endl;
+      }
+      kernel.set_parameter_values(adjusted);
+    } else {
+      if (verbose) {
+        std::cout << "------ no adjustment functor ------" << std::endl;
+      }
+      kernel.set_parameter_values(parameters);
     }
-    kernel.set_parameter_values(adjusted);
   }
 
 };  // namespace autotune
