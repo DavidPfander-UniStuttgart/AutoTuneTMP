@@ -44,7 +44,7 @@ class abstract_tuner
   parameter_result_cache result_cache;
 
   std::function<void(parameter_interface &)> parameter_adjustment_functor;
-  // std::function<void(parameter_value_set &)> parameter_values_adjustment_functor;
+  std::function<void(parameter_value_set &)> parameter_values_adjustment_functor;
 
   // std::shared_ptr<simple_constraints> simple_constraints_wrapper;
   // std::shared_ptr<constraint_graph> constraint_graph_wrapper;
@@ -155,14 +155,14 @@ class abstract_tuner
   void set_parameter_adjustment_functor(
       std::function<void(parameter_interface &)> parameter_adjustment_functor) {
     this->parameter_adjustment_functor = parameter_adjustment_functor;
-    // this->parameter_values_adjustment_functor = nullptr;
+    this->parameter_values_adjustment_functor = nullptr;
   }
 
-  // void set_parameter_values_adjustment_functor(
-  //     std::function<void(parameter_value_set &)> parameter_values_adjustment_functor) {
-  //   this->parameter_values_adjustment_functor = parameter_values_adjustment_functor;
-  //   this->parameter_adjustment_functor = nullptr;
-  // }
+  void set_parameter_values_adjustment_functor(
+      std::function<void(parameter_value_set &)> parameter_values_adjustment_functor) {
+    this->parameter_values_adjustment_functor = parameter_values_adjustment_functor;
+    this->parameter_adjustment_functor = nullptr;
+  }
 
   // execute kernel multiple times to average across the result
   void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
@@ -291,6 +291,34 @@ class abstract_tuner
         if (verbose) {
           std::cout << "------ invalidated eval (precompile) ------" << std::endl;
           adjusted.print_values();
+          std::cout << "--------------------------" << std::endl;
+        }
+        return false;
+      } else {
+        if (verbose) {
+          std::cout << "parameter combination passed precompile check" << std::endl;
+        }
+      }
+      kernel.set_parameter_values(adjusted);
+    } else if (parameter_values_adjustment_functor) {
+      parameter_value_set adjusted = to_parameter_values(parameters);
+      if (verbose) {
+        std::cout << "------ parameters pre-adjustment ------" << std::endl;
+        print_parameter_values(adjusted);
+        std::cout << "--------------------------" << std::endl;
+      }
+
+      parameter_values_adjustment_functor(adjusted);
+
+      if (verbose) {
+        std::cout << "------ post-adjustment values ------" << std::endl;
+        print_parameter_values(adjusted);
+        std::cout << "--------------------------" << std::endl;
+      }
+      if (!kernel.precompile_validate_parameters(adjusted)) {
+        if (verbose) {
+          std::cout << "------ invalidated eval (precompile) ------" << std::endl;
+          print_parameter_values(adjusted);
           std::cout << "--------------------------" << std::endl;
         }
         return false;
