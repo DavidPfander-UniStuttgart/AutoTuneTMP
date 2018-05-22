@@ -11,15 +11,29 @@
 namespace autotune {
 
 template <typename parameter_interface, typename R, typename... Args>
+class abstract_tuner;
+
+// template <typename parameter_interface, typename R, typename... Args>
+// bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
+//                          abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+//                          parameter_interface &parameters, Args &... args)
+
+namespace detail {
+template <typename parameter_interface, typename R, typename... Args>
+bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
+                         abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+                         parameter_interface &parameters, Args &... args);
+}
+
+template <typename parameter_interface, typename R, typename... Args>
 class abstract_tuner
-    : public std::conditional<!std::is_same<R, void>::value,
-                              with_tests<R, Args...>,
+    : public std::conditional<!std::is_same<R, void>::value, with_tests<R, Args...>,
                               without_tests<R, Args...>>::type {
-protected:
+ protected:
   autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
   // always-unadjusted, state managed by tuner impl.!
   parameter_interface parameters;
-  parameter_interface optimal_parameters; // adjusted
+  parameter_interface optimal_parameters;  // adjusted
   double optimal_duration;
   bool verbose;
   bool do_measurement;
@@ -30,8 +44,7 @@ protected:
   parameter_result_cache result_cache;
 
   std::function<void(parameter_interface &)> parameter_adjustment_functor;
-  std::function<void(parameter_value_set &)>
-      parameter_values_adjustment_functor;
+  // std::function<void(parameter_value_set &)> parameter_values_adjustment_functor;
 
   // std::shared_ptr<simple_constraints> simple_constraints_wrapper;
   // std::shared_ptr<constraint_graph> constraint_graph_wrapper;
@@ -42,11 +55,16 @@ protected:
 
   virtual void tune_impl(Args &... args) = 0;
 
-public:
+ public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
-      : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
-        do_measurement(false), do_write_header(true), repetitions(1),
+      : f(f),
+        parameters(parameters),
+        optimal_duration(-1.0),
+        verbose(false),
+        do_measurement(false),
+        do_write_header(true),
+        repetitions(1),
         clear_tuner(true) {}
 
   parameter_interface tune(Args &... args) {
@@ -68,218 +86,44 @@ public:
     return optimal_parameters;
   }
 
-  // returns whether evaluate lead to new optimal configuration found
   bool evaluate(Args &... args) {
-    // save original paramters
-    parameter_value_set parameter_values = f.get_parameter_values();
-    for (size_t parameter_index = 0; parameter_index < parameters.size();
-         parameter_index++) {
-      auto &p = parameters[parameter_index];
-      parameter_values[p->get_name()] = p->get_value();
-    }
-    // create a copy, so that adjustment can be done
-    // (without changing the configured parameters)
-    parameter_interface evaluate_parameters = parameters;
+    parameter_value_set original_kernel_values = f.get_parameter_values();
+    apply_adjusted_parameters(f, parameters);
+    bool found =
+        detail::evaluate_parameters<parameter_interface, R, Args...>(*this, f, parameters, args...);
+    f.set_parameter_values(original_kernel_values);
+    return found;
+  }
 
-    // adjust parameters by parameter set
-    if (parameter_adjustment_functor) {
-      if (verbose) {
-        std::cout << "------ parameters pre-adjustment ------" << std::endl;
-        evaluate_parameters.print_values();
-        std::cout << "--------------------------" << std::endl;
-      }
-      if (parameter_adjustment_functor) {
-        parameter_adjustment_functor(evaluate_parameters);
-        for (size_t parameter_index = 0;
-             parameter_index < evaluate_parameters.size(); parameter_index++) {
-          auto &p = evaluate_parameters[parameter_index];
-          parameter_values[p->get_name()] = p->get_value();
-        }
-      }
-    }
-    // // adjust parameters by values
-    // if (parameter_values_adjustment_functor) {
-    //   if (verbose) {
-    //     std::cout << "------ parameters pre-adjustment (value functor)
-    //     ------"
-    //               << std::endl;
-    //     // parameters.print_values();
-    //     print_parameter_values(parameter_values);
-    //     std::cout << "--------------------------" << std::endl;
-    //   }
-    //   if (parameter_values_adjustment_functor) {
-    //     parameter_values_adjustment_functor(parameter_values);
-    //   }
-    // }
-    // // adjust parameters by simple constraints (useful for group tuners!)
-    // if (simple_constraints_wrapper) {
-    //   simple_constraints_wrapper->adjust();
-    // }
-    // // adjust parameters by constraint graph (useful for group tuners!)
-    // if (constraint_graph_wrapper) {
-    //   constraint_graph_wrapper->adjust();
-    // }
+  // bool evaluate_cloned(Args &... args) {
+  //   return evaluate_with_kernel(f->clone(), parameters, args...);
+  // }
 
-    if (verbose) {
-      std::cout << "------ post-adjustment values ------" << std::endl;
-      // parameters.print_values();
-      print_parameter_values(parameter_values);
-      std::cout << "--------------------------" << std::endl;
+  bool evaluate_parallel(std::vector<parameter_interface> &parameters, Args &... args) {
+    std::vector<std::unique_ptr<autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>>>
+        kernels;
+    // clone all kernels and set its parameters
+    for (size_t i = 0; i < parameters.size(); i++) {
+      std::unique_ptr<autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>> clone(f.clone());
+      // clone->set_parameter_values(parameters[i]);
+      apply_adjusted_parameters(*clone, parameters[i]);
+      kernels.push_back(std::move(clone));
     }
 
-    // parameter_value_set parameter_values = f.get_parameter_values();
-    if (!result_cache.contains(parameter_values)) {
-      if (verbose) {
-        std::cout << "------ add to cache ------" << std::endl;
-        print_parameter_values(parameter_values);
-      }
-      result_cache.insert(parameter_values);
-    } else {
-
-      if (verbose) {
-        std::cout << "------ skipped eval ------" << std::endl;
-        evaluate_parameters.print_values();
-        std::cout << "--------------------------" << std::endl;
-      }
-      return false;
+#pragma omp parallel for
+    for (size_t i = 0; i < kernels.size(); i++) {
+      kernels[i]->compile();
     }
 
-    if (!f.precompile_validate_parameters(parameter_values)) {
-      if (verbose) {
-        std::cout << "------ invalidated eval (precompile) ------" << std::endl;
-        evaluate_parameters.print_values();
-        std::cout << "--------------------------" << std::endl;
-      }
-      return false;
-    } else {
-      if (verbose) {
-        std::cout << "parameter combination passed precompile check"
-                  << std::endl;
+    bool any_better = false;
+    for (size_t i = 0; i < parameters.size(); i++) {
+      bool better = detail::evaluate_parameters<parameter_interface, R, Args...>(
+          *this, *kernels[i], parameters[i], args...);
+      if (!any_better && better) {
+        any_better = true;
       }
     }
-
-    parameter_value_set original_kernel_parameters = f.get_parameter_values();
-    f.set_parameter_values(parameter_values);
-
-    if (do_measurement && do_write_header) {
-      this->write_header();
-      do_write_header = false;
-    }
-
-    if (verbose) {
-      std::cout << "------ begin eval ------" << std::endl;
-      // parameters.print_values();
-      print_parameter_values(parameter_values);
-    }
-
-    f.create_parameter_file();
-
-    auto start_compile = std::chrono::high_resolution_clock::now();
-    f.compile();
-    auto end_compile = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration_compile =
-        end_compile - start_compile;
-
-    if (!f.is_valid_parameter_combination()) {
-      if (verbose) {
-        std::cout << "invalid parameter combination encountered" << std::endl;
-      }
-      f.set_parameter_values(original_kernel_parameters);
-      return false;
-    } else {
-      if (verbose) {
-        std::cout << "parameter combination is valid" << std::endl;
-      }
-    }
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // call kernel, discard possibly returned values
-    if
-      constexpr(!std::is_same<R, void>::value) {
-        if (this->has_test()) {
-          for (size_t i = 0; i < repetitions; i++) {
-            bool test_ok = this->test(f(args...));
-            if (!test_ok) {
-              if (verbose) {
-                std::cout << "warning: test for combination failed!"
-                          << std::endl;
-              }
-              f.set_parameter_values(original_kernel_parameters);
-              return false;
-            } else {
-              if (verbose) {
-                std::cout << "test for combination passed" << std::endl;
-              }
-            }
-          }
-        } else {
-          for (size_t i = 0; i < repetitions; i++) {
-            f(args...);
-          }
-        }
-      }
-    else {
-      for (size_t i = 0; i < repetitions; i++) {
-        f(args...);
-      }
-    }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-
-    if (verbose) {
-      if (f.has_kernel_duration_functor()) {
-        std::cout << "internal duration: " << f.get_internal_kernel_duration()
-                  << std::endl;
-        if (repetitions > 1) {
-          std::cout << "internal duration per repetition: "
-                    << (f.get_internal_kernel_duration() /
-                        static_cast<double>(repetitions))
-                    << std::endl;
-        }
-        std::cout << "(duration tuner: " << duration.count() << "s)"
-                  << std::endl;
-        if (repetitions > 1) {
-          std::cout << "(duration tuner per repetition: "
-                    << (duration.count() / static_cast<double>(repetitions))
-                    << "s)" << std::endl;
-        }
-      } else {
-        std::cout << "duration: " << duration.count() << "s" << std::endl;
-        if (repetitions > 1) {
-          std::cout << "duration tuner per reptition: "
-                    << (duration.count() / static_cast<double>(repetitions))
-                    << "s" << std::endl;
-        }
-        std::cout << "------- end eval -------" << std::endl;
-      }
-    }
-
-    double final_duration;
-    if (f.has_kernel_duration_functor()) {
-      if (do_measurement) {
-        this->write_measurement(f.get_internal_kernel_duration(),
-                                duration_compile.count());
-      }
-      final_duration = f.get_internal_kernel_duration();
-    } else {
-      if (do_measurement) {
-        this->write_measurement(duration.count(), duration_compile.count());
-      }
-      final_duration = duration.count();
-    }
-    bool is_better = false;
-    if (optimal_duration < 0.0 || final_duration < optimal_duration) {
-      optimal_duration = final_duration;
-      optimal_parameters = evaluate_parameters;
-      this->report_verbose("new best kernel", optimal_duration,
-                           evaluate_parameters);
-      is_better = true;
-    }
-
-    f.set_parameter_values(original_kernel_parameters);
-    return is_better;
+    return any_better;
   }
 
   void set_verbose(bool verbose) { this->verbose = verbose; }
@@ -296,23 +140,20 @@ public:
     do_measurement = true;
     do_write_header = true;
     scenario_kernel_duration_file.open(scenario_name + "_kernel_duration.csv");
-    scenario_compile_duration_file.open(scenario_name +
-                                        "_compile_duration.csv");
+    scenario_compile_duration_file.open(scenario_name + "_compile_duration.csv");
   }
 
   void set_parameter_adjustment_functor(
       std::function<void(parameter_interface &)> parameter_adjustment_functor) {
     this->parameter_adjustment_functor = parameter_adjustment_functor;
-    this->parameter_values_adjustment_functor = nullptr;
+    // this->parameter_values_adjustment_functor = nullptr;
   }
 
-  void set_parameter_values_adjustment_functor(
-      std::function<void(parameter_value_set &)>
-          parameter_values_adjustment_functor) {
-    this->parameter_values_adjustment_functor =
-        parameter_values_adjustment_functor;
-    this->parameter_adjustment_functor = nullptr;
-  }
+  // void set_parameter_values_adjustment_functor(
+  //     std::function<void(parameter_value_set &)> parameter_values_adjustment_functor) {
+  //   this->parameter_values_adjustment_functor = parameter_values_adjustment_functor;
+  //   this->parameter_adjustment_functor = nullptr;
+  // }
 
   // execute kernel multiple times to average across the result
   void set_repetitions(size_t repetitions) { this->repetitions = repetitions; }
@@ -347,9 +188,26 @@ public:
   //   group_tuner_for_adjust = &g;
   // }
 
-private:
-  void report(const std::string &message, double duration,
-              parameter_interface &parameters) {
+  bool update_parameters(parameter_interface adjusted_candidate, double candidate_duration,
+                         double candiate_duration_compile) {
+    if (do_measurement) {
+      write_measurement(candidate_duration, candiate_duration_compile);
+    }
+    bool is_better = false;
+    if (optimal_duration < 0.0 || candidate_duration < optimal_duration) {
+      optimal_duration = candidate_duration;
+      optimal_parameters = adjusted_candidate;
+      report_verbose("new best kernel", optimal_duration, adjusted_candidate);
+      is_better = true;
+    }
+    return is_better;
+  }
+
+  parameter_result_cache &get_result_cache() { return result_cache; }
+
+  bool is_verbose() { return verbose; }
+
+  void report(const std::string &message, double duration, parameter_interface &parameters) {
     std::cout << message << "; duration: " << duration << std::endl;
     parameters.print_values();
   }
@@ -362,22 +220,25 @@ private:
   }
 
   void write_header() {
-    const parameter_value_set &parameter_values = f.get_parameter_values();
-    bool first = true;
-    for (auto &p : parameter_values) {
-      if (!first) {
-        scenario_kernel_duration_file << ", ";
-        scenario_compile_duration_file << ", ";
-      } else {
-        first = false;
+    if (do_measurement && do_write_header) {
+      const parameter_value_set &parameter_values = f.get_parameter_values();
+      bool first = true;
+      for (auto &p : parameter_values) {
+        if (!first) {
+          scenario_kernel_duration_file << ", ";
+          scenario_compile_duration_file << ", ";
+        } else {
+          first = false;
+        }
+        scenario_kernel_duration_file << p.first;
+        scenario_compile_duration_file << p.first;
       }
-      scenario_kernel_duration_file << p.first;
-      scenario_compile_duration_file << p.first;
+      scenario_kernel_duration_file << ", "
+                                    << "duration" << std::endl;
+      scenario_compile_duration_file << ", "
+                                     << "duration" << std::endl;
+      do_write_header = false;
     }
-    scenario_kernel_duration_file << ", "
-                                  << "duration" << std::endl;
-    scenario_compile_duration_file << ", "
-                                   << "duration" << std::endl;
   }
 
   void write_measurement(double duration_kernel_s, double duration_compile_s) {
@@ -396,5 +257,183 @@ private:
     scenario_kernel_duration_file << ", " << duration_kernel_s << std::endl;
     scenario_compile_duration_file << ", " << duration_compile_s << std::endl;
   }
-};
-} // namespace autotune
+
+  size_t get_repetitions() { return repetitions; }
+
+  void apply_adjusted_parameters(
+      autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
+      const parameter_interface &parameters) {
+    parameter_interface adjusted = parameters;
+    if (verbose) {
+      std::cout << "------ parameters pre-adjustment ------" << std::endl;
+      adjusted.print_values();
+      std::cout << "--------------------------" << std::endl;
+    }
+
+    parameter_adjustment_functor(adjusted);
+
+    if (verbose) {
+      std::cout << "------ post-adjustment values ------" << std::endl;
+      adjusted.print_values();
+      std::cout << "--------------------------" << std::endl;
+    }
+    kernel.set_parameter_values(adjusted);
+  }
+
+};  // namespace autotune
+
+namespace detail {
+
+// returns whether evaluate lead to new optimal configuration found
+template <typename parameter_interface, typename R, typename... Args>
+bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
+                         abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
+                         parameter_interface &adjusted_parameters, Args &... args) {
+  auto &result_cache = tuner.get_result_cache();
+  bool verbose = tuner.is_verbose();
+
+  // // save original paramters
+  // parameter_value_set parameter_values = f.get_parameter_values();
+  // for (size_t parameter_index = 0; parameter_index < adjusted_parameters.size();
+  //      parameter_index++) {
+  //   auto &p = parameters[parameter_index];
+  //   parameter_values[p->get_name()] = p->get_value();
+  // }
+  // c// reate a copy, so that adjustment can be done
+  // // (without changing the configured parameters)
+  // parameter_interface evaluate_parameters = parameters;
+  parameter_value_set adjusted_parameter_values = to_parameter_values(adjusted_parameters);
+
+  // parameter_value_set parameter_values = f.get_parameter_values();
+  if (!result_cache.contains(adjusted_parameter_values)) {
+    if (verbose) {
+      std::cout << "------ add to cache ------" << std::endl;
+      print_parameter_values(adjusted_parameter_values);
+    }
+    result_cache.insert(adjusted_parameter_values);
+  } else {
+    if (verbose) {
+      std::cout << "------ skipped eval ------" << std::endl;
+      adjusted_parameters.print_values();
+      std::cout << "--------------------------" << std::endl;
+    }
+    return false;
+  }
+
+  if (!kernel.precompile_validate_parameters(adjusted_parameter_values)) {
+    if (verbose) {
+      std::cout << "------ invalidated eval (precompile) ------" << std::endl;
+      adjusted_parameters.print_values();
+      std::cout << "--------------------------" << std::endl;
+    }
+    return false;
+  } else {
+    if (verbose) {
+      std::cout << "parameter combination passed precompile check" << std::endl;
+    }
+  }
+
+  // parameter_value_set original_kernel_parameters = f.get_parameter_values();
+  // f.set_parameter_values(parameter_values);
+
+  tuner.write_header();
+
+  if (verbose) {
+    std::cout << "------ begin eval ------" << std::endl;
+    // parameters.print_values();
+    print_parameter_values(adjusted_parameter_values);
+  }
+
+  // f.create_parameter_file();
+
+  auto start_compile = std::chrono::high_resolution_clock::now();
+  if (!kernel.is_compiled()) {
+    kernel.compile();
+  }
+  auto end_compile = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> duration_compile = end_compile - start_compile;
+
+  if (!kernel.is_valid_parameter_combination()) {
+    if (verbose) {
+      std::cout << "invalid parameter combination encountered" << std::endl;
+    }
+    // restored outside function
+    // f.set_parameter_values(original_kernel_parameters);
+    return false;
+  } else {
+    if (verbose) {
+      std::cout << "parameter combination is valid" << std::endl;
+    }
+  }
+
+  auto start = std::chrono::high_resolution_clock::now();
+
+  // call kernel, discard possibly returned values
+  if constexpr (!std::is_same<R, void>::value) {
+    if (tuner.has_test()) {
+      for (size_t i = 0; i < tuner.get_repetitions(); i++) {
+        bool test_ok = tuner.test(kernel(args...));
+        if (!test_ok) {
+          if (verbose) {
+            std::cout << "warning: test for combination failed!" << std::endl;
+          }
+          // restored outside
+          // f.set_parameter_values(original_kernel_parameters);
+          return false;
+        } else {
+          if (verbose) {
+            std::cout << "test for combination passed" << std::endl;
+          }
+        }
+      }
+    } else {
+      for (size_t i = 0; i < tuner.get_repetitions(); i++) {
+        kernel(args...);
+      }
+    }
+  } else {
+    for (size_t i = 0; i < tuner.get_repetitions(); i++) {
+      kernel(args...);
+    }
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> duration = end - start;
+  size_t repetitions = tuner.get_repetitions();
+  if (verbose) {
+    if (kernel.has_kernel_duration_functor()) {
+      double internal_duration = kernel.get_internal_kernel_duration();
+      std::cout << "internal duration: " << internal_duration << std::endl;
+      if (repetitions > 1) {
+        std::cout << "internal duration per repetition: "
+                  << (internal_duration / static_cast<double>(repetitions)) << std::endl;
+      }
+      std::cout << "(duration tuner: " << duration.count() << "s)" << std::endl;
+      if (repetitions > 1) {
+        std::cout << "(duration tuner per repetition: "
+                  << (duration.count() / static_cast<double>(repetitions)) << "s)" << std::endl;
+      }
+    } else {
+      std::cout << "duration: " << duration.count() << "s" << std::endl;
+      if (repetitions > 1) {
+        std::cout << "duration tuner per reptition: "
+                  << (duration.count() / static_cast<double>(repetitions)) << "s" << std::endl;
+      }
+      std::cout << "------- end eval -------" << std::endl;
+    }
+  }
+
+  double final_duration;
+  if (kernel.has_kernel_duration_functor()) {
+    final_duration = kernel.get_internal_kernel_duration();
+  } else {
+    final_duration = duration.count();
+  }
+
+  // f.set_parameter_values(original_kernel_parameters);
+  return tuner.update_parameters(adjusted_parameters, final_duration, duration_compile.count());
+}
+
+}  // namespace detail
+
+}  // namespace autotune
