@@ -287,7 +287,8 @@ class abstract_tuner
         adjusted.print_values();
         std::cout << "--------------------------" << std::endl;
       }
-      if (!kernel.precompile_validate_parameters(to_parameter_values(adjusted))) {
+      parameter_value_set adjusted_values = to_parameter_values(adjusted);
+      if (!kernel.precompile_validate_parameters(adjusted_values)) {
         if (verbose) {
           std::cout << "------ invalidated eval (precompile) ------" << std::endl;
           adjusted.print_values();
@@ -332,7 +333,8 @@ class abstract_tuner
       if (verbose) {
         std::cout << "------ no adjustment functor ------" << std::endl;
       }
-      if (!kernel.precompile_validate_parameters(to_parameter_values(parameters))) {
+      parameter_value_set parameter_values = to_parameter_values(parameters);
+      if (!kernel.precompile_validate_parameters(parameter_values)) {
         if (verbose) {
           std::cout << "------ invalidated eval (precompile) ------" << std::endl;
           parameters.print_values();
