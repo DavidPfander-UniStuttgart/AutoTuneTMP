@@ -49,7 +49,8 @@ template <typename T, typename U>
 bool compare_matrices(std::vector<T> &m, std::vector<U> &n, size_t N) {
   for (size_t x = 0; x < N; x++) {
     for (size_t y = 0; y < N; y++) {
-      if (m[x * N + y] - n[x * N + y] >= 1E-9) {
+      // std::cout << "m: " <<   << std::endl;
+      if (std::abs(m[x * N + y] - n[x * N + y]) >= 1E-9) {
         // throw "matrix not equal";
         std::cout << "error: " << m[x * N + y] << " != " << n[x * N + y]
                   << std::endl;
@@ -86,7 +87,7 @@ int main(void) {
   });
 
   std::vector<double> B(N * N);
-  fillup = 0.5;
+  // fillup = 0.5;
   std::fill(B.begin(), B.end(), 1.0);
   // std::generate(B.begin(), B.end(), [&fillup]() {
   //   fillup += 1;
@@ -95,10 +96,10 @@ int main(void) {
   std::vector<std::atomic<double>> C(N * N);
   std::fill(C.begin(), C.end(), 0.0);
 
-  // std::cout << "A:" << std::endl;
-  // print_matrix(A, N);
-  // std::cout << "B:" << std::endl;
-  // print_matrix(B, N);
+  std::cout << "A:" << std::endl;
+  print_matrix(A, N);
+  std::cout << "B:" << std::endl;
+  print_matrix(B, N);
 
   autotune::grid_mult_kernel.get_builder<cppjit::builder::gcc>().set_cpp_flags(
       "-std=c++17 -march=native -mtune=native -g ");
@@ -120,9 +121,14 @@ int main(void) {
   autotune::countable_set parameters;
 
   // TODO: increase threads!!!
+  // autotune::tuned_grid_executor<
+  //     2, double_v::size(), std::vector<double> &, std::vector<double> &,
+  //     std::vector<std::atomic<double>> &, size_t, size_t>
+  //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
+
   autotune::tuned_grid_executor<
-      2, double_v::size(), std::vector<double> &, std::vector<double> &,
-      std::vector<std::atomic<double>> &, size_t, size_t>
+      16, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
+      std::vector<double> &, std::vector<std::atomic<double>> &, size_t, size_t>
       tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
   std::chrono::high_resolution_clock::time_point start_stamp =
@@ -156,6 +162,8 @@ int main(void) {
     compare_matrices(C, C_ref, N);
     std::cout << "duration naive: " << duration_naive << "s" << std::endl;
     std::cout << "Gflop/s naive: " << (flop / duration_naive) << std::endl;
+    std::cout << "C_ref:" << std::endl;
+    print_matrix(C_ref, N);
   }
 
   std::cout << "C:" << std::endl;
