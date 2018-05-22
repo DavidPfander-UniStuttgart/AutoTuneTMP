@@ -88,11 +88,14 @@ class abstract_tuner
 
   bool evaluate(Args &... args) {
     parameter_value_set original_kernel_values = f.get_parameter_values();
-    apply_parameters(f, parameters);  // does adjustment if applicable
-    bool found =
-        detail::evaluate_parameters<parameter_interface, R, Args...>(*this, f, parameters, args...);
-    f.set_parameter_values(original_kernel_values);
-    return found;
+    bool do_evaluate = apply_parameters(f, parameters);  // does adjustment if applicable
+    if (do_evaluate) {
+      bool found = detail::evaluate_parameters<parameter_interface, R, Args...>(
+          *this, f, parameters, args...);
+      f.set_parameter_values(original_kernel_values);
+      return found;
+    }
+    return false;
   }
 
   // bool evaluate_cloned(Args &... args) {
@@ -102,25 +105,31 @@ class abstract_tuner
   bool evaluate_parallel(std::vector<parameter_interface> &parameters, Args &... args) {
     std::vector<std::unique_ptr<autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>>>
         kernels;
+    std::vector<bool> do_evaluates;
     // clone all kernels and set its parameters
     for (size_t i = 0; i < parameters.size(); i++) {
       std::unique_ptr<autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>> clone(f.clone());
       // clone->set_parameter_values(parameters[i]);
-      apply_parameters(*clone, parameters[i]);  // does adjustment if applicable
+      bool do_evaluate = apply_parameters(*clone, parameters[i]);  // does adjustment if applicable
+      do_evaluates.push_back(do_evaluate);
       kernels.push_back(std::move(clone));
     }
 
 #pragma omp parallel for
     for (size_t i = 0; i < kernels.size(); i++) {
-      kernels[i]->compile();
+      if (do_evaluates[i]) {
+        kernels[i]->compile();
+      }
     }
 
     bool any_better = false;
     for (size_t i = 0; i < parameters.size(); i++) {
-      bool better = detail::evaluate_parameters<parameter_interface, R, Args...>(
-          *this, *kernels[i], parameters[i], args...);
-      if (!any_better && better) {
-        any_better = true;
+      if (do_evaluates[i]) {
+        bool better = detail::evaluate_parameters<parameter_interface, R, Args...>(
+            *this, *kernels[i], parameters[i], args...);
+        if (!any_better && better) {
+          any_better = true;
+        }
       }
     }
     return any_better;
@@ -260,7 +269,8 @@ class abstract_tuner
 
   size_t get_repetitions() { return repetitions; }
 
-  void apply_parameters(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
+  // returns true if an apply is useful (adjusted and validated)
+  bool apply_parameters(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
                         const parameter_interface &parameters) {
     if (parameter_adjustment_functor) {
       parameter_interface adjusted = parameters;
@@ -277,12 +287,53 @@ class abstract_tuner
         adjusted.print_values();
         std::cout << "--------------------------" << std::endl;
       }
+      if (!kernel.precompile_validate_parameters(to_parameter_values(adjusted))) {
+        if (verbose) {
+          std::cout << "------ invalidated eval (precompile) ------" << std::endl;
+          adjusted.print_values();
+          std::cout << "--------------------------" << std::endl;
+        }
+        return false;
+      } else {
+        if (verbose) {
+          std::cout << "parameter combination passed precompile check" << std::endl;
+        }
+      }
       kernel.set_parameter_values(adjusted);
     } else {
       if (verbose) {
         std::cout << "------ no adjustment functor ------" << std::endl;
       }
+      if (!kernel.precompile_validate_parameters(to_parameter_values(parameters))) {
+        if (verbose) {
+          std::cout << "------ invalidated eval (precompile) ------" << std::endl;
+          parameters.print_values();
+          std::cout << "--------------------------" << std::endl;
+        }
+        return false;
+      } else {
+        if (verbose) {
+          std::cout << "parameter combination passed precompile check" << std::endl;
+        }
+      }
       kernel.set_parameter_values(parameters);
+    }
+    parameter_value_set kernel_values = kernel.get_parameter_values();
+    // parameter_value_set parameter_values = f.get_parameter_values();
+    if (!result_cache.contains(kernel_values)) {
+      if (verbose) {
+        std::cout << "------ add to cache ------" << std::endl;
+        print_parameter_values(kernel_values);
+      }
+      result_cache.insert(kernel_values);
+      return true;
+    } else {
+      if (verbose) {
+        std::cout << "------ skipped eval ------" << std::endl;
+        print_parameter_values(kernel_values);
+        std::cout << "--------------------------" << std::endl;
+      }
+      return false;
     }
   }
 
@@ -298,46 +349,7 @@ bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
   auto &result_cache = tuner.get_result_cache();
   bool verbose = tuner.is_verbose();
 
-  // // save original paramters
-  // parameter_value_set parameter_values = f.get_parameter_values();
-  // for (size_t parameter_index = 0; parameter_index < adjusted_parameters.size();
-  //      parameter_index++) {
-  //   auto &p = parameters[parameter_index];
-  //   parameter_values[p->get_name()] = p->get_value();
-  // }
-  // c// reate a copy, so that adjustment can be done
-  // // (without changing the configured parameters)
-  // parameter_interface evaluate_parameters = parameters;
   parameter_value_set adjusted_parameter_values = to_parameter_values(adjusted_parameters);
-
-  // parameter_value_set parameter_values = f.get_parameter_values();
-  if (!result_cache.contains(adjusted_parameter_values)) {
-    if (verbose) {
-      std::cout << "------ add to cache ------" << std::endl;
-      print_parameter_values(adjusted_parameter_values);
-    }
-    result_cache.insert(adjusted_parameter_values);
-  } else {
-    if (verbose) {
-      std::cout << "------ skipped eval ------" << std::endl;
-      adjusted_parameters.print_values();
-      std::cout << "--------------------------" << std::endl;
-    }
-    return false;
-  }
-
-  if (!kernel.precompile_validate_parameters(adjusted_parameter_values)) {
-    if (verbose) {
-      std::cout << "------ invalidated eval (precompile) ------" << std::endl;
-      adjusted_parameters.print_values();
-      std::cout << "--------------------------" << std::endl;
-    }
-    return false;
-  } else {
-    if (verbose) {
-      std::cout << "parameter combination passed precompile check" << std::endl;
-    }
-  }
 
   // parameter_value_set original_kernel_parameters = f.get_parameter_values();
   // f.set_parameter_values(parameter_values);

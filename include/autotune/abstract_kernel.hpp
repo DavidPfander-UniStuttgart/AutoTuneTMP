@@ -26,7 +26,7 @@ class abstract_kernel<R, cppjit::detail::pack<Args...>> {
 
   bool parameters_changed;
 
-  std::function<bool(parameter_value_set &)> precompile_validate_parameters_functor;
+  std::function<bool(const parameter_value_set &)> precompile_validate_parameters_functor;
 
  public:
   abstract_kernel(const std::string &kernel_name)
@@ -105,11 +105,12 @@ class abstract_kernel<R, cppjit::detail::pack<Args...>> {
   }
 
   void set_precompile_validate_parameter_functor(
-      const std::function<bool(parameter_value_set &parameters)> &precompile_validate_parameters) {
+      const std::function<bool(const parameter_value_set &parameters)>
+          &precompile_validate_parameters) {
     this->precompile_validate_parameters_functor = precompile_validate_parameters;
   }
 
-  bool precompile_validate_parameters(parameter_value_set &parameters) {
+  bool precompile_validate_parameters(const parameter_value_set &parameters) {
     if (precompile_validate_parameters_functor) {
       return precompile_validate_parameters_functor(parameters);
     }

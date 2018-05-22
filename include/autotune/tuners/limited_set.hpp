@@ -78,7 +78,7 @@ public:
     this->push_back(cloned);
   }
 
-  void print_values() {
+  void print_values() const {
     std::cout << "parameter name  | ";
     bool first = true;
     for (auto &p : *this) {
