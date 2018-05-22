@@ -346,7 +346,6 @@ template <typename parameter_interface, typename R, typename... Args>
 bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
                          abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
                          parameter_interface &adjusted_parameters, Args &... args) {
-  auto &result_cache = tuner.get_result_cache();
   bool verbose = tuner.is_verbose();
 
   parameter_value_set adjusted_parameter_values = to_parameter_values(adjusted_parameters);
