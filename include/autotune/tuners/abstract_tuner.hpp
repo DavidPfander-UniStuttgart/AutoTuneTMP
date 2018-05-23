@@ -40,6 +40,7 @@ class abstract_tuner
   bool do_write_header;
   std::ofstream scenario_kernel_duration_file;
   std::ofstream scenario_compile_duration_file;
+  std::ofstream scenario_parallel_compile_duration_file;
 
   parameter_result_cache result_cache;
 
@@ -103,6 +104,9 @@ class abstract_tuner
   // }
 
   bool evaluate_parallel(std::vector<parameter_interface> &parameters, Args &... args) {
+    parameter_value_set first_parameter_values = to_parameter_values(parameters[0]);
+    write_header(first_parameter_values);
+
     std::vector<std::unique_ptr<autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>>>
         kernels;
     std::vector<bool> do_evaluates;
@@ -115,12 +119,19 @@ class abstract_tuner
       kernels.push_back(std::move(clone));
     }
 
+    int64_t no_to_evaluate = std::count(do_evaluates.begin(), do_evaluates.end(), true);
+
+    auto start = std::chrono::high_resolution_clock::now();
 #pragma omp parallel for
     for (size_t i = 0; i < kernels.size(); i++) {
       if (do_evaluates[i]) {
         kernels[i]->compile();
       }
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_parallel_compile = end - start;
+    scenario_parallel_compile_duration_file << no_to_evaluate << ", "
+                                            << duration_parallel_compile.count() << std::endl;
 
     bool any_better = false;
     for (size_t i = 0; i < parameters.size(); i++) {
@@ -145,11 +156,15 @@ class abstract_tuner
       if (scenario_compile_duration_file.is_open()) {
         scenario_compile_duration_file.close();
       }
+      if (scenario_parallel_compile_duration_file.is_open()) {
+        scenario_parallel_compile_duration_file.close();
+      }
     }
     do_measurement = true;
     do_write_header = true;
     scenario_kernel_duration_file.open(scenario_name + "_kernel_duration.csv");
     scenario_compile_duration_file.open(scenario_name + "_compile_duration.csv");
+    scenario_parallel_compile_duration_file.open(scenario_name + "_parallel_compile_duration.csv");
   }
 
   void set_parameter_adjustment_functor(
@@ -200,7 +215,8 @@ class abstract_tuner
   bool update_parameters(parameter_interface adjusted_candidate, double candidate_duration,
                          double candiate_duration_compile) {
     if (do_measurement) {
-      write_measurement(candidate_duration, candiate_duration_compile);
+      parameter_value_set candidate_parameter_values = to_parameter_values(adjusted_candidate);
+      write_measurement(candidate_parameter_values, candidate_duration, candiate_duration_compile);
     }
     bool is_better = false;
     if (optimal_duration < 0.0 || candidate_duration < optimal_duration) {
@@ -228,9 +244,9 @@ class abstract_tuner
     }
   }
 
-  void write_header() {
+  void write_header(parameter_value_set parameter_values) {
     if (do_measurement && do_write_header) {
-      const parameter_value_set &parameter_values = f.get_parameter_values();
+      // const parameter_value_set &parameter_values = f.get_parameter_values();
       bool first = true;
       for (auto &p : parameter_values) {
         if (!first) {
@@ -246,12 +262,14 @@ class abstract_tuner
                                     << "duration" << std::endl;
       scenario_compile_duration_file << ", "
                                      << "duration" << std::endl;
+      scenario_parallel_compile_duration_file << "count, duration" << std::endl;
       do_write_header = false;
     }
   }
 
-  void write_measurement(double duration_kernel_s, double duration_compile_s) {
-    const parameter_value_set &parameter_values = f.get_parameter_values();
+  void write_measurement(parameter_value_set parameter_values, double duration_kernel_s,
+                         double duration_compile_s) {
+    // const parameter_value_set &parameter_values = f.get_parameter_values();
     bool first = true;
     for (auto &p : parameter_values) {
       if (!first) {
@@ -383,7 +401,7 @@ bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
   // parameter_value_set original_kernel_parameters = f.get_parameter_values();
   // f.set_parameter_values(parameter_values);
 
-  tuner.write_header();
+  tuner.write_header(adjusted_parameter_values);
 
   if (verbose) {
     std::cout << "------ begin eval ------" << std::endl;
