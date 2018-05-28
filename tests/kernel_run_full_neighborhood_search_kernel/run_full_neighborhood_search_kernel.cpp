@@ -4,7 +4,7 @@
 #include <thread>
 #include <vector>
 
-#include "parameters.hpp"
+#include "autotune_kernel.hpp"
 
 const std::vector<double> map = {
     100, 150, 30,  150, 150, //

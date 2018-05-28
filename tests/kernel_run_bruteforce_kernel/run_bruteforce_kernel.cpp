@@ -2,7 +2,7 @@
 #include <iostream>
 #include <thread>
 
-#include "parameters.hpp"
+#include "autotune_kernel.hpp"
 
 constexpr bool is_equal(const char *a, const char *b) {
   bool char_same = (*a == *b);

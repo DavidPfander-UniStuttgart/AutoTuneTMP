@@ -13,6 +13,7 @@
 #include "autotune/tuners/line_search.hpp"
 #include "autotune/tuners/monte_carlo.hpp"
 #include "autotune/tuners/neighborhood_search.hpp"
+#include "autotune/tuners/parallel_line_search.hpp"
 
 AUTOTUNE_KERNEL(int(int), run_kernel, "tests/kernel_run_kernel")
 
@@ -180,6 +181,33 @@ BOOST_AUTO_TEST_CASE(run_line_search) {
   int a = 5;
 
   autotune::tuners::line_search tuner(autotune::run_line_search_kernel, parameters, 5);
+  tuner.setup_test(test_result);
+  tuner.set_verbose(true);
+  autotune::countable_set optimal_parameters = tuner.tune(a);
+  std::cout << optimal_parameters[0]->get_value() << std::endl;
+  std::cout << optimal_parameters[1]->get_value() << std::endl;
+  bool check1 = optimal_parameters[0]->get_value().compare("\"zwei\"") == 0;
+  BOOST_CHECK(check1);
+  bool check2 = optimal_parameters[1]->get_value().compare("2") == 0;
+  BOOST_CHECK(check2);
+}
+
+BOOST_AUTO_TEST_CASE(run_parallel_line_search) {
+  // autotune::run_line_search_kernel.set_verbose(true);
+  auto &builder = autotune::run_line_search_kernel.get_builder<cppjit::builder::gcc>();
+  builder.set_cpp_flags("-Wall -Wextra -std=c++17 -fPIC");
+
+  autotune::countable_set parameters;
+  autotune::fixed_set_parameter<std::string> p1("PAR_1", {"eins", "zwei", "drei"});
+  parameters.add_parameter(p1);
+  autotune::countable_continuous_parameter p2("PAR_2", 1.0, 1.0, 1.0, 3.0);
+  parameters.add_parameter(p2);
+
+  std::function<bool(int)> test_result = [](int) -> bool { return true; };
+
+  int a = 5;
+
+  autotune::tuners::parallel_line_search tuner(autotune::run_line_search_kernel, parameters, 5);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::countable_set optimal_parameters = tuner.tune(a);

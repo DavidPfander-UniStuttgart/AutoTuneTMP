@@ -3,7 +3,7 @@
 #include <iostream>
 #include <thread>
 
-#include "parameters.hpp"
+#include "autotune_kernel.hpp"
 
 AUTOTUNE_EXPORT int run_neighborhood_search_kernel(int a) {
   // use quadratic cost function

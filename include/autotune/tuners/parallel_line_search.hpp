@@ -11,17 +11,15 @@ namespace tuners {
 
 template <typename R, typename... Args>
 class parallel_line_search : public abstract_tuner<countable_set, R, Args...> {
-private:
+ private:
   size_t max_iterations;
 
-public:
-  parallel_line_search(
-      autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-      countable_set &parameters, size_t max_iterations)
-      : abstract_tuner<countable_set, R, Args...>(f, parameters),
-        max_iterations(max_iterations) {}
+ public:
+  parallel_line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+                       countable_set &parameters, size_t max_iterations)
+      : abstract_tuner<countable_set, R, Args...>(f, parameters), max_iterations(max_iterations) {}
 
-private:
+ private:
   virtual void tune_impl(Args &... args) override {
     size_t counter = 0;
     size_t cur_index = 0;
@@ -35,17 +33,23 @@ private:
       p->set_initial();
 
       // evaluate current and next values
-      this->evaluate(args...);
+      std::vector<countable_set> parameters_to_evaluate;
+      parameters_to_evaluate.push_back(this->parameters);
+      // this->evaluate(args...);
       while (p->next()) {
-        this->evaluate(args...);
+        parameters_to_evaluate.push_back(this->parameters);
+        // this->evaluate(args...);
       }
 
       // evaluate previous values
       p->set_initial();
       // skip current value (already processed above)
       while (p->prev()) {
-        this->evaluate(args...);
+        parameters_to_evaluate.push_back(this->parameters);
+        // this->evaluate(args...);
       }
+      this->evaluate_parallel(parameters_to_evaluate, args...);
+
       cur_index = (cur_index + 1) % this->parameters.size();
       counter += 1;
       this->parameters = this->optimal_parameters;
@@ -53,5 +57,5 @@ private:
   }
 };
 
-} // namespace tuners
-} // namespace autotune
+}  // namespace tuners
+}  // namespace autotune

@@ -139,6 +139,10 @@ add_executable(bruteforce_search_example "examples/bruteforce_search_example.cpp
 target_link_libraries(bruteforce_search_example AutoTuneTMP)
 install(TARGETS bruteforce_search_example DESTINATION examples)
 
+add_executable(parallel_line_search_example "examples/parallel_line_search_example.cpp")
+target_link_libraries(parallel_line_search_example AutoTuneTMP)
+install(TARGETS parallel_line_search_example DESTINATION examples)
+
 add_executable(countable_set_example "examples/countable_set_example.cpp")
 target_link_libraries(countable_set_example AutoTuneTMP)
 install(TARGETS countable_set_example DESTINATION examples)
@@ -162,6 +166,10 @@ install(TARGETS monte_carlo_example DESTINATION examples)
 add_executable(register_blocking_example "examples/register_blocking.cpp")
 target_link_libraries(register_blocking_example AutoTuneTMP)
 install(TARGETS register_blocking_example DESTINATION examples)
+
+add_executable(register_blocking_minimal_example "examples/register_blocking_minimal.cpp")
+target_link_libraries(register_blocking_minimal_example AutoTuneTMP)
+install(TARGETS register_blocking_minimal_example DESTINATION examples)
 
 add_executable(mult_example "examples/mult_example.cpp")
 target_link_libraries(mult_example AutoTuneTMP)
@@ -203,10 +211,10 @@ target_link_libraries(tuned_grid_executor_example AutoTuneTMP -pthread)
 target_compile_options(tuned_grid_executor_example PUBLIC -fopenmp)
 install(TARGETS tuned_grid_executor_example DESTINATION examples)
 
-add_executable(tuned_grid_executor_generalized_kernel_example "examples/tuned_grid_executor_generalized_kernel_example.cpp")
-target_link_libraries(tuned_grid_executor_generalized_kernel_example AutoTuneTMP -pthread)
-target_compile_options(tuned_grid_executor_generalized_kernel_example PUBLIC -fopenmp)
-install(TARGETS tuned_grid_executor_generalized_kernel_example DESTINATION examples)
+# add_executable(tuned_grid_executor_generalized_kernel_example "examples/tuned_grid_executor_generalized_kernel_example.cpp")
+# target_link_libraries(tuned_grid_executor_generalized_kernel_example AutoTuneTMP -pthread)
+# target_compile_options(tuned_grid_executor_generalized_kernel_example PUBLIC -fopenmp)
+# install(TARGETS tuned_grid_executor_generalized_kernel_example DESTINATION examples)
 
 add_executable(copyable_kernel_example "examples/copyable_kernel_example.cpp")
 target_link_libraries(copyable_kernel_example AutoTuneTMP -pthread)
