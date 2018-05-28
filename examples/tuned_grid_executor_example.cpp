@@ -68,7 +68,7 @@ int main(void) {
   autotune::grid_mult_kernel.set_verbose(true);
   std::cout << "info: vector size is: " << double_v::size() << std::endl;
 
-  size_t N = 4;
+  size_t N = 16;
   size_t z_block_size = 1;   // 64
   size_t x_y_block_size = 4; // 16
   bool compare_with_naive = true;
@@ -121,7 +121,9 @@ int main(void) {
 
   autotune::countable_set parameters;
   parameters.emplace_parameter<autotune::countable_continuous_parameter>(
-      "DUMMY_PARAMETER", 3.0, 1.0, 1.0, 4.0);
+      "DUMMY_PARAMETER_1", 3.0, 1.0, 1.0, 4.0);
+  parameters.emplace_parameter<autotune::countable_continuous_parameter>(
+      "DUMMY_PARAMETER_2", 3.0, 1.0, 1.0, 4.0);
 
   // TODO: increase threads!!!
   // autotune::tuned_grid_executor<
