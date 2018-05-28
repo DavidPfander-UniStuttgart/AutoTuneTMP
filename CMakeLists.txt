@@ -214,7 +214,7 @@ install(TARGETS grid_executor_example DESTINATION examples)
 
 add_executable(tuned_grid_executor_example "examples/tuned_grid_executor_example.cpp")
 target_link_libraries(tuned_grid_executor_example AutoTuneTMP -pthread)
-target_compile_options(tuned_grid_executor_example PUBLIC -fopenmp)
+target_compile_options(tuned_grid_executor_example PUBLIC) # -fopenmp
 install(TARGETS tuned_grid_executor_example DESTINATION examples)
 
 # add_executable(tuned_grid_executor_generalized_kernel_example "examples/tuned_grid_executor_generalized_kernel_example.cpp")

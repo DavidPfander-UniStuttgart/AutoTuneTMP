@@ -104,10 +104,10 @@ public:
   }
 
   virtual bool is_compiled() override {
-    std::cout << "parameters_changed: " << this->parameters_changed
-              << std::endl;
-    std::cout << "internal_kernel.is_compiled(): "
-              << internal_kernel.is_compiled() << std::endl;
+    // std::cout << "parameters_changed: " << this->parameters_changed
+    //           << std::endl;
+    // std::cout << "internal_kernel.is_compiled(): "
+    // << internal_kernel.is_compiled() << std::endl;
     return !this->parameters_changed && internal_kernel.is_compiled();
   }
 
@@ -177,8 +177,8 @@ public:
       set_meta_pointer =
           reinterpret_cast<decltype(set_meta_pointer)>(uncasted_function);
     }
-    std::cout << "set_meta pointer: "
-              << reinterpret_cast<void *>(set_meta_pointer) << std::endl;
+    // std::cout << "set_meta pointer: "
+    //           << reinterpret_cast<void *>(set_meta_pointer) << std::endl;
     set_meta_pointer(meta);
   };
 

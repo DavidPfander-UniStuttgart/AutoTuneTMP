@@ -2,6 +2,7 @@
 #include "autotune/autotune.hpp"
 #include "autotune/autotune_exception.hpp"
 #include "autotune/execution_wrapper.hpp"
+#include "autotune/parameter.hpp"
 #include "autotune/queue_thread_pool.hpp"
 #include "autotune/thread_pool.hpp"
 #include "autotune/thread_safe_queue.hpp"
@@ -119,6 +120,8 @@ int main(void) {
   spec.grid_x = N / spec.block_x;
 
   autotune::countable_set parameters;
+  parameters.emplace_parameter<autotune::countable_continuous_parameter>(
+      "DUMMY_PARAMETER", 3.0, 1.0, 1.0, 4.0);
 
   // TODO: increase threads!!!
   // autotune::tuned_grid_executor<
@@ -127,12 +130,12 @@ int main(void) {
   //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
   autotune::tuned_grid_executor<
-      16, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
-      std::vector<double> &, std::vector<std::atomic<double>> &, size_t,
-      size_t>
+      1, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
+      std::vector<double> &, std::vector<std::atomic<double>> &, size_t, size_t>
       tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
-  // autotune::tuned_grid_executor<16, double_v::size(), autotune::cppjit_kernel>
+  // autotune::tuned_grid_executor<16, double_v::size(),
+  // autotune::cppjit_kernel>
   //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
   std::chrono::high_resolution_clock::time_point start_stamp =

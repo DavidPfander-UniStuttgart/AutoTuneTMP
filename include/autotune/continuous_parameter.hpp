@@ -93,6 +93,9 @@ public:
 
   bool prev() {
     // if (this->current - this->step >= min) {
+    // std::cout << "current: " << current << " step: " << step << " min: " <<
+    // min
+    //           << std::endl;
     if (prev_functional(current, step) >= min) {
       // this->current -= this->step;
       current = prev_functional(current, step);
