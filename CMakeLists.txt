@@ -10,6 +10,9 @@ find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_ROOT})
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
 message("Vc_INCLUDE_DIR: " ${Vc_INCLUDE_DIR})
+# message("BOOST_ROOT: " ${BOOST_ROOT})
+# message("Boost_FOUND: " ${Boost_FOUND})
+# message("Boost_INCLUDE_DIRS: " ${Boost_INCLUDE_DIRS})
 
 # target_include_directories(AutoTuneTMP INTERFACE ${Vc_INCLUDE_DIR})
 target_include_directories(AutoTuneTMP INTERFACE
@@ -168,6 +171,9 @@ target_link_libraries(register_blocking_example AutoTuneTMP)
 install(TARGETS register_blocking_example DESTINATION examples)
 
 add_executable(register_blocking_minimal_example "examples/register_blocking_minimal.cpp")
+# target_compile_options(register_blocking_minimal_example PUBLIC AutoTuneTMP Boost::boost)
+target_include_directories(register_blocking_minimal_example PUBLIC ${Boost_INCLUDE_DIRS})
+# target_include_directories(register_blocking_minimal_example PUBLIC Boost::boost)
 target_link_libraries(register_blocking_minimal_example AutoTuneTMP)
 install(TARGETS register_blocking_minimal_example DESTINATION examples)
 

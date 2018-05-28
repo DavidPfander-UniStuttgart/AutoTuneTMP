@@ -126,14 +126,14 @@ int main(void) {
   //     std::vector<std::atomic<double>> &, size_t, size_t>
   //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
-  // autotune::tuned_grid_executor<
-  //     16, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
-  //     std::vector<double> &, std::vector<std::atomic<double>> &, size_t,
-  //     size_t>
-  //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
-
-  autotune::tuned_grid_executor<16, double_v::size(), autotune::cppjit_kernel>
+  autotune::tuned_grid_executor<
+      16, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
+      std::vector<double> &, std::vector<std::atomic<double>> &, size_t,
+      size_t>
       tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
+
+  // autotune::tuned_grid_executor<16, double_v::size(), autotune::cppjit_kernel>
+  //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
   std::chrono::high_resolution_clock::time_point start_stamp =
       std::chrono::high_resolution_clock::now();
