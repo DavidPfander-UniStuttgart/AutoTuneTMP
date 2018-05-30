@@ -26,21 +26,27 @@ class cppjit_kernel<R, cppjit::detail::pack<Args...>>
 private:
   cppjit::kernel<R, cppjit::detail::pack<Args...>> internal_kernel;
   void (*set_meta_pointer)(thread_meta);
+  // void (*set_thread_id_pointer)(size_t);
 
 public:
   cppjit_kernel(const std::string &kernel_name)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
-        internal_kernel(kernel_name), set_meta_pointer(nullptr) {}
+        internal_kernel(kernel_name), set_meta_pointer(nullptr)
+      // , set_thread_id_pointer(nullptr)
+    {}
 
   cppjit_kernel(const std::string &kernel_name,
                 const std::string &kernel_src_dir)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(kernel_name),
-        internal_kernel(kernel_name, kernel_src_dir),
-        set_meta_pointer(nullptr) {}
+        internal_kernel(kernel_name, kernel_src_dir), set_meta_pointer(nullptr)
+      // , set_thread_id_pointer(nullptr)
+    {}
 
   cppjit_kernel(cppjit_kernel<R, cppjit::detail::pack<Args...>> &other)
       : abstract_kernel<R, cppjit::detail::pack<Args...>>(other),
-        internal_kernel(other.internal_kernel), set_meta_pointer(nullptr) {}
+        internal_kernel(other.internal_kernel), set_meta_pointer(nullptr)
+      // , set_thread_id_pointer(nullptr)
+    {}
 
   void set_source_inline(const std::string &source_) {
     internal_kernel.set_source_inline(source_);
@@ -181,6 +187,21 @@ public:
     //           << reinterpret_cast<void *>(set_meta_pointer) << std::endl;
     set_meta_pointer(meta);
   };
+
+  // // important: will forget data in case of a recompile
+  // // due to data being stored within shared object which is unloaded and
+  // // replaced
+  // virtual void set_thread_id(size_t thread_id) override {
+  //   if (!is_compiled()) {
+  //     compile();
+  //   }
+  //   if (!set_thread_id_pointer) {
+  //     void *uncasted_function = load_other_symbol("set_thread_id");
+  //     set_thread_id_pointer =
+  //         reinterpret_cast<decltype(set_thread_id_pointer)>(uncasted_function);
+  //   }
+  //   set_thread_id_pointer(thread_id);
+  // };
 
   virtual thread_meta get_meta() {
     throw autotune_exception("not available for cppjit kernel");

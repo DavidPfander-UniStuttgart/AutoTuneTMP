@@ -1,6 +1,6 @@
-#include "autotune/grid_executor.hpp"
 #include "autotune/autotune_exception.hpp"
 #include "autotune/execution_wrapper.hpp"
+#include "autotune/grid_executor.hpp"
 #include "autotune/queue_thread_pool.hpp"
 #include "autotune/thread_pool.hpp"
 #include "autotune/thread_safe_queue.hpp"
@@ -187,10 +187,14 @@ int main(void) {
 
   // pool.finish();
 
-  const size_t N = 2048;
-  const size_t z_block_size = 64;
-  const size_t x_y_block_size = 16; // 256
-  bool compare_with_naive = false;
+  // const size_t N = 2048;
+  // const size_t z_block_size = 64;
+  // const size_t x_y_block_size = 16; // 256
+  const size_t N = 16;
+  const size_t z_block_size = 1;
+  const size_t x_y_block_size = 4; // 256
+
+  bool compare_with_naive = true;
   if (N < double_v::size()) {
     throw "matrix too small for configured vector width, make \"N\" larger!";
   }
@@ -236,7 +240,7 @@ int main(void) {
         add_atomically(C, meta.y * N + meta.x, C_comp);
       };
 
-  autotune::grid_executor<8, double_v::size()> grid_exe;
+  autotune::grid_executor<4, double_v::size()> grid_exe;
   autotune::grid_spec spec;
   // span a 3d grid
   spec.block_z = 1;

@@ -1,4 +1,3 @@
-#include "autotune/tuned_grid_executor.hpp"
 #include "autotune/autotune.hpp"
 #include "autotune/autotune_exception.hpp"
 #include "autotune/execution_wrapper.hpp"
@@ -6,6 +5,7 @@
 #include "autotune/queue_thread_pool.hpp"
 #include "autotune/thread_pool.hpp"
 #include "autotune/thread_safe_queue.hpp"
+#include "autotune/tuned_grid_executor.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -69,8 +69,8 @@ int main(void) {
   std::cout << "info: vector size is: " << double_v::size() << std::endl;
 
   size_t N = 16;
-  size_t z_block_size = 1;   // 64
-  size_t x_y_block_size = 4; // 16
+  size_t z_block_size = 16;   // 64
+  size_t x_y_block_size = 8; // 16
   bool compare_with_naive = true;
   if (N < double_v::size()) {
     throw "matrix too small for configured vector width, make \"N\" larger!";
@@ -132,7 +132,7 @@ int main(void) {
   //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
   autotune::tuned_grid_executor<
-      1, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
+      2, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
       std::vector<double> &, std::vector<std::atomic<double>> &, size_t, size_t>
       tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
