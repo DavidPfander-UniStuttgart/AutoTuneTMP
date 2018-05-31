@@ -64,7 +64,7 @@ private:
   }
 
 public:
-  size_t THREAD_ID_PLACEHOLDER = 0;
+  int64_t THREAD_ID_PLACEHOLDER = 0;
 
   queue_thread_pool() : threads_finish(false) {} // next_work(0), last_work(0)
 

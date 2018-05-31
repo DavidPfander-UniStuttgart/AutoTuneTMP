@@ -1,5 +1,6 @@
 #pragma once
 
+#include "helpers/non_zero_seq.hpp"
 #include "thread_meta.hpp"
 
 #include <functional>
@@ -60,17 +61,18 @@ template <typename... Args_reduced> struct reduced_parameter_holder;
 // };
 
 template <typename... Args>
-class delayed_executor_id
-    : public abstract_executor,
-      reduced_parameter_holder<typename remove_first<Args...>::remainder> {
+class delayed_executor_id : public abstract_executor
+// , reduced_parameter_holder<typename remove_first<Args...>::remainder>
+{
 private:
   std::function<void(Args...)> f;
   std::tuple<Args...> copied_arguments;
 
-  // size_t THREAD_ID_PLACEHOLDER = 0;
+  size_t THREAD_ID_PLACEHOLDER = 0;
 
   template <size_t... indices>
-  void tuple_unwrapped(std::index_sequence<indices...>) {
+  void tuple_unwrapped(autotune::detail::gen_non_zero_seq<
+                       indices...>) { // std::index_sequence<indices...>
     f(this->thread_id, std::get<indices>(std::move(this->copied_arguments))...);
   }
 
@@ -78,13 +80,16 @@ public:
   delayed_executor_id(std::function<void(Args...)> f, Args... args)
       : // reduced_parameter_holder<typename remove_first<Args...>::remainder>(
         //       args...),
-        f(f), copied_arguments(std::move(args)...) {
+        f(f),
+        copied_arguments(std::move(args)...) {
     // this->copied_arguments =
     //     std::tuple<Args_reduced...>(std::move<Args_reduced>(args), ...);
   }
 
   virtual void operator()() override {
-    tuple_unwrapped(std::make_integer_sequence<1, sizeof...(Args) - 1>{});
+    tuple_unwrapped(autotune::make_non_zero_sequence<
+                    1, sizeof...(Args) - 1>{}); // std::make_integer_sequence<1,
+                                                // sizeof...(Args) - 1>{}
   }
 };
 //////////////////////////////////////////

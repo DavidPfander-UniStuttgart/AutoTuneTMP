@@ -103,7 +103,7 @@ private:
   // }
 
   double run_block(kernel_type<void, cppjit::detail::pack<Args...>> &kernel,
-                   thread_meta &meta_base, Args &... args) {
+                   int64_t thread_id, thread_meta &meta_base, Args &... args) {
     std::chrono::high_resolution_clock::time_point start_stamp =
         std::chrono::high_resolution_clock::now();
 
@@ -116,13 +116,17 @@ private:
           meta.y += block_y;
           meta.x += block_x;
 
-          if constexpr (std::is_same<
-                            kernel_type<void, cppjit::detail::pack<Args...>>,
-                            generalized_kernel<
-                                void, cppjit::detail::pack<Args...>>>::value) {
-            set_meta(meta);
-            kernel(args...);
-          } else {
+          if
+            constexpr(
+                std::is_same<kernel_type<void, cppjit::detail::pack<Args...>>,
+                             generalized_kernel<
+                                 void, cppjit::detail::pack<Args...>>>::value) {
+              set_meta(meta);
+              kernel(args...);
+            }
+          else {
+            kernel.set_thread_id(thread_id);
+            // kernel.set_meta(meta, thread_id);
             kernel.set_meta(meta);
             kernel(args...);
           }
@@ -148,7 +152,7 @@ private:
 public:
   tuned_grid_executor(kernel_type<void, cppjit::detail::pack<Args...>> &kernel,
                       grid_spec spec, countable_set parameters)
-      : kernel(kernel), spec(spec), in_tuning_phase(false),
+      : kernel(kernel), spec(spec), in_tuning_phase(true),
         tuner(parameters, 1, true), final_kernel_compiled(false),
         verbose(true) {
     if (cppjit_kernel<void, cppjit::detail::pack<Args...>> *casted =
@@ -163,18 +167,19 @@ public:
   void operator()(Args... args) {
     autotune::queue_thread_pool<num_threads> pool;
 
-    std::function<void(size_t, grid_spec, thread_meta)> thread_wrapper =
-        [this, &args...](size_t thread_id, grid_spec spec,
+    std::function<void(int64_t, grid_spec, thread_meta)> thread_wrapper =
+        [this, &args...](int64_t thread_id, grid_spec spec,
                          thread_meta meta_base) {
           if (verbose) {
-            std::cout << "starting thread" << std::endl;
+            std::cout << "starting thread id: " << thread_id << std::endl;
           }
 
           if (in_tuning_phase) {
 
             countable_set cur_parameters;
             bool found = false;
-            cur_parameters = tuner.get_next(found);
+            bool update = false;
+            cur_parameters = tuner.get_next(found, update);
             if (found) {
               std::shared_ptr<kernel_type<void, cppjit::detail::pack<Args...>>>
               kernel_clone(dynamic_cast<
@@ -182,8 +187,11 @@ public:
                   kernel.clone()));
               kernel_clone->set_parameter_values(cur_parameters);
               kernel_clone->compile();
-              double duration = run_block(*kernel_clone, meta_base, args...);
-              tuner.update_best(cur_parameters, duration);
+              double duration =
+                  run_block(*kernel_clone, thread_id, meta_base, args...);
+              if (update) {
+                tuner.update_best(cur_parameters, duration);
+              }
             } else {
               in_tuning_phase = false;
             }
@@ -208,7 +216,7 @@ public:
                 }
               }
             }
-            double duration = run_block(kernel, meta_base, args...);
+            double duration = run_block(kernel, thread_id, meta_base, args...);
             if (verbose) {
               std::cout << "tuned grid executor: block duration: " << duration
                         << std::endl;
@@ -224,12 +232,17 @@ public:
           meta_base.z = grid_z * spec.block_z;
           meta_base.y = grid_y * spec.block_y;
           meta_base.x = grid_x * spec.block_x;
-          std::cout << "meta_base.x: " << meta_base.x
-                    << " meta_base.y: " << meta_base.y
-                    << " meta_base.z: " << meta_base.z << std::endl;
+          // std::cout << "meta_base.x: " << meta_base.x
+          //           << " meta_base.y: " << meta_base.y
+          //           << " meta_base.z: " << meta_base.z << std::endl;
 
           pool.enqueue_work_id(thread_wrapper, pool.THREAD_ID_PLACEHOLDER, spec,
                                meta_base);
+          // pool.enqueue_work(thread_wrapper, spec, meta_base);
+
+          // std::function<void(size_t, double, double)> dummy =
+          //     [](size_t a, double b, double c) {};
+          // pool.enqueue_work_id(dummy, static_cast<size_t>(0), 2.0, 3.0);
         }
       }
     }

@@ -118,7 +118,7 @@ class abstract_kernel<R, cppjit::detail::pack<Args...>> {
 
   virtual abstract_kernel<R, cppjit::detail::pack<Args...>> *clone() = 0;
 
-  virtual void set_meta(thread_meta meta) = 0;
+  // virtual void set_meta(thread_meta meta) = 0;
 
   virtual thread_meta get_meta() = 0;
 };

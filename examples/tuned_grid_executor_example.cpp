@@ -65,12 +65,14 @@ bool compare_matrices(std::vector<T> &m, std::vector<U> &n, size_t N) {
 
 int main(void) {
 
+  bool verbose_print_matrices = true;
+
   autotune::grid_mult_kernel.set_verbose(true);
   std::cout << "info: vector size is: " << double_v::size() << std::endl;
 
   size_t N = 16;
-  size_t z_block_size = 16;   // 64
-  size_t x_y_block_size = 8; // 16
+  size_t z_block_size = 16;  // 64
+  size_t x_y_block_size = 4; // 16, not smaller than 4 for AVX2 vectorization!
   bool compare_with_naive = true;
   if (N < double_v::size()) {
     throw "matrix too small for configured vector width, make \"N\" larger!";
@@ -97,10 +99,12 @@ int main(void) {
   std::vector<std::atomic<double>> C(N * N);
   std::fill(C.begin(), C.end(), 0.0);
 
-  std::cout << "A:" << std::endl;
-  print_matrix(A, N);
-  std::cout << "B:" << std::endl;
-  print_matrix(B, N);
+  if (verbose_print_matrices) {
+    std::cout << "A:" << std::endl;
+    print_matrix(A, N);
+    std::cout << "B:" << std::endl;
+    print_matrix(B, N);
+  }
 
   autotune::grid_mult_kernel.get_builder<cppjit::builder::gcc>().set_cpp_flags(
       "-std=c++17 -march=native -mtune=native -g ");
@@ -171,10 +175,14 @@ int main(void) {
     compare_matrices(C, C_ref, N);
     std::cout << "duration naive: " << duration_naive << "s" << std::endl;
     std::cout << "Gflop/s naive: " << (flop / duration_naive) << std::endl;
-    std::cout << "C_ref:" << std::endl;
-    print_matrix(C_ref, N);
+    if (verbose_print_matrices) {
+      std::cout << "C_ref:" << std::endl;
+      print_matrix(C_ref, N);
+    }
   }
 
-  std::cout << "C:" << std::endl;
-  print_matrix(C, N);
+  if (verbose_print_matrices) {
+    std::cout << "C:" << std::endl;
+    print_matrix(C, N);
+  }
 }
