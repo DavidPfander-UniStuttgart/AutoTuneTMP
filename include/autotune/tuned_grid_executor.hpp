@@ -196,9 +196,9 @@ private:
 #ifdef USERMODE_RDPMC_ENABLED
       double duration_act_cycles = static_cast<double>(rdpmc_end - rdpmc_start);
       double act_frequency = duration_act_cycles / duration_time;
-      std::cout << "rdpmc cycles: " << duration_act_cycles << std::endl;
-      std::cout << "rdpmc freq (cycles/duration): " << act_frequency
-                << std::endl;
+      // std::cout << "rdpmc cycles: " << duration_act_cycles << std::endl;
+      // std::cout << "rdpmc freq (cycles/duration): " << act_frequency
+      //           << std::endl;
 
 #endif
       std::cout << "raw duration: " << time_span.count() << std::endl;
