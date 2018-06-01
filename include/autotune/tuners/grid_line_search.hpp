@@ -27,8 +27,8 @@ private:
 
   std::shared_ptr<countable_parameter> cur_base_parameter;
 
-  std::mutex
-      access_parameters_mutex; // protects best_parameters, parameters_in_flight
+  // protects best_parameters, parameters_in_flight
+  std::mutex access_parameters_mutex;
 
 public:
   grid_line_search(countable_set &parameters, int64_t steps,
@@ -123,7 +123,7 @@ public:
         }
       }
 
-      // the might be other combination still in their evaluation phase
+      // there might be other combinations still in their evaluation phase,
       // wait until all updates from those combinations have been received
       if (state == phase::WAITING_FOR_RESULTS) {
         if (parameters_in_flight == 0) {

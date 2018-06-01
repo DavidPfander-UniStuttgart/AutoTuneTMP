@@ -37,6 +37,7 @@ template <typename T> void print_matrix(std::vector<T> &m, size_t N) {
 template <typename T, typename U>
 void naive_matrix_multiplication(std::vector<T> &A, std::vector<T> &B,
                                  std::vector<U> &C, size_t N) {
+#pragma omp parallel for collapse(2)
   for (size_t x = 0; x < N; x++) {
     for (size_t y = 0; y < N; y++) {
       for (size_t k = 0; k < N; k++) {
@@ -48,31 +49,40 @@ void naive_matrix_multiplication(std::vector<T> &A, std::vector<T> &B,
 
 template <typename T, typename U>
 bool compare_matrices(std::vector<T> &m, std::vector<U> &n, size_t N) {
+  // bool equal = true;
   for (size_t x = 0; x < N; x++) {
     for (size_t y = 0; y < N; y++) {
       // std::cout << "m: " <<   << std::endl;
       if (std::abs(m[x * N + y] - n[x * N + y]) >= 1E-9) {
         // throw "matrix not equal";
+        // std::cout << "error: " << m[x * N + y] << " != " << n[x * N + y]
+        //           << std::endl;
+        std::cout << "-----------------------------------" << std::endl;
         std::cout << "error: " << m[x * N + y] << " != " << n[x * N + y]
-                  << std::endl;
-        return false;
+                  << " (further errors not shown)" << std::endl;
+        std::cout << "-----------------------------------" << std::endl;
+        // equal = false;
       }
     }
   }
+  // if (!equal) {
+  //   return false;
+  // }
+
   std::cout << "matrices are equal" << std::endl;
   return true;
 }
 
 int main(void) {
 
-  bool verbose_print_matrices = true;
+  bool verbose_print_matrices = false;
 
   autotune::grid_mult_kernel.set_verbose(true);
   std::cout << "info: vector size is: " << double_v::size() << std::endl;
 
-  size_t N = 16;
-  size_t z_block_size = 16;  // 64
-  size_t x_y_block_size = 4; // 16, not smaller than 4 for AVX2 vectorization!
+  size_t N = 1024;
+  size_t z_block_size = N;    // 64
+  size_t x_y_block_size = 32; // 16, not smaller than 4 for AVX2 vectorization!
   bool compare_with_naive = true;
   if (N < double_v::size()) {
     throw "matrix too small for configured vector width, make \"N\" larger!";
@@ -136,7 +146,7 @@ int main(void) {
   //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
   autotune::tuned_grid_executor<
-      2, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
+      4, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
       std::vector<double> &, std::vector<std::atomic<double>> &, size_t, size_t>
       tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 

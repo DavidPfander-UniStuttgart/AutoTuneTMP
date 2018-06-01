@@ -116,15 +116,13 @@ private:
           meta.y += block_y;
           meta.x += block_x;
 
-          if
-            constexpr(
-                std::is_same<kernel_type<void, cppjit::detail::pack<Args...>>,
-                             generalized_kernel<
-                                 void, cppjit::detail::pack<Args...>>>::value) {
-              set_meta(meta);
-              kernel(args...);
-            }
-          else {
+          if constexpr (std::is_same<
+                            kernel_type<void, cppjit::detail::pack<Args...>>,
+                            generalized_kernel<
+                                void, cppjit::detail::pack<Args...>>>::value) {
+            set_meta(meta);
+            kernel(args...);
+          } else {
             kernel.set_thread_id(thread_id);
             // kernel.set_meta(meta, thread_id);
             kernel.set_meta(meta);
@@ -175,12 +173,11 @@ public:
           }
 
           if (in_tuning_phase) {
-
             countable_set cur_parameters;
-            bool found = false;
+            bool still_tuning = false;
             bool update = false;
-            cur_parameters = tuner.get_next(found, update);
-            if (found) {
+            cur_parameters = tuner.get_next(still_tuning, update);
+            if (still_tuning) {
               std::shared_ptr<kernel_type<void, cppjit::detail::pack<Args...>>>
               kernel_clone(dynamic_cast<
                            kernel_type<void, cppjit::detail::pack<Args...>> *>(
@@ -192,6 +189,8 @@ public:
               if (update) {
                 tuner.update_best(cur_parameters, duration);
               }
+              // otherwise the !in_tuning_phase can be entered
+              return;
             } else {
               in_tuning_phase = false;
             }
