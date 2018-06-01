@@ -7,7 +7,7 @@ add_library(AutoTuneTMP INTERFACE)
 
 find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_ROOT})
 
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+find_package(Boost REQUIRED COMPONENTS unit_test_framework thread system)
 
 message("Vc_INCLUDE_DIR: " ${Vc_INCLUDE_DIR})
 # message("BOOST_ROOT: " ${BOOST_ROOT})
@@ -203,17 +203,20 @@ target_compile_options(thread_pool_example PUBLIC -fopenmp)
 install(TARGETS thread_pool_example DESTINATION examples)
 
 add_executable(queue_thread_pool_example "examples/queue_thread_pool_example.cpp")
-target_link_libraries(queue_thread_pool_example AutoTuneTMP -pthread)
+target_include_directories(queue_thread_pool_example PUBLIC ${Boost_INCLUDE_DIRS})
+target_link_libraries(queue_thread_pool_example AutoTuneTMP -pthread Boost::boost Boost::thread Boost::system)
 target_compile_options(queue_thread_pool_example PUBLIC -fopenmp)
 install(TARGETS queue_thread_pool_example DESTINATION examples)
 
 add_executable(grid_executor_example "examples/grid_executor_example.cpp")
-target_link_libraries(grid_executor_example AutoTuneTMP -pthread)
+target_include_directories(grid_executor_example PUBLIC ${Boost_INCLUDE_DIRS})
+target_link_libraries(grid_executor_example AutoTuneTMP -pthread Boost::boost Boost::thread Boost::system)
 target_compile_options(grid_executor_example PUBLIC -fopenmp)
 install(TARGETS grid_executor_example DESTINATION examples)
 
 add_executable(tuned_grid_executor_example "examples/tuned_grid_executor_example.cpp")
-target_link_libraries(tuned_grid_executor_example AutoTuneTMP -pthread -fopenmp)
+target_include_directories(tuned_grid_executor_example PUBLIC ${Boost_INCLUDE_DIRS})
+target_link_libraries(tuned_grid_executor_example AutoTuneTMP -pthread -fopenmp Boost::boost Boost::thread Boost::system papi)
 target_compile_options(tuned_grid_executor_example PUBLIC -fopenmp)
 install(TARGETS tuned_grid_executor_example DESTINATION examples)
 

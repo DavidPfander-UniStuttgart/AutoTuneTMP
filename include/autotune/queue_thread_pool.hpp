@@ -2,6 +2,9 @@
 
 #include "execution_wrapper.hpp"
 #include "thread_safe_queue.hpp"
+#include <boost/thread.hpp>
+#include <errno.h>
+#include <pthread.h>
 
 #include <condition_variable>
 #include <iostream>
@@ -25,9 +28,43 @@ private:
 
   detail::thread_safe_queue<std::unique_ptr<detail::abstract_executor>> safe_q;
 
+  uint32_t physical_concurrency;
+
+  bool verbose;
+
+  // int32_t count_cpus() {
+  //   cpu_set_t cpu_set;
+  //   CPU_ZERO(&cpu_set);
+  //   // will only count online CPUs
+  //   sched_getaffinity(0, sizeof(cpu_set), &cpu_set);
+
+  //   int32_t count = 0;
+  //   for (int i = 0; i < CPU_SETSIZE; i++) {
+  //     if (CPU_ISSET(i, &cpu_set))
+  //       count += 1;
+  //   }
+  //   return count;
+  // }
+
   void worker_main(size_t i) {
 
-    // thread_id = i;
+    // set thread affinity to the core of your number
+    pthread_t thread = pthread_self();
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(static_cast<int>(i % physical_concurrency), &cpuset);
+    if (verbose) {
+      std::cout << "queue_thread_pool: thread i: " << i
+                << " bound to core: " << (i % physical_concurrency)
+                << std::endl;
+    }
+
+    int s = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+    if (s != 0) {
+      errno = s;
+      perror("pthread_setaffinity_np");
+      exit(EXIT_FAILURE);
+    }
 
     while (true) {
 
@@ -66,7 +103,25 @@ private:
 public:
   int64_t THREAD_ID_PLACEHOLDER = 0;
 
-  queue_thread_pool() : threads_finish(false) {} // next_work(0), last_work(0)
+  queue_thread_pool(bool verbose = false)
+      : threads_finish(false),
+        physical_concurrency(boost::thread::physical_concurrency()),
+        verbose(verbose) {
+    // std::cout << "using no. of cpu cores: " << cpu_cores << std::endl;
+    // std::cout << "boost physical concurrency: "
+    //           << boost::thread::physical_concurrency() << std::endl;
+    // std::cout << "boost hardware concurrency: "
+    //           << boost::thread::hardware_concurrency() << std::endl;
+    if (verbose) {
+      std::cout << "queue_thread_pool: physical_concurrency: "
+                << physical_concurrency << std::endl;
+    }
+    if (num_threads > physical_concurrency) {
+      std::cout << "queue_thread_pool: warning: using more threads than "
+                   "available cores"
+                << std::endl;
+    }
+  } // next_work(0), last_work(0)
 
   // creates and starts threads of thread pool (non-blocking)
   void start() {

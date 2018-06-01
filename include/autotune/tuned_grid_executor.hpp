@@ -13,6 +13,26 @@
 // #include "tuners/grid_bruteforce.hpp"
 #include "tuners/grid_line_search.hpp"
 
+#include <papi.h>
+#include <x86intrin.h>
+
+// static __inline__ unsigned long long rdtsc(void) {
+//   unsigned long long int x;
+//   __asm__ volatile(".byte 0x0f, 0x31" : "=A"(x));
+//   return x;
+// }
+
+#define USERMODE_RDPMC_ENABLED
+
+#ifdef USERMODE_RDPMC_ENABLED
+unsigned long rdpmc_actual_cycles() {
+  unsigned a, d, c;
+  c = (1 << 30) + 1;
+  __asm__ volatile("rdpmc" : "=a"(a), "=d"(d) : "c"(c));
+  return ((unsigned long)a) | (((unsigned long)d) << 32);
+}
+#endif
+
 namespace autotune {
 
 thread_meta get_meta();
@@ -106,6 +126,18 @@ private:
                    int64_t thread_id, thread_meta &meta_base, Args &... args) {
     std::chrono::high_resolution_clock::time_point start_stamp =
         std::chrono::high_resolution_clock::now();
+// unsigned int temp1;
+// uint64_t r1 = __rdtscp(&temp1);
+// uint64_t s = PAPI_get_real_cyc();
+#ifdef USERMODE_RDPMC_ENABLED
+    uint64_t rdpmc_start = rdpmc_actual_cycles();
+#endif
+
+    // long_long values_start[2];
+    // if (int error_code = PAPI_read_counters(values_start, 2) != PAPI_OK) {
+    //   std::cout << "PAPI ERROR read start!!!, error_code: " << error_code
+    //             << std::endl;
+    // }
 
     for (size_t block_z = 0; block_z < spec.block_z; block_z++) {
       for (size_t block_y = 0; block_y < spec.block_y; block_y++) {
@@ -144,6 +176,52 @@ private:
     std::chrono::duration<double> time_span =
         std::chrono::duration_cast<std::chrono::duration<double>>(stop_stamp -
                                                                   start_stamp);
+// unsigned int temp2;
+// uint64_t r2 = __rdtscp(&temp2);
+// std::cout << "r1: " << r1 << std::endl;
+// std::cout << "r2: " << r2 << std::endl;
+// std::cout << "r span: " << (r2 - r1) << std::endl;
+// std::cout << "freq (r-span/duration): " << ((r2 - r1) /
+// time_span.count())
+//           << std::endl;
+// uint64_t e = PAPI_get_real_cyc();
+// std::cout << "PAPI cycles: " << (e - s) << std::endl;
+// std::cout << "PAPI freq (cycles/duration): "
+//           << ((e - s) / time_span.count()) << std::endl;
+#ifdef USERMODE_RDPMC_ENABLED
+    uint64_t rdpmc_end = rdpmc_actual_cycles();
+#endif
+    if (verbose) {
+      double duration_time = time_span.count();
+#ifdef USERMODE_RDPMC_ENABLED
+      double duration_act_cycles = static_cast<double>(rdpmc_end - rdpmc_start);
+      double act_frequency = duration_act_cycles / duration_time;
+      std::cout << "rdpmc cycles: " << duration_act_cycles << std::endl;
+      std::cout << "rdpmc freq (cycles/duration): " << act_frequency
+                << std::endl;
+
+#endif
+      std::cout << "raw duration: " << time_span.count() << std::endl;
+#ifdef USERMODE_RDPMC_ENABLED
+
+      double fraction_freq = act_frequency / 4.0E9;
+      std::cout << "fraction_freq: " << fraction_freq << std::endl;
+      std::cout << "weighted duration (ref clock of 4GHz): "
+                << fraction_freq * duration_time << std::endl;
+#endif
+    }
+
+    // long_long values_stop[2];
+    // if (PAPI_read_counters(values_stop, 2) != PAPI_OK) {
+    //   std::cout << "PAPI ERROR read stop!!!" << std::endl;
+    // }
+
+    // std::cout << "PAPI_TOT_CYC start: " << values_start[0] << std::endl;
+    // std::cout << "PAPI_TOT_INS start: " << values_start[1] << std::endl;
+
+    // std::cout << "PAPI_TOT_CYC stop: " << values_stop[0] << std::endl;
+    // std::cout << "PAPI_TOT_INS stop: " << values_stop[1] << std::endl;
+
     return time_span.count();
   }
 
@@ -153,6 +231,36 @@ public:
       : kernel(kernel), spec(spec), in_tuning_phase(true),
         tuner(parameters, 1, true), final_kernel_compiled(false),
         verbose(true) {
+
+    // int retval;
+    // /* Initialize the library */
+    // retval = PAPI_library_init(PAPI_VER_CURRENT);
+    // if (retval != PAPI_VER_CURRENT && retval > 0) {
+    //   fprintf(stderr, "PAPI library version mismatch!\en");
+    //   exit(1);
+    // }
+
+    // int Events[2] = {PAPI_TOT_CYC, PAPI_TOT_INS};
+    // int num_hwcntrs = 0;
+
+    // /* Initialize the PAPI library and get the number of counters available
+    // */ if ((num_hwcntrs = PAPI_num_counters()) < PAPI_OK) {
+    //   std::cout << "PAPI ERROR querying num counters!!!, errno: " <<
+    //   num_hwcntrs
+    //             << std::endl;
+    // }
+
+    // std::cout << "papi reports system has " << num_hwcntrs
+    //           << " available counters" << std::endl;
+
+    // if (num_hwcntrs > 2)
+    //   num_hwcntrs = 2;
+
+    // /* Start counting events */
+    // if (PAPI_start_counters(Events, num_hwcntrs) != PAPI_OK) {
+    //   std::cout << "PAPI ERROR starting counters!!!" << std::endl;
+    // }
+
     if (cppjit_kernel<void, cppjit::detail::pack<Args...>> *casted =
             dynamic_cast<cppjit_kernel<void, cppjit::detail::pack<Args...>> *>(
                 &kernel)) {
@@ -163,14 +271,14 @@ public:
   }
 
   void operator()(Args... args) {
-    autotune::queue_thread_pool<num_threads> pool;
+    autotune::queue_thread_pool<num_threads> pool(verbose);
 
     std::function<void(int64_t, grid_spec, thread_meta)> thread_wrapper =
         [this, &args...](int64_t thread_id, grid_spec spec,
                          thread_meta meta_base) {
-          if (verbose) {
-            std::cout << "starting thread id: " << thread_id << std::endl;
-          }
+          // if (verbose) {
+          //   std::cout << "starting thread id: " << thread_id << std::endl;
+          // }
 
           if (in_tuning_phase) {
             countable_set cur_parameters;

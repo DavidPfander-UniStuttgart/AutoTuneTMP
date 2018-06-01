@@ -80,7 +80,7 @@ int main(void) {
   autotune::grid_mult_kernel.set_verbose(true);
   std::cout << "info: vector size is: " << double_v::size() << std::endl;
 
-  size_t N = 1024;
+  size_t N = 2048;
   size_t z_block_size = N;    // 64
   size_t x_y_block_size = 32; // 16, not smaller than 4 for AVX2 vectorization!
   bool compare_with_naive = true;
