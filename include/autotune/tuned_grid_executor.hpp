@@ -16,11 +16,11 @@
 // #include <papi.h>
 #include <x86intrin.h>
 
-// static __inline__ unsigned long long rdtsc(void) {
-//   unsigned long long int x;
-//   __asm__ volatile(".byte 0x0f, 0x31" : "=A"(x));
-//   return x;
-// }
+static __inline__ unsigned long long rdtsc_base_cycles(void) {
+  unsigned long long int x;
+  __asm__ volatile(".byte 0x0f, 0x31" : "=A"(x));
+  return x;
+}
 
 //#define USERMODE_RDPMC_ENABLED
 
@@ -126,8 +126,9 @@ private:
                    int64_t thread_id, thread_meta &meta_base, Args &... args) {
     std::chrono::high_resolution_clock::time_point start_stamp =
         std::chrono::high_resolution_clock::now();
-// unsigned int temp1;
-// uint64_t r1 = __rdtscp(&temp1);
+    // unsigned int temp1;
+    // uint64_t r1 = __rdtscp(&temp1);
+    uint64_t rdtsc_start = rdtsc_base_cycles();
 // uint64_t s = PAPI_get_real_cyc();
 #ifdef USERMODE_RDPMC_ENABLED
     uint64_t rdpmc_start = rdpmc_actual_cycles();
@@ -183,8 +184,7 @@ private:
 // std::cout << "r1: " << r1 << std::endl;
 // std::cout << "r2: " << r2 << std::endl;
 // std::cout << "r span: " << (r2 - r1) << std::endl;
-// std::cout << "freq (r-span/duration): " << ((r2 - r1) /
-// time_span.count())
+// std::cout << "freq (r-span/duration): " << ((r2 - r1) / time_span.count())
 //           << std::endl;
 // uint64_t e = PAPI_get_real_cyc();
 // std::cout << "PAPI cycles: " << (e - s) << std::endl;
@@ -193,6 +193,7 @@ private:
 #ifdef USERMODE_RDPMC_ENABLED
     uint64_t rdpmc_end = rdpmc_actual_cycles();
 #endif
+    uint64_t rdtsc_stop = rdtsc_base_cycles();
     if (verbose) {
       double duration_time = time_span.count();
 #ifdef USERMODE_RDPMC_ENABLED
@@ -204,12 +205,15 @@ private:
 
 #endif
       std::cout << "raw duration: " << duration_time << std::endl;
+      double base_freq = ((rdtsc_stop - rdtsc_start) / duration_time);
+      std::cout << "base frequency (from constant rdtsc): " << base_freq
+                << std::endl;
 #ifdef USERMODE_RDPMC_ENABLED
 
-      double fraction_freq = act_frequency / 4.0E9;
+      double fraction_freq = act_frequency / base_freq;
       std::cout << "fraction_freq: " << fraction_freq << std::endl;
-      std::cout << "weighted duration (ref clock of 4GHz): "
-                << fraction_freq * duration_time << std::endl;
+      std::cout << "weighted duration: " << fraction_freq * duration_time
+                << std::endl;
 #endif
     }
 
