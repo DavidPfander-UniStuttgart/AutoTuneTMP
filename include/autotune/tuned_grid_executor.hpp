@@ -13,7 +13,7 @@
 // #include "tuners/grid_bruteforce.hpp"
 #include "tuners/grid_line_search.hpp"
 
-#include <papi.h>
+// #include <papi.h>
 #include <x86intrin.h>
 
 // static __inline__ unsigned long long rdtsc(void) {
@@ -22,7 +22,7 @@
 //   return x;
 // }
 
-#define USERMODE_RDPMC_ENABLED
+//#define USERMODE_RDPMC_ENABLED
 
 #ifdef USERMODE_RDPMC_ENABLED
 unsigned long rdpmc_actual_cycles() {
@@ -148,13 +148,15 @@ private:
           meta.y += block_y;
           meta.x += block_x;
 
-          if constexpr (std::is_same<
-                            kernel_type<void, cppjit::detail::pack<Args...>>,
-                            generalized_kernel<
-                                void, cppjit::detail::pack<Args...>>>::value) {
-            set_meta(meta);
-            kernel(args...);
-          } else {
+          if
+            constexpr(
+                std::is_same<kernel_type<void, cppjit::detail::pack<Args...>>,
+                             generalized_kernel<
+                                 void, cppjit::detail::pack<Args...>>>::value) {
+              set_meta(meta);
+              kernel(args...);
+            }
+          else {
             kernel.set_thread_id(thread_id);
             // kernel.set_meta(meta, thread_id);
             kernel.set_meta(meta);
@@ -196,12 +198,12 @@ private:
 #ifdef USERMODE_RDPMC_ENABLED
       double duration_act_cycles = static_cast<double>(rdpmc_end - rdpmc_start);
       double act_frequency = duration_act_cycles / duration_time;
-      // std::cout << "rdpmc cycles: " << duration_act_cycles << std::endl;
-      // std::cout << "rdpmc freq (cycles/duration): " << act_frequency
-      //           << std::endl;
+// std::cout << "rdpmc cycles: " << duration_act_cycles << std::endl;
+// std::cout << "rdpmc freq (cycles/duration): " << act_frequency
+//           << std::endl;
 
 #endif
-      std::cout << "raw duration: " << time_span.count() << std::endl;
+      std::cout << "raw duration: " << duration_time << std::endl;
 #ifdef USERMODE_RDPMC_ENABLED
 
       double fraction_freq = act_frequency / 4.0E9;

@@ -46,7 +46,7 @@ public:
   }
 
   countable_set get_next(bool &still_tuning, bool &update) {
-    std::unique_lock<std::mutex>(access_parameters_mutex);
+    std::unique_lock<std::mutex> lock(access_parameters_mutex);
     if (cur_parameters.size() == 0) {
       still_tuning = false;
       update = false;
@@ -74,7 +74,7 @@ public:
       still_tuning = true;
       update = true;
       parameters_in_flight += 1;
-      std::cout << "grid line search: evaluating initial parameter combination"
+      std::cout << "grid line search: evaluating initial parameter combination:"
                 << std::endl;
       cur_parameters.print_values();
       return cur_parameters;
@@ -104,7 +104,7 @@ public:
         }
       }
 
-      if (state == phase::PREV) {
+      if (state == phase::PREV) { // change back to PREV
         bool has_prev_value = cur_parameters[current_index]->prev();
 
         if (has_prev_value) {
@@ -146,8 +146,8 @@ public:
         } else {
           if (verbose) {
             std::cout << "grid line search: waiting for remaining in-flight "
-                         "candidates to update"
-                      << std::endl;
+                         "candidates to update, remaining: "
+                      << parameters_in_flight << std::endl;
           }
 
           still_tuning = true;
@@ -168,12 +168,15 @@ public:
   }
 
   countable_set get_best() {
-    std::unique_lock<std::mutex>(access_parameters_mutex);
+    std::unique_lock<std::mutex> lock(access_parameters_mutex);
     return best_parameters;
   }
 
   void update_best(countable_set candidate, double candidate_duration) {
-    std::unique_lock<std::mutex>(access_parameters_mutex);
+    std::unique_lock<std::mutex> lock(access_parameters_mutex);
+    std::cout << "grid_line_search: update_best, candidate:" << std::endl;
+    candidate.print_values();
+
     parameters_in_flight -= 1;
     if (candidate_duration < best_parameters_duration) {
       best_parameters = candidate;
