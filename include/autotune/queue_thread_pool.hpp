@@ -32,20 +32,6 @@ private:
 
   bool verbose;
 
-  // int32_t count_cpus() {
-  //   cpu_set_t cpu_set;
-  //   CPU_ZERO(&cpu_set);
-  //   // will only count online CPUs
-  //   sched_getaffinity(0, sizeof(cpu_set), &cpu_set);
-
-  //   int32_t count = 0;
-  //   for (int i = 0; i < CPU_SETSIZE; i++) {
-  //     if (CPU_ISSET(i, &cpu_set))
-  //       count += 1;
-  //   }
-  //   return count;
-  // }
-
   void worker_main(size_t i) {
 
     // set thread affinity to the core of your number

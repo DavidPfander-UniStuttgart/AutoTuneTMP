@@ -13,25 +13,7 @@
 // #include "tuners/grid_bruteforce.hpp"
 #include "tuners/grid_line_search.hpp"
 
-// #include <papi.h>
-#include <x86intrin.h>
-
-static __inline__ unsigned long long rdtsc_base_cycles(void) {
-  unsigned long long int x;
-  __asm__ volatile(".byte 0x0f, 0x31" : "=A"(x));
-  return x;
-}
-
-//#define USERMODE_RDPMC_ENABLED
-
-#ifdef USERMODE_RDPMC_ENABLED
-unsigned long rdpmc_actual_cycles() {
-  unsigned a, d, c;
-  c = (1 << 30) + 1;
-  __asm__ volatile("rdpmc" : "=a"(a), "=d"(d) : "c"(c));
-  return ((unsigned long)a) | (((unsigned long)d) << 32);
-}
-#endif
+#include "helpers/timing.hpp"
 
 namespace autotune {
 
@@ -50,15 +32,16 @@ public:
   size_t block_x;
 };
 
-// template <size_t num_threads, size_t vector_width,
-//           template <class R, template <class... Args> class pack_type> class
-//           kernel_type>;
 template <size_t num_threads, size_t vector_width,
           template <class, class> class kernel_type, typename... Args>
 class tuned_grid_executor {
 private:
-  // kernel_type<void, cppjit::detail::pack<Args...>> &kernel;
   kernel_type<void, cppjit::detail::pack<Args...>> &kernel;
+
+  std::array<std::shared_ptr<kernel_type<void, cppjit::detail::pack<Args...>>>,
+             num_threads>
+      all_kernel_clones;
+
   grid_spec spec;
   volatile bool in_tuning_phase;
 
@@ -69,76 +52,14 @@ private:
 
   std::mutex final_compile_mutex;
 
-  // void thread_wrapper(grid_spec spec, thread_meta meta_base, Args &... args)
-  // {
-  //   if (verbose) {
-  //     std::cout << "starting thread" << std::endl;
-  //   }
-
-  //   // if (!in_tuning_phase) { // TODO/CONTINUE: compile only once, then
-  //   //                         // reuse "kernel"
-  //   //     if (!final_kernel_compiled) {
-  //   //         wait();
-  //   //     }
-  //   // }
-
-  //   if (in_tuning_phase) {
-  //     std::shared_ptr<kernel_type<void, cppjit::detail::pack<Args...>>>
-  //     kernel_clone(
-  //         dynamic_cast<kernel_type<void, cppjit::detail::pack<Args...>> *>(
-  //             kernel.clone()));
-
-  //     countable_set cur_parameters;
-  //     bool found = false;
-  //     cur_parameters = tuner.get_next(found);
-  //     if (found) {
-  //       kernel_clone->set_parameter_values(cur_parameters);
-  //     } else {
-  //       in_tuning_phase = false;
-  //     }
-
-  //     if (found) {
-  //       kernel_clone->set_parameter_values(cur_parameters);
-  //       kernel_clone->compile();
-  //       double duration = run_block(*kernel_clone, meta_base, args...);
-  //       tuner.update_best(cur_parameters, duration);
-  //     }
-  //   }
-  //   if (!in_tuning_phase) {
-  //     if (!final_kernel_compiled) {
-  //       std::unique_lock<std::mutex>(final_compile_mutex);
-  //       if (!final_kernel_compiled) {
-  //         countable_set best_parameters = tuner.get_best();
-  //         kernel->set_parameter_values(best_parameters);
-  //         kernel->compile();
-  //         final_kernel_compiled = true;
-  //       }
-  //     }
-  //     double duration = run_block(*kernel, meta_base, args...);
-  //     if (verbose) {
-  //       std::cout << "tuned grid executor: block duration: " << duration
-  //                 << std::endl;
-  //     }
-  //   }
-  // }
-
   double run_block(kernel_type<void, cppjit::detail::pack<Args...>> &kernel,
                    int64_t thread_id, thread_meta &meta_base, Args &... args) {
     std::chrono::high_resolution_clock::time_point start_stamp =
         std::chrono::high_resolution_clock::now();
-    // unsigned int temp1;
-    // uint64_t r1 = __rdtscp(&temp1);
-    uint64_t rdtsc_start = rdtsc_base_cycles();
-// uint64_t s = PAPI_get_real_cyc();
+    uint64_t rdtscp_start = rdtscp_base_cycles_start();
 #ifdef USERMODE_RDPMC_ENABLED
     uint64_t rdpmc_start = rdpmc_actual_cycles();
 #endif
-
-    // long_long values_start[2];
-    // if (int error_code = PAPI_read_counters(values_start, 2) != PAPI_OK) {
-    //   std::cout << "PAPI ERROR read start!!!, error_code: " << error_code
-    //             << std::endl;
-    // }
 
     for (size_t block_z = 0; block_z < spec.block_z; block_z++) {
       for (size_t block_y = 0; block_y < spec.block_y; block_y++) {
@@ -149,28 +70,18 @@ private:
           meta.y += block_y;
           meta.x += block_x;
 
-          if
-            constexpr(
-                std::is_same<kernel_type<void, cppjit::detail::pack<Args...>>,
-                             generalized_kernel<
-                                 void, cppjit::detail::pack<Args...>>>::value) {
-              set_meta(meta);
-              kernel(args...);
-            }
-          else {
+          if constexpr (std::is_same<
+                            kernel_type<void, cppjit::detail::pack<Args...>>,
+                            generalized_kernel<
+                                void, cppjit::detail::pack<Args...>>>::value) {
+            // TODO: should probably add set_thread_id here
+            set_meta(meta);
+            kernel(args...);
+          } else {
             kernel.set_thread_id(thread_id);
-            // kernel.set_meta(meta, thread_id);
             kernel.set_meta(meta);
             kernel(args...);
           }
-
-          // if (generalized_kernel_ptr) {
-          //   set_meta(meta);
-          //   (*kernel_clone)(args...);
-          // } else {
-          //   kernel_clone->set_meta(meta);
-          //   (*kernel_clone)(args...);
-          // }
         }
       }
     }
@@ -179,56 +90,39 @@ private:
     std::chrono::duration<double> time_span =
         std::chrono::duration_cast<std::chrono::duration<double>>(stop_stamp -
                                                                   start_stamp);
-// unsigned int temp2;
-// uint64_t r2 = __rdtscp(&temp2);
-// std::cout << "r1: " << r1 << std::endl;
-// std::cout << "r2: " << r2 << std::endl;
-// std::cout << "r span: " << (r2 - r1) << std::endl;
-// std::cout << "freq (r-span/duration): " << ((r2 - r1) / time_span.count())
-//           << std::endl;
-// uint64_t e = PAPI_get_real_cyc();
-// std::cout << "PAPI cycles: " << (e - s) << std::endl;
-// std::cout << "PAPI freq (cycles/duration): "
-//           << ((e - s) / time_span.count()) << std::endl;
 #ifdef USERMODE_RDPMC_ENABLED
     uint64_t rdpmc_end = rdpmc_actual_cycles();
 #endif
-    uint64_t rdtsc_stop = rdtsc_base_cycles();
+    uint64_t rdtscp_stop = rdtscp_base_cycles_stop();
+    double corrected_duration = 0.0;
     if (verbose) {
       double duration_time = time_span.count();
 #ifdef USERMODE_RDPMC_ENABLED
       double duration_act_cycles = static_cast<double>(rdpmc_end - rdpmc_start);
       double act_frequency = duration_act_cycles / duration_time;
-// std::cout << "rdpmc cycles: " << duration_act_cycles << std::endl;
-// std::cout << "rdpmc freq (cycles/duration): " << act_frequency
-//           << std::endl;
+      std::cout << "rdpmc freq (cycles/duration): " << act_frequency
+                << std::endl;
 
 #endif
       std::cout << "raw duration: " << duration_time << std::endl;
-      double base_freq = ((rdtsc_stop - rdtsc_start) / duration_time);
-      std::cout << "base frequency (from constant rdtsc): " << base_freq
+      double base_freq = ((rdtscp_stop - rdtscp_start) / duration_time);
+      std::cout << "base frequency (from constant rdtscp): " << base_freq
                 << std::endl;
 #ifdef USERMODE_RDPMC_ENABLED
 
       double fraction_freq = act_frequency / base_freq;
       std::cout << "fraction_freq: " << fraction_freq << std::endl;
-      std::cout << "weighted duration: " << fraction_freq * duration_time
+      corrected_duration = fraction_freq * duration_time;
+      std::cout << "frequency-corrected duration: " << corrected_duration
                 << std::endl;
 #endif
     }
 
-    // long_long values_stop[2];
-    // if (PAPI_read_counters(values_stop, 2) != PAPI_OK) {
-    //   std::cout << "PAPI ERROR read stop!!!" << std::endl;
-    // }
-
-    // std::cout << "PAPI_TOT_CYC start: " << values_start[0] << std::endl;
-    // std::cout << "PAPI_TOT_INS start: " << values_start[1] << std::endl;
-
-    // std::cout << "PAPI_TOT_CYC stop: " << values_stop[0] << std::endl;
-    // std::cout << "PAPI_TOT_INS stop: " << values_stop[1] << std::endl;
-
+#ifdef USERMODE_RDPMC_ENABLED
+    return corrected_duration;
+#else
     return time_span.count();
+#endif
   }
 
 public:
@@ -237,35 +131,6 @@ public:
       : kernel(kernel), spec(spec), in_tuning_phase(true),
         tuner(parameters, 1, true), final_kernel_compiled(false),
         verbose(true) {
-
-    // int retval;
-    // /* Initialize the library */
-    // retval = PAPI_library_init(PAPI_VER_CURRENT);
-    // if (retval != PAPI_VER_CURRENT && retval > 0) {
-    //   fprintf(stderr, "PAPI library version mismatch!\en");
-    //   exit(1);
-    // }
-
-    // int Events[2] = {PAPI_TOT_CYC, PAPI_TOT_INS};
-    // int num_hwcntrs = 0;
-
-    // /* Initialize the PAPI library and get the number of counters available
-    // */ if ((num_hwcntrs = PAPI_num_counters()) < PAPI_OK) {
-    //   std::cout << "PAPI ERROR querying num counters!!!, errno: " <<
-    //   num_hwcntrs
-    //             << std::endl;
-    // }
-
-    // std::cout << "papi reports system has " << num_hwcntrs
-    //           << " available counters" << std::endl;
-
-    // if (num_hwcntrs > 2)
-    //   num_hwcntrs = 2;
-
-    // /* Start counting events */
-    // if (PAPI_start_counters(Events, num_hwcntrs) != PAPI_OK) {
-    //   std::cout << "PAPI ERROR starting counters!!!" << std::endl;
-    // }
 
     if (cppjit_kernel<void, cppjit::detail::pack<Args...>> *casted =
             dynamic_cast<cppjit_kernel<void, cppjit::detail::pack<Args...>> *>(
@@ -282,20 +147,24 @@ public:
     std::function<void(int64_t, grid_spec, thread_meta)> thread_wrapper =
         [this, &args...](int64_t thread_id, grid_spec spec,
                          thread_meta meta_base) {
-          // if (verbose) {
-          //   std::cout << "starting thread id: " << thread_id << std::endl;
-          // }
-
           if (in_tuning_phase) {
+
+            auto &kernel_clone = all_kernel_clones[thread_id];
+
+            if (!kernel_clone) {
+              std::cout << "tuned_grid_executor: cloning kernel, thread_id: "
+                        << thread_id << std::endl;
+              kernel_clone = std::shared_ptr<
+                  kernel_type<void, cppjit::detail::pack<Args...>>>(
+                  dynamic_cast<kernel_type<void, cppjit::detail::pack<Args...>>
+                                   *>(kernel.clone()));
+            }
+
             countable_set cur_parameters;
             bool still_tuning = false;
             bool update = false;
             cur_parameters = tuner.get_next(still_tuning, update);
             if (still_tuning) {
-              std::shared_ptr<kernel_type<void, cppjit::detail::pack<Args...>>>
-              kernel_clone(dynamic_cast<
-                           kernel_type<void, cppjit::detail::pack<Args...>> *>(
-                  kernel.clone()));
               kernel_clone->set_parameter_values(cur_parameters);
               kernel_clone->compile();
               double duration =
