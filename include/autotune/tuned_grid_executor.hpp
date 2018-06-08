@@ -41,9 +41,20 @@ private:
   std::array<std::shared_ptr<kernel_type<void, cppjit::detail::pack<Args...>>>,
              num_threads>
       all_kernel_clones;
+  std::array<countable_set, num_threads> all_cur_parameters;
+
+  static constexpr size_t max_measurements = 20;
+  // next two parameters determine the magnitude of the improvement that can be
+  // determined semi-reliably
+  static constexpr size_t min_measurements = 4;
+  static constexpr double accuracy_threshold = 0.05;
+  std::array<size_t, num_threads> all_num_measurements;
+  std::array<std::array<double, max_measurements>, num_threads>
+      all_measurements;
 
   grid_spec spec;
   volatile bool in_tuning_phase;
+  std::array<bool, num_threads> improve_accuracy;
 
   tuners::grid_line_search tuner;
 
@@ -106,7 +117,7 @@ private:
 #endif
       std::cout << "raw duration: " << duration_time << std::endl;
       double base_freq = ((rdtscp_stop - rdtscp_start) / duration_time);
-      std::cout << "base frequency (from constant rdtscp): " << base_freq
+      std::cout << "base frequency (from steady rdtscp): " << base_freq
                 << std::endl;
 #ifdef USERMODE_RDPMC_ENABLED
 
@@ -125,12 +136,105 @@ private:
 #endif
   }
 
+  void compute_statistics(std::array<double, max_measurements> &measurements,
+                          size_t index_start, size_t index_stop, double &min,
+                          double &max, double &average) {
+    min = 0.0;
+    max = 0.0;
+    double sum = 0.0;
+    bool first = true;
+
+    for (size_t i = index_start; i < index_stop; i++) {
+      if (first) {
+        min = measurements[i];
+        max = measurements[i];
+        first = false;
+      }
+      if (measurements[i] < min) {
+        min = measurements[i];
+      }
+      if (measurements[i] > min) {
+        max = measurements[i];
+      }
+      sum += measurements[i];
+    }
+    average = sum / static_cast<double>(index_stop - index_start);
+  }
+
+  double evaluate_accuracy(int64_t thread_id, double duration,
+                           bool &measurement_accurate) {
+    size_t &num_measurements = all_num_measurements[thread_id];
+    std::array<double, max_measurements> &measurements =
+        all_measurements[thread_id];
+
+    // add the current measurement (requires max_measurements > 0)
+    measurements[num_measurements] = duration;
+    num_measurements += 1;
+
+    double min;
+    double max;
+    double average;
+
+    compute_statistics(measurements, 0, num_measurements, min, max, average);
+
+    // reached maximum evaluations, return average
+    if (num_measurements >= max_measurements) {
+      std::cout << "tuned_grid_executor: evaluations not stable after "
+                   "num_measurements: "
+                << num_measurements << " min: " << min
+                << " average: " << average << " max: " << max << std::endl;
+      measurement_accurate = true;
+      return average;
+    }
+
+    // do at least 3 measurements
+    if (num_measurements < min_measurements) {
+      measurement_accurate = false;
+      return average;
+    }
+
+    compute_statistics(measurements, num_measurements - min_measurements,
+                       num_measurements, min, max, average);
+
+    // if (max == average) {
+    //   measurement_accurate = true;
+    //   return max;
+    // }
+
+    // ~x% surrounding fence
+    double max_fraction = average / max;
+    double min_fraction = average / min;
+    if (max_fraction > (1.0 - accuracy_threshold) &&
+        min_fraction < (1.0 + accuracy_threshold)) {
+      if (verbose) {
+        std::cout << "tuned_grid_executor: measurement accepted after "
+                     "num_measurements: "
+                  << num_measurements << " min: " << min
+                  << " average: " << average << " max: " << max << std::endl;
+      }
+      measurement_accurate = true;
+      return min;
+    }
+
+    if (verbose) {
+      std::cout << "tuned_grid_executor: rejected due to accuracy after "
+                   "num_measurements: "
+                << num_measurements << " min: " << min
+                << " average: " << average << " max: " << max << std::endl;
+    }
+
+    measurement_accurate = false;
+    return average;
+  }
+
 public:
   tuned_grid_executor(kernel_type<void, cppjit::detail::pack<Args...>> &kernel,
                       grid_spec spec, countable_set parameters)
       : kernel(kernel), spec(spec), in_tuning_phase(true),
         tuner(parameters, 1, true), final_kernel_compiled(false),
         verbose(true) {
+
+    std::fill(improve_accuracy.begin(), improve_accuracy.end(), false);
 
     if (cppjit_kernel<void, cppjit::detail::pack<Args...>> *casted =
             dynamic_cast<cppjit_kernel<void, cppjit::detail::pack<Args...>> *>(
@@ -160,22 +264,44 @@ public:
                                    *>(kernel.clone()));
             }
 
-            countable_set cur_parameters;
-            bool still_tuning = false;
-            bool update = false;
-            cur_parameters = tuner.get_next(still_tuning, update);
-            if (still_tuning) {
-              kernel_clone->set_parameter_values(cur_parameters);
-              kernel_clone->compile();
+            if (!improve_accuracy[thread_id]) {
+              countable_set cur_parameters;
+              bool still_tuning = false;
+              bool update = false;
+              cur_parameters = tuner.get_next(still_tuning, update);
+              if (still_tuning) {
+                kernel_clone->set_parameter_values(cur_parameters);
+                kernel_clone->compile();
+
+                if (update) {
+                  all_cur_parameters[thread_id] = cur_parameters;
+                  all_num_measurements[thread_id] = 0;
+                  improve_accuracy[thread_id] = true;
+                } else {
+                  // double duration =
+                  run_block(*kernel_clone, thread_id, meta_base, args...);
+                  // otherwise the !in_tuning_phase can be entered (data race)
+                  return;
+                }
+              } else {
+                in_tuning_phase = false;
+              }
+            }
+
+            if (improve_accuracy[thread_id]) { // improve_accuracy implies
+                                               // update
               double duration =
                   run_block(*kernel_clone, thread_id, meta_base, args...);
-              if (update) {
-                tuner.update_best(cur_parameters, duration);
+              bool measurement_accurate = false;
+              double duration_report =
+                  evaluate_accuracy(thread_id, duration, measurement_accurate);
+              if (measurement_accurate) {
+                tuner.update_best(all_cur_parameters[thread_id],
+                                  duration_report);
+                improve_accuracy[thread_id] = false;
               }
-              // otherwise the !in_tuning_phase can be entered
+              // otherwise the !in_tuning_phase can be entered (data race)
               return;
-            } else {
-              in_tuning_phase = false;
             }
           }
 
@@ -233,6 +359,6 @@ public:
       std::cout << "tuned grid executor: pool finished!" << std::endl;
     }
   }
-};
+}; // namespace autotune
 } // namespace autotune
 // namespace autotune
