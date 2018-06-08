@@ -2,9 +2,6 @@
 
 #include <x86intrin.h>
 
-// TODO: change this to a CMake option
-#define USERMODE_RDPMC_ENABLED
-
 /*
 usage:
 - measure clock base rate with the rdtscp_* calls

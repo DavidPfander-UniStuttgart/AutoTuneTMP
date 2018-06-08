@@ -19,15 +19,17 @@
 #include <Vc/Vc>
 using Vc::double_v;
 
+#include <boost/thread.hpp>
+
 AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &,
                      std::vector<std::atomic<double>> &, size_t, size_t),
                 grid_mult_kernel, "examples/grid_mult_kernel")
 
-template <typename T> void print_matrix(std::vector<T> &m, size_t N) {
+template <typename T>
+void print_matrix(std::vector<T> &m, size_t N) {
   for (size_t i = 0; i < N; i++) {
     for (size_t j = 0; j < N; j++) {
-      if (j > 0)
-        std::cout << ", ";
+      if (j > 0) std::cout << ", ";
       std::cout << m[i * N + j];
     }
     std::cout << std::endl;
@@ -35,8 +37,8 @@ template <typename T> void print_matrix(std::vector<T> &m, size_t N) {
 }
 
 template <typename T, typename U>
-void naive_matrix_multiplication(std::vector<T> &A, std::vector<T> &B,
-                                 std::vector<U> &C, size_t N) {
+void naive_matrix_multiplication(std::vector<T> &A, std::vector<T> &B, std::vector<U> &C,
+                                 size_t N) {
 #pragma omp parallel for collapse(2)
   for (size_t x = 0; x < N; x++) {
     for (size_t y = 0; y < N; y++) {
@@ -74,22 +76,24 @@ bool compare_matrices(std::vector<T> &m, std::vector<U> &n, size_t N) {
 }
 
 int main(void) {
-
   bool verbose_print_matrices = false;
+
+  // uint32_t threads = boost::thread::physical_concurrency();
+  constexpr uint32_t cores = 2;
+  std::cout << "cores configured: " << cores << std::endl;
 
   autotune::grid_mult_kernel.set_verbose(true);
   std::cout << "info: vector size is: " << double_v::size() << std::endl;
 
   size_t N = 1024;
-  size_t z_block_size = N;    // 64
-  size_t x_y_block_size = 32; // 16, not smaller than 4 for AVX2 vectorization!
+  size_t z_block_size = N;     // 64
+  size_t x_y_block_size = 32;  // 16, not smaller than 4 for AVX2 vectorization!
   bool compare_with_naive = true;
   if (N < double_v::size()) {
     throw "matrix too small for configured vector width, make \"N\" larger!";
   }
   if (x_y_block_size % double_v::size() != 0) {
-    throw autotune::autotune_exception(
-        "\"x_y_block_size\" does not divide vector size!");
+    throw autotune::autotune_exception("\"x_y_block_size\" does not divide vector size!");
   }
 
   std::vector<double> A(N * N);
@@ -118,10 +122,9 @@ int main(void) {
 
   autotune::grid_mult_kernel.get_builder<cppjit::builder::gcc>().set_cpp_flags(
       "-std=c++17 -march=native -mtune=native -g ");
-  autotune::grid_mult_kernel.get_builder<cppjit::builder::gcc>().set_link_flags(
-      "-std=c++17 -g ");
-  autotune::grid_mult_kernel.get_builder<cppjit::builder::gcc>()
-      .set_include_paths("-IVc_install/include");
+  autotune::grid_mult_kernel.get_builder<cppjit::builder::gcc>().set_link_flags("-std=c++17 -g ");
+  autotune::grid_mult_kernel.get_builder<cppjit::builder::gcc>().set_include_paths(
+      "-IVc_install/include");
 
   autotune::grid_spec spec;
   // span a 3d grid
@@ -134,10 +137,10 @@ int main(void) {
   spec.grid_x = N / spec.block_x;
 
   autotune::countable_set parameters;
-  parameters.emplace_parameter<autotune::countable_continuous_parameter>(
-      "DUMMY_PARAMETER_1", 3.0, 1.0, 1.0, 4.0);
-  parameters.emplace_parameter<autotune::countable_continuous_parameter>(
-      "DUMMY_PARAMETER_2", 3.0, 1.0, 1.0, 4.0);
+  parameters.emplace_parameter<autotune::countable_continuous_parameter>("DUMMY_PARAMETER_1", 3.0,
+                                                                         1.0, 1.0, 4.0);
+  parameters.emplace_parameter<autotune::countable_continuous_parameter>("DUMMY_PARAMETER_2", 3.0,
+                                                                         1.0, 1.0, 4.0);
 
   // TODO: increase threads!!!
   // autotune::tuned_grid_executor<
@@ -145,9 +148,9 @@ int main(void) {
   //     std::vector<std::atomic<double>> &, size_t, size_t>
   //     tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
-  autotune::tuned_grid_executor<
-      4, double_v::size(), autotune::cppjit_kernel, std::vector<double> &,
-      std::vector<double> &, std::vector<std::atomic<double>> &, size_t, size_t>
+  autotune::tuned_grid_executor<cores, double_v::size(), autotune::cppjit_kernel,
+                                std::vector<double> &, std::vector<double> &,
+                                std::vector<std::atomic<double>> &, size_t, size_t>
       tuned_grid_exe(autotune::grid_mult_kernel, spec, parameters);
 
   // autotune::tuned_grid_executor<16, double_v::size(),
@@ -160,8 +163,7 @@ int main(void) {
   std::chrono::high_resolution_clock::time_point stop_stamp =
       std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> time_span =
-      std::chrono::duration_cast<std::chrono::duration<double>>(stop_stamp -
-                                                                start_stamp);
+      std::chrono::duration_cast<std::chrono::duration<double>>(stop_stamp - start_stamp);
   double duration = time_span.count();
 
   double flop = 2 * N * N * N * 1E-9;
@@ -179,8 +181,8 @@ int main(void) {
     std::chrono::high_resolution_clock::time_point stop_stamp_naive =
         std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_span_naive =
-        std::chrono::duration_cast<std::chrono::duration<double>>(
-            stop_stamp_naive - start_stamp_naive);
+        std::chrono::duration_cast<std::chrono::duration<double>>(stop_stamp_naive -
+                                                                  start_stamp_naive);
     double duration_naive = time_span_naive.count();
     compare_matrices(C, C_ref, N);
     std::cout << "duration naive: " << duration_naive << "s" << std::endl;

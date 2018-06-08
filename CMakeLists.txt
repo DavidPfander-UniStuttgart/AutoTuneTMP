@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.5)
 project(AutoTuneTMP)
 set(AutoTuneTMP_VERSION 0.1.0)
 
+option(WITH_USERMODE_RDPMC "Use RDPMC calls (query performance counters) to for more accurate measurements, needs to be user accessible, otherwise the program will segfault" ON)
+
 add_library(AutoTuneTMP INTERFACE)
 
 find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_ROOT})
@@ -56,7 +58,6 @@ install(EXPORT AutoTuneTMPTargets
   ${ConfigPackageLocation}
   )
 
-
 install(
   FILES
   AutoTuneTMPConfig.cmake
@@ -77,6 +78,11 @@ INSTALL (
 
 # -Wconversion
 target_compile_options(AutoTuneTMP INTERFACE -std=c++17 -march=native -mtune=native -mno-vzeroupper -ffast-math -Wall -Wextra -Wcast-qual -Wformat=2 -Wformat-nonliteral -Wformat-security -Winit-self -Wmissing-format-attribute -Wmissing-include-dirs -Wpacked -Wunreachable-code -Wunused -Wno-unused-parameter -Wswitch-enum -Wredundant-decls -pedantic -Wswitch-default ${CMAKE_CXX_FLAGS})
+
+if(WITH_USERMODE_RDPMC)
+  message("USERMODE_RDPMC is ENABLED!")
+  add_definitions(-DUSERMODE_RDPMC_ENABLED)
+endif(WITH_USERMODE_RDPMC)
 
 #################
 # build examples

@@ -22,7 +22,7 @@ thread_meta get_meta();
 void set_meta(thread_meta meta);
 
 class grid_spec {
-public:
+ public:
   size_t grid_z;
   size_t grid_y;
   size_t grid_x;
@@ -32,14 +32,13 @@ public:
   size_t block_x;
 };
 
-template <size_t num_threads, size_t vector_width,
-          template <class, class> class kernel_type, typename... Args>
+template <size_t num_threads, size_t vector_width, template <class, class> class kernel_type,
+          typename... Args>
 class tuned_grid_executor {
-private:
+ private:
   kernel_type<void, cppjit::detail::pack<Args...>> &kernel;
 
-  std::array<std::shared_ptr<kernel_type<void, cppjit::detail::pack<Args...>>>,
-             num_threads>
+  std::array<std::shared_ptr<kernel_type<void, cppjit::detail::pack<Args...>>>, num_threads>
       all_kernel_clones;
   std::array<countable_set, num_threads> all_cur_parameters;
 
@@ -49,8 +48,7 @@ private:
   static constexpr size_t min_measurements = 4;
   static constexpr double accuracy_threshold = 0.05;
   std::array<size_t, num_threads> all_num_measurements;
-  std::array<std::array<double, max_measurements>, num_threads>
-      all_measurements;
+  std::array<std::array<double, max_measurements>, num_threads> all_measurements;
 
   grid_spec spec;
   volatile bool in_tuning_phase;
@@ -63,8 +61,8 @@ private:
 
   std::mutex final_compile_mutex;
 
-  double run_block(kernel_type<void, cppjit::detail::pack<Args...>> &kernel,
-                   int64_t thread_id, thread_meta &meta_base, Args &... args) {
+  double run_block(kernel_type<void, cppjit::detail::pack<Args...>> &kernel, int64_t thread_id,
+                   thread_meta &meta_base, Args &... args) {
     std::chrono::high_resolution_clock::time_point start_stamp =
         std::chrono::high_resolution_clock::now();
     uint64_t rdtscp_start = rdtscp_base_cycles_start();
@@ -74,8 +72,7 @@ private:
 
     for (size_t block_z = 0; block_z < spec.block_z; block_z++) {
       for (size_t block_y = 0; block_y < spec.block_y; block_y++) {
-        for (size_t block_x = 0; block_x < spec.block_x;
-             block_x += vector_width) {
+        for (size_t block_x = 0; block_x < spec.block_x; block_x += vector_width) {
           thread_meta meta = meta_base;
           meta.z += block_z;
           meta.y += block_y;
@@ -83,8 +80,7 @@ private:
 
           if constexpr (std::is_same<
                             kernel_type<void, cppjit::detail::pack<Args...>>,
-                            generalized_kernel<
-                                void, cppjit::detail::pack<Args...>>>::value) {
+                            generalized_kernel<void, cppjit::detail::pack<Args...>>>::value) {
             // TODO: should probably add set_thread_id here
             set_meta(meta);
             kernel(args...);
@@ -99,33 +95,30 @@ private:
     std::chrono::high_resolution_clock::time_point stop_stamp =
         std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_span =
-        std::chrono::duration_cast<std::chrono::duration<double>>(stop_stamp -
-                                                                  start_stamp);
+        std::chrono::duration_cast<std::chrono::duration<double>>(stop_stamp - start_stamp);
 #ifdef USERMODE_RDPMC_ENABLED
     uint64_t rdpmc_end = rdpmc_actual_cycles();
+    double corrected_duration = 0.0;
 #endif
     uint64_t rdtscp_stop = rdtscp_base_cycles_stop();
-    double corrected_duration = 0.0;
     if (verbose) {
       double duration_time = time_span.count();
 #ifdef USERMODE_RDPMC_ENABLED
       double duration_act_cycles = static_cast<double>(rdpmc_end - rdpmc_start);
+      std::cout << "rdpmc cycles: " << duration_act_cycles << std::endl;
       double act_frequency = duration_act_cycles / duration_time;
-      std::cout << "rdpmc freq (cycles/duration): " << act_frequency
-                << std::endl;
+      std::cout << "rdpmc freq (cycles/duration): " << act_frequency << std::endl;
 
 #endif
       std::cout << "raw duration: " << duration_time << std::endl;
       double base_freq = ((rdtscp_stop - rdtscp_start) / duration_time);
-      std::cout << "base frequency (from steady rdtscp): " << base_freq
-                << std::endl;
+      std::cout << "base frequency (from steady rdtscp): " << base_freq << std::endl;
 #ifdef USERMODE_RDPMC_ENABLED
 
       double fraction_freq = act_frequency / base_freq;
       std::cout << "fraction_freq: " << fraction_freq << std::endl;
       corrected_duration = fraction_freq * duration_time;
-      std::cout << "frequency-corrected duration: " << corrected_duration
-                << std::endl;
+      std::cout << "frequency-corrected duration: " << corrected_duration << std::endl;
 #endif
     }
 
@@ -136,9 +129,8 @@ private:
 #endif
   }
 
-  void compute_statistics(std::array<double, max_measurements> &measurements,
-                          size_t index_start, size_t index_stop, double &min,
-                          double &max, double &average) {
+  void compute_statistics(std::array<double, max_measurements> &measurements, size_t index_start,
+                          size_t index_stop, double &min, double &max, double &average) {
     min = 0.0;
     max = 0.0;
     double sum = 0.0;
@@ -161,11 +153,9 @@ private:
     average = sum / static_cast<double>(index_stop - index_start);
   }
 
-  double evaluate_accuracy(int64_t thread_id, double duration,
-                           bool &measurement_accurate) {
+  double evaluate_accuracy(int64_t thread_id, double duration, bool &measurement_accurate) {
     size_t &num_measurements = all_num_measurements[thread_id];
-    std::array<double, max_measurements> &measurements =
-        all_measurements[thread_id];
+    std::array<double, max_measurements> &measurements = all_measurements[thread_id];
 
     // add the current measurement (requires max_measurements > 0)
     measurements[num_measurements] = duration;
@@ -181,8 +171,8 @@ private:
     if (num_measurements >= max_measurements) {
       std::cout << "tuned_grid_executor: evaluations not stable after "
                    "num_measurements: "
-                << num_measurements << " min: " << min
-                << " average: " << average << " max: " << max << std::endl;
+                << num_measurements << " min: " << min << " average: " << average << " max: " << max
+                << std::endl;
       measurement_accurate = true;
       return average;
     }
@@ -193,8 +183,8 @@ private:
       return average;
     }
 
-    compute_statistics(measurements, num_measurements - min_measurements,
-                       num_measurements, min, max, average);
+    compute_statistics(measurements, num_measurements - min_measurements, num_measurements, min,
+                       max, average);
 
     // if (max == average) {
     //   measurement_accurate = true;
@@ -204,13 +194,12 @@ private:
     // ~x% surrounding fence
     double max_fraction = average / max;
     double min_fraction = average / min;
-    if (max_fraction > (1.0 - accuracy_threshold) &&
-        min_fraction < (1.0 + accuracy_threshold)) {
+    if (max_fraction > (1.0 - accuracy_threshold) && min_fraction < (1.0 + accuracy_threshold)) {
       if (verbose) {
         std::cout << "tuned_grid_executor: measurement accepted after "
                      "num_measurements: "
-                  << num_measurements << " min: " << min
-                  << " average: " << average << " max: " << max << std::endl;
+                  << num_measurements << " min: " << min << " average: " << average
+                  << " max: " << max << std::endl;
       }
       measurement_accurate = true;
       return min;
@@ -219,26 +208,27 @@ private:
     if (verbose) {
       std::cout << "tuned_grid_executor: rejected due to accuracy after "
                    "num_measurements: "
-                << num_measurements << " min: " << min
-                << " average: " << average << " max: " << max << std::endl;
+                << num_measurements << " min: " << min << " average: " << average << " max: " << max
+                << std::endl;
     }
 
     measurement_accurate = false;
     return average;
   }
 
-public:
-  tuned_grid_executor(kernel_type<void, cppjit::detail::pack<Args...>> &kernel,
-                      grid_spec spec, countable_set parameters)
-      : kernel(kernel), spec(spec), in_tuning_phase(true),
-        tuner(parameters, 1, true), final_kernel_compiled(false),
+ public:
+  tuned_grid_executor(kernel_type<void, cppjit::detail::pack<Args...>> &kernel, grid_spec spec,
+                      countable_set parameters)
+      : kernel(kernel),
+        spec(spec),
+        in_tuning_phase(true),
+        tuner(parameters, 1, true),
+        final_kernel_compiled(false),
         verbose(true) {
-
     std::fill(improve_accuracy.begin(), improve_accuracy.end(), false);
 
     if (cppjit_kernel<void, cppjit::detail::pack<Args...>> *casted =
-            dynamic_cast<cppjit_kernel<void, cppjit::detail::pack<Args...>> *>(
-                &kernel)) {
+            dynamic_cast<cppjit_kernel<void, cppjit::detail::pack<Args...>> *>(&kernel)) {
       auto &b = casted->template get_builder<cppjit::builder::gcc>();
       std::string includes = b.get_include_paths();
       b.set_include_paths(includes + std::string(" -Igrid_include -Iinclude"));
@@ -249,19 +239,15 @@ public:
     autotune::queue_thread_pool<num_threads> pool(verbose);
 
     std::function<void(int64_t, grid_spec, thread_meta)> thread_wrapper =
-        [this, &args...](int64_t thread_id, grid_spec spec,
-                         thread_meta meta_base) {
+        [this, &args...](int64_t thread_id, grid_spec spec, thread_meta meta_base) {
           if (in_tuning_phase) {
-
             auto &kernel_clone = all_kernel_clones[thread_id];
 
             if (!kernel_clone) {
-              std::cout << "tuned_grid_executor: cloning kernel, thread_id: "
-                        << thread_id << std::endl;
-              kernel_clone = std::shared_ptr<
-                  kernel_type<void, cppjit::detail::pack<Args...>>>(
-                  dynamic_cast<kernel_type<void, cppjit::detail::pack<Args...>>
-                                   *>(kernel.clone()));
+              std::cout << "tuned_grid_executor: cloning kernel, thread_id: " << thread_id
+                        << std::endl;
+              kernel_clone = std::shared_ptr<kernel_type<void, cppjit::detail::pack<Args...>>>(
+                  dynamic_cast<kernel_type<void, cppjit::detail::pack<Args...>> *>(kernel.clone()));
             }
 
             if (!improve_accuracy[thread_id]) {
@@ -288,16 +274,13 @@ public:
               }
             }
 
-            if (improve_accuracy[thread_id]) { // improve_accuracy implies
-                                               // update
-              double duration =
-                  run_block(*kernel_clone, thread_id, meta_base, args...);
+            if (improve_accuracy[thread_id]) {  // improve_accuracy implies
+                                                // update
+              double duration = run_block(*kernel_clone, thread_id, meta_base, args...);
               bool measurement_accurate = false;
-              double duration_report =
-                  evaluate_accuracy(thread_id, duration, measurement_accurate);
+              double duration_report = evaluate_accuracy(thread_id, duration, measurement_accurate);
               if (measurement_accurate) {
-                tuner.update_best(all_cur_parameters[thread_id],
-                                  duration_report);
+                tuner.update_best(all_cur_parameters[thread_id], duration_report);
                 improve_accuracy[thread_id] = false;
               }
               // otherwise the !in_tuning_phase can be entered (data race)
@@ -310,8 +293,7 @@ public:
               std::unique_lock lock(final_compile_mutex);
               if (!final_kernel_compiled) {
                 if (verbose) {
-                  std::cout << "tuned grid executor: now compiling final kernel"
-                            << std::endl;
+                  std::cout << "tuned grid executor: now compiling final kernel" << std::endl;
                 }
                 countable_set best_parameters = tuner.get_best();
                 kernel.set_parameter_values(best_parameters);
@@ -319,15 +301,13 @@ public:
                 final_kernel_compiled = true;
               } else {
                 if (verbose) {
-                  std::cout << "tuned grid executor: compiled by another thread"
-                            << std::endl;
+                  std::cout << "tuned grid executor: compiled by another thread" << std::endl;
                 }
               }
             }
             double duration = run_block(kernel, thread_id, meta_base, args...);
             if (verbose) {
-              std::cout << "tuned grid executor: block duration: " << duration
-                        << std::endl;
+              std::cout << "tuned grid executor: block duration: " << duration << std::endl;
             }
           }
         };
@@ -344,8 +324,7 @@ public:
           //           << " meta_base.y: " << meta_base.y
           //           << " meta_base.z: " << meta_base.z << std::endl;
 
-          pool.enqueue_work_id(thread_wrapper, pool.THREAD_ID_PLACEHOLDER, spec,
-                               meta_base);
+          pool.enqueue_work_id(thread_wrapper, pool.THREAD_ID_PLACEHOLDER, spec, meta_base);
           // pool.enqueue_work(thread_wrapper, spec, meta_base);
 
           // std::function<void(size_t, double, double)> dummy =
@@ -359,6 +338,6 @@ public:
       std::cout << "tuned grid executor: pool finished!" << std::endl;
     }
   }
-}; // namespace autotune
-} // namespace autotune
+};  // namespace autotune
+}  // namespace autotune
 // namespace autotune
