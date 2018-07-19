@@ -9,8 +9,9 @@ fi
 if [ ! -d "Vc/" ]; then
     git clone https://github.com/STEllAR-GROUP/Vc.git
     cd Vc
-    git checkout pfandedd_inlining_AVX512
-    git checkout HEAD~1
+    # git checkout pfandedd_inlining_AVX512
+    # git checkout HEAD~1
+    git checkout gcc8_fixes
     cd ..
 fi
 # else
