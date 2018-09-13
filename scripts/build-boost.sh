@@ -7,12 +7,12 @@ if [[ -z ${AutoTuneTMP_source_me_sourced} ]]; then
 fi
 
 if [ ! -d "boost" ]; then
-    wget 'http://downloads.sourceforge.net/project/boost/boost/1.65.0/boost_1_65_0.tar.bz2'
-    tar xf boost_1_65_0.tar.bz2
-    mv boost_1_65_0 boost
+    wget 'http://downloads.sourceforge.net/project/boost/boost/1.66.0/boost_1_66_0.tar.bz2'
+    tar xf boost_1_66_0.tar.bz2
+    mv boost_1_66_0 boost
     # # configure for gcc 7
     # if [[ "$MATRIX_MULTIPLICATION_TARGET" != "knl" ]]; then
-    # 	echo "using gcc : 7.1 : /usr/bin/g++-7  ; " > boost/tools/build/src/user-config.jam
+    #   echo "using gcc : 7.1 : /usr/bin/g++-7  ; " > boost/tools/build/src/user-config.jam
     # fi
 fi
 

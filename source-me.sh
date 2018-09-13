@@ -22,6 +22,10 @@ else
     echo "AutoTuneTMP: configuration already done, skipping..."
 fi
 
+if [ ! -d "cppjit" ]; then
+    git clone git@github.com:DavidPfander-UniStuttgart/cppjit.git
+fi
+
 # source the remaining dependencies recursively
 source $(readlink -f $(dirname "$BASH_SOURCE"))/cppjit/source-me.sh
 
