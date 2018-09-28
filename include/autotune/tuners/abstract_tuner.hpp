@@ -164,7 +164,7 @@ class abstract_tuner
     do_write_header = true;
     scenario_kernel_duration_file.open(scenario_name + "_kernel_duration.csv");
     scenario_compile_duration_file.open(scenario_name + "_compile_duration.csv");
-    scenario_parallel_compile_duration_file.open(scenario_name + "_parallel_compile_duration.csv");
+    scenario_parallel_compile_duration_file.open(scenario_name + "_par_comp_duration.csv");
   }
 
   void set_parameter_adjustment_functor(
@@ -250,17 +250,17 @@ class abstract_tuner
       bool first = true;
       for (auto &p : parameter_values) {
         if (!first) {
-          scenario_kernel_duration_file << ", ";
-          scenario_compile_duration_file << ", ";
+          scenario_kernel_duration_file << ",";
+          scenario_compile_duration_file << ",";
         } else {
           first = false;
         }
         scenario_kernel_duration_file << p.first;
         scenario_compile_duration_file << p.first;
       }
-      scenario_kernel_duration_file << ", "
+      scenario_kernel_duration_file << ","
                                     << "duration" << std::endl;
-      scenario_compile_duration_file << ", "
+      scenario_compile_duration_file << ","
                                      << "duration" << std::endl;
       scenario_parallel_compile_duration_file << "count, duration" << std::endl;
       do_write_header = false;
@@ -273,16 +273,16 @@ class abstract_tuner
     bool first = true;
     for (auto &p : parameter_values) {
       if (!first) {
-        scenario_kernel_duration_file << ", ";
-        scenario_compile_duration_file << ", ";
+        scenario_kernel_duration_file << ",";
+        scenario_compile_duration_file << ",";
       } else {
         first = false;
       }
       scenario_kernel_duration_file << p.second;
       scenario_compile_duration_file << p.second;
     }
-    scenario_kernel_duration_file << ", " << duration_kernel_s << std::endl;
-    scenario_compile_duration_file << ", " << duration_compile_s << std::endl;
+    scenario_kernel_duration_file << "," << duration_kernel_s << std::endl;
+    scenario_compile_duration_file << "," << duration_compile_s << std::endl;
   }
 
   size_t get_repetitions() { return repetitions; }
