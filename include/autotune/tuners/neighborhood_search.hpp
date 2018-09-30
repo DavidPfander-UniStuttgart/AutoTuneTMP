@@ -15,7 +15,7 @@ private:
 
 public:
   neighborhood_search(
-      autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
+      autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
       countable_set &parameters, size_t iterations)
       : abstract_tuner<countable_set, R, Args...>(f, parameters),
         iterations(iterations) {}
