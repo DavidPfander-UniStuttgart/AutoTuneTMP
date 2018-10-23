@@ -1,11 +1,15 @@
 #include "opttmp/vectorization/register_tiling.hpp"
-
-#include <cassert>
-
 #include <Vc/Vc>
+
 using Vc::double_v;
 
 using namespace opttmp::vectorization;
+
+void check_and_throw(bool condition) {
+  if (!condition) {
+    throw;
+  }
+}
 
 // template <typename left_expr, typename right_expr>
 // mult_expression<left_expr, right_expr> const operator*(left_expr const
@@ -52,7 +56,7 @@ int main(void) {
     register_array<double_v, vector_elements> copied = positive_values;
     for (size_t i = 0; i < vector_elements; i++) {
       auto mask = copied[i] == positive_values[i];
-      assert(Vc::all_of(mask));
+      check_and_throw(Vc::all_of(mask));
     }
   }
 
@@ -66,7 +70,8 @@ int main(void) {
     for (size_t i = 0; i < addition_result.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
 
-        assert(addition_result[i][j] == reference[i * double_v::size() + j]);
+        check_and_throw(addition_result[i][j] ==
+                        reference[i * double_v::size() + j]);
       }
     }
   }
@@ -79,7 +84,8 @@ int main(void) {
                                                               positive_values);
     for (size_t i = 0; i < addition_result.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(addition_result[i][j] == reference[i * double_v::size() + j]);
+        check_and_throw(addition_result[i][j] ==
+                        reference[i * double_v::size() + j]);
       }
     }
   }
@@ -92,7 +98,8 @@ int main(void) {
         negative_values + positive_values;
     for (size_t i = 0; i < addition_result.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(addition_result[i][j] == reference[i * double_v::size() + j]);
+        check_and_throw(addition_result[i][j] ==
+                        reference[i * double_v::size() + j]);
       }
     }
   }
@@ -110,7 +117,8 @@ int main(void) {
 
     for (size_t i = 0; i < sum.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(result_reference[i * double_v::size() + j] == sum[i][j]);
+        check_and_throw(result_reference[i * double_v::size() + j] ==
+                        sum[i][j]);
       }
     }
   }
@@ -121,7 +129,8 @@ int main(void) {
         negative_values + shared_scalar;
     for (size_t i = 0; i < right_scalar.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(right_scalar[i][j] == negative_values[i][j] + shared_scalar[j]);
+        check_and_throw(right_scalar[i][j] ==
+                        negative_values[i][j] + shared_scalar[j]);
       }
     }
   }
@@ -131,7 +140,8 @@ int main(void) {
         shared_scalar + negative_values;
     for (size_t i = 0; i < left_scalar.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(left_scalar[i][j] == negative_values[i][j] + shared_scalar[j]);
+        check_and_throw(left_scalar[i][j] ==
+                        negative_values[i][j] + shared_scalar[j]);
       }
     }
   }
@@ -146,8 +156,8 @@ int main(void) {
         negative_values - positive_values);
     for (size_t i = 0; i < subtraction_result.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(subtraction_result[i][j] ==
-               result_reference[i * double_v::size() + j]);
+        check_and_throw(subtraction_result[i][j] ==
+                        result_reference[i * double_v::size() + j]);
       }
     }
   }
@@ -162,8 +172,8 @@ int main(void) {
         negative_values - positive_values;
     for (size_t i = 0; i < subtraction_result.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(subtraction_result[i][j] ==
-               result_reference[i * double_v::size() + j]);
+        check_and_throw(subtraction_result[i][j] ==
+                        result_reference[i * double_v::size() + j]);
       }
     }
   }
@@ -181,7 +191,8 @@ int main(void) {
 
     for (size_t i = 0; i < sum.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(result_reference[i * double_v::size() + j] == sum[i][j]);
+        check_and_throw(result_reference[i * double_v::size() + j] ==
+                        sum[i][j]);
       }
     }
   }
@@ -192,7 +203,8 @@ int main(void) {
         negative_values - shared_scalar;
     for (size_t i = 0; i < right_scalar.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(right_scalar[i][j] == negative_values[i][j] - shared_scalar[j]);
+        check_and_throw(right_scalar[i][j] ==
+                        negative_values[i][j] - shared_scalar[j]);
       }
     }
   }
@@ -202,7 +214,8 @@ int main(void) {
         shared_scalar - negative_values;
     for (size_t i = 0; i < left_scalar.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(left_scalar[i][j] == shared_scalar[j] - negative_values[i][j]);
+        check_and_throw(left_scalar[i][j] ==
+                        shared_scalar[j] - negative_values[i][j]);
       }
     }
   }
@@ -213,8 +226,8 @@ int main(void) {
         negative_values * shared_scalar;
     for (size_t i = 0; i < right_scalar_mult.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(right_scalar_mult[i][j] ==
-               negative_values[i][j] * shared_scalar[j]);
+        check_and_throw(right_scalar_mult[i][j] ==
+                        negative_values[i][j] * shared_scalar[j]);
       }
     }
   }
@@ -226,8 +239,8 @@ int main(void) {
 
     for (size_t i = 0; i < left_scalar_mult.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(left_scalar_mult[i][j] ==
-               negative_values[i][j] * shared_scalar[j]);
+        check_and_throw(left_scalar_mult[i][j] ==
+                        negative_values[i][j] * shared_scalar[j]);
       }
     }
     // left_scalar_mult.print("left_scalar_mult");
@@ -238,7 +251,7 @@ int main(void) {
     register_array<double_v, vector_elements> abs_result = abs(negative_values);
     for (size_t i = 0; i < abs_result.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(abs_result[i][j] == -negative_values[i][j]);
+        check_and_throw(abs_result[i][j] == -negative_values[i][j]);
       }
     }
     // abs_left_scalar_mult.print("abs_left_scalar_mult");
@@ -252,7 +265,8 @@ int main(void) {
     // max_result.print("max_result");
     for (size_t i = 0; i < max_result.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(max_result[i][j] == max_reference[i * double_v::size() + j]);
+        check_and_throw(max_result[i][j] ==
+                        max_reference[i * double_v::size() + j]);
       }
     }
   }
@@ -266,8 +280,8 @@ int main(void) {
     // max_left_result.print("max_left_result");
     for (size_t i = 0; i < max_left_result.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(max_left_result[i][j] ==
-               max_reference[i * double_v::size() + j]);
+        check_and_throw(max_left_result[i][j] ==
+                        max_reference[i * double_v::size() + j]);
       }
     }
   }
@@ -281,8 +295,8 @@ int main(void) {
     // max_right_result.print("max_right_result");
     for (size_t i = 0; i < max_right_result.size(); i++) {
       for (size_t j = 0; j < double_v::size(); j++) {
-        assert(max_right_result[i][j] ==
-               max_reference[i * double_v::size() + j]);
+        check_and_throw(max_right_result[i][j] ==
+                        max_reference[i * double_v::size() + j]);
       }
     }
   }
@@ -299,7 +313,7 @@ int main(void) {
       for (size_t j = 0; j < double_v::size(); j++) {
         // TODO: workaround for ambiguous bug in Vc
         double ref = result_reference[i][j];
-        assert(result[i][j] == ref);
+        check_and_throw(result[i][j] == ref);
       }
     }
   }

@@ -14,9 +14,10 @@ template <typename parameter_interface, typename R, typename... Args>
 class abstract_tuner;
 
 // template <typename parameter_interface, typename R, typename... Args>
-// bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
-//                          abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-//                          parameter_interface &parameters, Args &... args)
+// bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...>
+// &tuner,
+//                          abstract_kernel<R, cppjit::detail::pack<Args...>>
+//                          &f, parameter_interface &parameters, Args &... args)
 
 namespace detail {
 template <typename parameter_interface, typename R, typename... Args>
@@ -27,25 +28,27 @@ bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
 
 template <typename parameter_interface, typename R, typename... Args>
 class abstract_tuner
-    : public std::conditional<!std::is_same<R, void>::value, with_tests<R, Args...>,
+    : public std::conditional<!std::is_same<R, void>::value,
+                              with_tests<R, Args...>,
                               without_tests<R, Args...>>::type {
- protected:
+protected:
   autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
   // always-unadjusted, state managed by tuner impl.!
   parameter_interface parameters;
-  parameter_interface optimal_parameters;  // adjusted
+  parameter_interface optimal_parameters; // adjusted
   double optimal_duration;
   bool verbose;
   bool do_measurement;
   bool do_write_header;
-  std::ofstream scenario_kernel_duration_file;
-  std::ofstream scenario_compile_duration_file;
-  std::ofstream scenario_parallel_compile_duration_file;
+  std::ofstream scenario_file;
+  // std::ofstream scenario_compile_duration_file;
+  // std::ofstream scenario_parallel_compile_duration_file;
 
   parameter_result_cache result_cache;
 
   std::function<void(parameter_interface &)> parameter_adjustment_functor;
-  std::function<void(parameter_value_set &)> parameter_values_adjustment_functor;
+  std::function<void(parameter_value_set &)>
+      parameter_values_adjustment_functor;
 
   // std::shared_ptr<simple_constraints> simple_constraints_wrapper;
   // std::shared_ptr<constraint_graph> constraint_graph_wrapper;
@@ -54,19 +57,18 @@ class abstract_tuner
 
   bool clear_tuner;
 
+  double parallel_compilation_duration_reporting;
+  uint64_t parallel_compilation_count_reporting;
+
   virtual void tune_impl(Args &... args) = 0;
 
- public:
+public:
   abstract_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
                  parameter_interface &parameters)
-      : f(f),
-        parameters(parameters),
-        optimal_duration(-1.0),
-        verbose(false),
-        do_measurement(false),
-        do_write_header(true),
-        repetitions(1),
-        clear_tuner(true) {}
+      : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
+        do_measurement(false), do_write_header(true), repetitions(1),
+        clear_tuner(true), parallel_compilation_duration_reporting(0.0),
+        parallel_compilation_count_reporting(0) {}
 
   parameter_interface tune(Args &... args) {
     // if first run or auto clear is active
@@ -89,7 +91,8 @@ class abstract_tuner
 
   bool evaluate(Args &... args) {
     parameter_value_set original_kernel_values = f.get_parameter_values();
-    bool do_evaluate = apply_parameters(f, parameters);  // does adjustment if applicable
+    bool do_evaluate =
+        apply_parameters(f, parameters); // does adjustment if applicable
     if (do_evaluate) {
       bool found = detail::evaluate_parameters<parameter_interface, R, Args...>(
           *this, f, parameters, args...);
@@ -103,23 +106,30 @@ class abstract_tuner
   //   return evaluate_with_kernel(f->clone(), parameters, args...);
   // }
 
-  bool evaluate_parallel(std::vector<parameter_interface> &parameters, Args &... args) {
-    parameter_value_set first_parameter_values = to_parameter_values(parameters[0]);
+  bool evaluate_parallel(std::vector<parameter_interface> &parameters,
+                         Args &... args) {
+    parameter_value_set first_parameter_values =
+        to_parameter_values(parameters[0]);
     write_header(first_parameter_values);
 
-    std::vector<std::unique_ptr<autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>>>
+    std::vector<std::unique_ptr<
+        autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>>>
         kernels;
     std::vector<bool> do_evaluates;
     // clone all kernels and set its parameters
     for (size_t i = 0; i < parameters.size(); i++) {
-      std::unique_ptr<autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>> clone(f.clone());
+      std::unique_ptr<
+          autotune::abstract_kernel<R, cppjit::detail::pack<Args...>>>
+          clone(f.clone());
       // clone->set_parameter_values(parameters[i]);
-      bool do_evaluate = apply_parameters(*clone, parameters[i]);  // does adjustment if applicable
+      bool do_evaluate = apply_parameters(
+          *clone, parameters[i]); // does adjustment if applicable
       do_evaluates.push_back(do_evaluate);
       kernels.push_back(std::move(clone));
     }
 
-    int64_t no_to_evaluate = std::count(do_evaluates.begin(), do_evaluates.end(), true);
+    int64_t no_to_evaluate =
+        std::count(do_evaluates.begin(), do_evaluates.end(), true);
 
     auto start = std::chrono::high_resolution_clock::now();
 #pragma omp parallel for
@@ -130,14 +140,19 @@ class abstract_tuner
     }
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration_parallel_compile = end - start;
-    scenario_parallel_compile_duration_file << no_to_evaluate << ", "
-                                            << duration_parallel_compile.count() << std::endl;
+    // scenario_file << no_to_evaluate << ", " <<
+    // duration_parallel_compile.count()
+    //               << std::endl;
+    // nulled after begin written to file
+    parallel_compilation_duration_reporting = duration_parallel_compile.count();
+    parallel_compilation_count_reporting = no_to_evaluate;
 
     bool any_better = false;
     for (size_t i = 0; i < parameters.size(); i++) {
       if (do_evaluates[i]) {
-        bool better = detail::evaluate_parameters<parameter_interface, R, Args...>(
-            *this, *kernels[i], parameters[i], args...);
+        bool better =
+            detail::evaluate_parameters<parameter_interface, R, Args...>(
+                *this, *kernels[i], parameters[i], args...);
         if (!any_better && better) {
           any_better = true;
         }
@@ -150,21 +165,23 @@ class abstract_tuner
 
   void set_write_measurement(const std::string &scenario_name) {
     if (do_measurement) {
-      if (scenario_kernel_duration_file.is_open()) {
-        scenario_kernel_duration_file.close();
+      if (scenario_file.is_open()) {
+        scenario_file.close();
       }
-      if (scenario_compile_duration_file.is_open()) {
-        scenario_compile_duration_file.close();
-      }
-      if (scenario_parallel_compile_duration_file.is_open()) {
-        scenario_parallel_compile_duration_file.close();
-      }
+      // if (scenario_compile_duration_file.is_open()) {
+      //   scenario_compile_duration_file.close();
+      // }
+      // if (scenario_parallel_compile_duration_file.is_open()) {
+      //   scenario_parallel_compile_duration_file.close();
+      // }
     }
     do_measurement = true;
     do_write_header = true;
-    scenario_kernel_duration_file.open(scenario_name + "_kernel_duration.csv");
-    scenario_compile_duration_file.open(scenario_name + "_compile_duration.csv");
-    scenario_parallel_compile_duration_file.open(scenario_name + "_par_comp_duration.csv");
+    scenario_file.open(scenario_name + "_kernel.csv");
+    // scenario_compile_duration_file.open(scenario_name +
+    // "_compile_duration.csv");
+    // scenario_parallel_compile_duration_file.open(scenario_name +
+    // "_par_comp_duration.csv");
   }
 
   void set_parameter_adjustment_functor(
@@ -174,8 +191,10 @@ class abstract_tuner
   }
 
   void set_parameter_values_adjustment_functor(
-      std::function<void(parameter_value_set &)> parameter_values_adjustment_functor) {
-    this->parameter_values_adjustment_functor = parameter_values_adjustment_functor;
+      std::function<void(parameter_value_set &)>
+          parameter_values_adjustment_functor) {
+    this->parameter_values_adjustment_functor =
+        parameter_values_adjustment_functor;
     this->parameter_adjustment_functor = nullptr;
   }
 
@@ -212,11 +231,14 @@ class abstract_tuner
   //   group_tuner_for_adjust = &g;
   // }
 
-  bool update_parameters(parameter_interface adjusted_candidate, double candidate_duration,
+  bool update_parameters(parameter_interface adjusted_candidate,
+                         double candidate_duration,
                          double candiate_duration_compile) {
     if (do_measurement) {
-      parameter_value_set candidate_parameter_values = to_parameter_values(adjusted_candidate);
-      write_measurement(candidate_parameter_values, candidate_duration, candiate_duration_compile);
+      parameter_value_set candidate_parameter_values =
+          to_parameter_values(adjusted_candidate);
+      write_measurement(candidate_parameter_values, candidate_duration,
+                        candiate_duration_compile);
     }
     bool is_better = false;
     if (optimal_duration < 0.0 || candidate_duration < optimal_duration) {
@@ -232,7 +254,8 @@ class abstract_tuner
 
   bool is_verbose() { return verbose; }
 
-  void report(const std::string &message, double duration, parameter_interface &parameters) {
+  void report(const std::string &message, double duration,
+              parameter_interface &parameters) {
     std::cout << message << "; duration: " << duration << std::endl;
     parameters.print_values();
   }
@@ -250,46 +273,53 @@ class abstract_tuner
       bool first = true;
       for (auto &p : parameter_values) {
         if (!first) {
-          scenario_kernel_duration_file << ",";
-          scenario_compile_duration_file << ",";
+          scenario_file << ",";
+          // scenario_compile_duration_file << ",";
         } else {
           first = false;
         }
-        scenario_kernel_duration_file << p.first;
-        scenario_compile_duration_file << p.first;
+        scenario_file << p.first;
+        // scenario_compile_duration_file << p.first;
       }
-      scenario_kernel_duration_file << ","
-                                    << "duration" << std::endl;
-      scenario_compile_duration_file << ","
-                                     << "duration" << std::endl;
-      scenario_parallel_compile_duration_file << "count, duration" << std::endl;
+      scenario_file << ","
+                    << "kernel_s,compile_s,par_compile_s,par_compile_count"
+                    << std::endl;
+      // scenario_compile_duration_file << ","
+      //                                << "duration" << std::endl;
+      // scenario_parallel_compile_duration_file << "count, duration" <<
+      // std::endl;
       do_write_header = false;
     }
   }
 
-  void write_measurement(parameter_value_set parameter_values, double duration_kernel_s,
-                         double duration_compile_s) {
+  void write_measurement(parameter_value_set parameter_values,
+                         double duration_kernel_s, double duration_compile_s) {
     // const parameter_value_set &parameter_values = f.get_parameter_values();
     bool first = true;
     for (auto &p : parameter_values) {
       if (!first) {
-        scenario_kernel_duration_file << ",";
-        scenario_compile_duration_file << ",";
+        scenario_file << ",";
+        // scenario_compile_duration_file << ",";
       } else {
         first = false;
       }
-      scenario_kernel_duration_file << p.second;
-      scenario_compile_duration_file << p.second;
+      scenario_file << p.second;
+      // scenario_compile_duration_file << p.second;
     }
-    scenario_kernel_duration_file << "," << duration_kernel_s << std::endl;
-    scenario_compile_duration_file << "," << duration_compile_s << std::endl;
+    scenario_file << "," << duration_kernel_s << "," << duration_compile_s
+                  << "," << parallel_compilation_duration_reporting << ","
+                  << parallel_compilation_count_reporting << std::endl;
+    parallel_compilation_duration_reporting = 0.0;
+    parallel_compilation_count_reporting = 0;
+    // scenario_compile_duration_file << "," << duration_compile_s << std::endl;
   }
 
   size_t get_repetitions() { return repetitions; }
 
   // returns true if an apply is useful (adjusted and validated)
-  bool apply_parameters(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
-                        const parameter_interface &parameters) {
+  bool apply_parameters(
+      autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
+      const parameter_interface &parameters) {
     if (parameter_adjustment_functor) {
       parameter_interface adjusted = parameters;
       if (verbose) {
@@ -308,14 +338,16 @@ class abstract_tuner
       parameter_value_set adjusted_values = to_parameter_values(adjusted);
       if (!kernel.precompile_validate_parameters(adjusted_values)) {
         if (verbose) {
-          std::cout << "------ invalidated eval (precompile) ------" << std::endl;
+          std::cout << "------ invalidated eval (precompile) ------"
+                    << std::endl;
           adjusted.print_values();
           std::cout << "--------------------------" << std::endl;
         }
         return false;
       } else {
         if (verbose) {
-          std::cout << "parameter combination passed precompile check" << std::endl;
+          std::cout << "parameter combination passed precompile check"
+                    << std::endl;
         }
       }
       kernel.set_parameter_values(adjusted);
@@ -336,14 +368,16 @@ class abstract_tuner
       }
       if (!kernel.precompile_validate_parameters(adjusted)) {
         if (verbose) {
-          std::cout << "------ invalidated eval (precompile) ------" << std::endl;
+          std::cout << "------ invalidated eval (precompile) ------"
+                    << std::endl;
           print_parameter_values(adjusted);
           std::cout << "--------------------------" << std::endl;
         }
         return false;
       } else {
         if (verbose) {
-          std::cout << "parameter combination passed precompile check" << std::endl;
+          std::cout << "parameter combination passed precompile check"
+                    << std::endl;
         }
       }
       kernel.set_parameter_values(adjusted);
@@ -354,14 +388,16 @@ class abstract_tuner
       parameter_value_set parameter_values = to_parameter_values(parameters);
       if (!kernel.precompile_validate_parameters(parameter_values)) {
         if (verbose) {
-          std::cout << "------ invalidated eval (precompile) ------" << std::endl;
+          std::cout << "------ invalidated eval (precompile) ------"
+                    << std::endl;
           parameters.print_values();
           std::cout << "--------------------------" << std::endl;
         }
         return false;
       } else {
         if (verbose) {
-          std::cout << "parameter combination passed precompile check" << std::endl;
+          std::cout << "parameter combination passed precompile check"
+                    << std::endl;
         }
       }
       kernel.set_parameter_values(parameters);
@@ -385,31 +421,27 @@ class abstract_tuner
     }
   }
 
-};  // namespace autotune
+}; // namespace autotune
 
 namespace detail {
 
 // returns whether evaluate lead to new optimal configuration found
 template <typename parameter_interface, typename R, typename... Args>
-bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
-                         abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
-                         parameter_interface &adjusted_parameters, Args &... args) {
+bool evaluate_parameters(
+    abstract_tuner<parameter_interface, R, Args...> &tuner,
+    abstract_kernel<R, cppjit::detail::pack<Args...>> &kernel,
+    parameter_interface &adjusted_parameters, Args &... args) {
   bool verbose = tuner.is_verbose();
 
-  parameter_value_set adjusted_parameter_values = to_parameter_values(adjusted_parameters);
-
-  // parameter_value_set original_kernel_parameters = f.get_parameter_values();
-  // f.set_parameter_values(parameter_values);
+  parameter_value_set adjusted_parameter_values =
+      to_parameter_values(adjusted_parameters);
 
   tuner.write_header(adjusted_parameter_values);
 
   if (verbose) {
     std::cout << "------ begin eval ------" << std::endl;
-    // parameters.print_values();
     print_parameter_values(adjusted_parameter_values);
   }
-
-  // f.create_parameter_file();
 
   auto start_compile = std::chrono::high_resolution_clock::now();
   if (!kernel.is_compiled()) {
@@ -422,8 +454,6 @@ bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
     if (verbose) {
       std::cout << "invalid parameter combination encountered" << std::endl;
     }
-    // restored outside function
-    // f.set_parameter_values(original_kernel_parameters);
     return false;
   } else {
     if (verbose) {
@@ -442,8 +472,6 @@ bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
           if (verbose) {
             std::cout << "warning: test for combination failed!" << std::endl;
           }
-          // restored outside
-          // f.set_parameter_values(original_kernel_parameters);
           return false;
         } else {
           if (verbose) {
@@ -471,18 +499,21 @@ bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
       std::cout << "internal duration: " << internal_duration << std::endl;
       if (repetitions > 1) {
         std::cout << "internal duration per repetition: "
-                  << (internal_duration / static_cast<double>(repetitions)) << std::endl;
+                  << (internal_duration / static_cast<double>(repetitions))
+                  << std::endl;
       }
       std::cout << "(duration tuner: " << duration.count() << "s)" << std::endl;
       if (repetitions > 1) {
         std::cout << "(duration tuner per repetition: "
-                  << (duration.count() / static_cast<double>(repetitions)) << "s)" << std::endl;
+                  << (duration.count() / static_cast<double>(repetitions))
+                  << "s)" << std::endl;
       }
     } else {
       std::cout << "duration: " << duration.count() << "s" << std::endl;
       if (repetitions > 1) {
         std::cout << "duration tuner per reptition: "
-                  << (duration.count() / static_cast<double>(repetitions)) << "s" << std::endl;
+                  << (duration.count() / static_cast<double>(repetitions))
+                  << "s" << std::endl;
       }
       std::cout << "------- end eval -------" << std::endl;
     }
@@ -495,10 +526,10 @@ bool evaluate_parameters(abstract_tuner<parameter_interface, R, Args...> &tuner,
     final_duration = duration.count();
   }
 
-  // f.set_parameter_values(original_kernel_parameters);
-  return tuner.update_parameters(adjusted_parameters, final_duration, duration_compile.count());
+  return tuner.update_parameters(adjusted_parameters, final_duration,
+                                 duration_compile.count());
 }
 
-}  // namespace detail
+} // namespace detail
 
-}  // namespace autotune
+} // namespace autotune

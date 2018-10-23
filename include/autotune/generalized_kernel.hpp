@@ -67,9 +67,9 @@ public:
     return internal_kernel(std::forward<Args>(args)...);
   }
 
-  virtual void compile() override {}
+  virtual void compile() override { create_parameter_file(); }
 
-  virtual bool is_compiled() override { return true; }
+  virtual bool is_compiled() override { return false; }
 
   void
   set_create_parameter_file_functor(std::function<void(parameter_value_set &)>
