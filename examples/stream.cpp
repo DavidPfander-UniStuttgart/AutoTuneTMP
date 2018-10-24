@@ -104,7 +104,7 @@ int main(void) {
   std::vector<double, align> c(N, 3.0);
   double q = 5.0;
 
-  size_t repeat = 10;
+  size_t repeat = 1;
   std::cout << "warning: not using non-temporal stores" << std::endl;
 
   {
