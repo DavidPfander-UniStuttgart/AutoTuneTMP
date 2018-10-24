@@ -39,18 +39,19 @@ int main(void) {
   autotune::countable_set parameters;
   autotune::fixed_set_parameter<size_t> p1("KERNEL_OMP_THREADS", {1});
   parameters.add_parameter(p1);
+  autotune::fixed_set_parameter<size_t> p2("REG_BLOCKING", {1});
+  parameters.add_parameter(p2);
 
   {
     autotune::copy.set_verbose(true);
     auto &builder = autotune::copy.get_builder<cppjit::builder::gcc>();
     builder.set_cpp_flags("-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
                           "-march=native -mtune=native -fstrict-aliasing ");
-    builder.set_include_paths("-Iboost_install/include");
+    builder.set_include_paths(
+        "-Iboost_install/include -IVc_install/include -Iinclude");
     builder.set_link_flags("-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
     builder.set_do_cleanup(false);
-
     autotune::copy.set_parameter_values(parameters);
-
     autotune::copy.compile();
   }
 
@@ -59,12 +60,11 @@ int main(void) {
     auto &builder = autotune::scale.get_builder<cppjit::builder::gcc>();
     builder.set_cpp_flags("-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
                           "-march=native -mtune=native -fstrict-aliasing ");
-    builder.set_include_paths("-Iboost_install/include");
+    builder.set_include_paths(
+        "-Iboost_install/include -IVc_install/include -Iinclude");
     builder.set_link_flags("-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
     builder.set_do_cleanup(false);
-
     autotune::scale.set_parameter_values(parameters);
-
     autotune::scale.compile();
   }
 
@@ -73,30 +73,32 @@ int main(void) {
     auto &builder = autotune::sum.get_builder<cppjit::builder::gcc>();
     builder.set_cpp_flags("-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
                           "-march=native -mtune=native -fstrict-aliasing ");
-    builder.set_include_paths("-Iboost_install/include");
+    builder.set_include_paths(
+        "-Iboost_install/include -IVc_install/include -Iinclude");
     builder.set_link_flags("-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
     builder.set_do_cleanup(false);
-
     autotune::sum.set_parameter_values(parameters);
-
     autotune::sum.compile();
   }
 
   {
     autotune::triad.set_verbose(true);
     auto &builder = autotune::triad.get_builder<cppjit::builder::gcc>();
-    builder.set_cpp_flags("-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
-                          "-march=native -mtune=native -fstrict-aliasing ");
-    builder.set_include_paths("-Iboost_install/include");
+    builder.set_cpp_flags(
+        "-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
+        "-march=native -mtune=native -fstrict-aliasing -Iinclude");
+    builder.set_include_paths("-Iboost_install/include -IVc_install/include");
     builder.set_link_flags("-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
     builder.set_do_cleanup(false);
-
     autotune::triad.set_parameter_values(parameters);
-
     autotune::triad.compile();
   }
 
   size_t N = 1000000000 / 8;
+  // adjust to next number divisible by 64
+  if (N % 64 != 0) {
+    N += 64 - (N % 64);
+  }
   std::cout << "N: " << N << " -> " << (static_cast<double>(8 * N) * 1E-9)
             << "GB" << std::endl;
   std::vector<double, align> a(N, 1.0);
@@ -104,7 +106,7 @@ int main(void) {
   std::vector<double, align> c(N, 3.0);
   double q = 5.0;
 
-  size_t repeat = 1;
+  size_t repeat = 10;
   std::cout << "warning: not using non-temporal stores" << std::endl;
 
   {
