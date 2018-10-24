@@ -13,69 +13,133 @@ using time_point = std::chrono::high_resolution_clock::time_point;
 // defines kernel, put in single compilation unit
 AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &), copy,
                 "examples/stream_kernel")
-// AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &, double),
-//                 scale, "examples/stream_kernel")
-// AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &,
-//                      std::vector<double> &),
-//                 sum, "examples/stream_kernel")
-// AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &,
-//                      std::vector<double> &, double),
-//                 triad, "examples/stream_kernel")
+AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &, double),
+                scale, "examples/stream_kernel")
+AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &,
+                     std::vector<double> &),
+                sum, "examples/stream_kernel")
+AUTOTUNE_KERNEL(void(std::vector<double> &, std::vector<double> &,
+                     std::vector<double> &, double),
+                triad, "examples/stream_kernel")
+
+void print_bandwidth(size_t N, size_t repeat, double bytes_traffic,
+                     double duration_s_avr) {
+  double bandwidth_gb = (bytes_traffic / duration_s_avr) * 1E-9;
+  std::cout << "bandwidth GB/s: " << bandwidth_gb << std::endl;
+}
 
 int main(void) {
-  autotune::copy.set_verbose(true);
-  auto &builder = autotune::copy.get_builder<cppjit::builder::gcc>();
-  builder.set_cpp_flags("-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
-                        "-march=native -mtune=native -fstrict-aliasing ");
-  builder.set_link_flags("-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
-  builder.set_do_cleanup(false);
 
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter<size_t> p1("KERNEL_OMP_THREADS", {2});
+  autotune::fixed_set_parameter<size_t> p1("KERNEL_OMP_THREADS", {4});
   parameters.add_parameter(p1);
-  autotune::copy.set_parameter_values(parameters);
 
-  // register parameters
-  // autotune::countable_set parameters;
-  // autotune::fixed_set_parameter<std::string> p1("ADD_ONE", {"0", "1"},
-  // false); parameters.add_parameter(p1); int a = 5;
+  {
+    autotune::copy.set_verbose(true);
+    auto &builder = autotune::copy.get_builder<cppjit::builder::gcc>();
+    builder.set_cpp_flags("-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
+                          "-march=native -mtune=native -fstrict-aliasing ");
+    builder.set_link_flags("-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
+    builder.set_do_cleanup(false);
 
-  // size_t line_search_iterations = 1;
-  // autotune::tuners::line_search tuner(autotune::add_one, parameters,
-  //                                     line_search_iterations);
-  // autotune::countable_set optimal_parameters = tuner.tune(a);
-  // autotune::add_one.set_parameter_values(optimal_parameters);
+    autotune::copy.set_parameter_values(parameters);
+  }
 
-  size_t N = 100000000;
+  {
+    autotune::scale.set_verbose(true);
+    auto &builder = autotune::scale.get_builder<cppjit::builder::gcc>();
+    builder.set_cpp_flags("-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
+                          "-march=native -mtune=native -fstrict-aliasing ");
+    builder.set_link_flags("-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
+    builder.set_do_cleanup(false);
+
+    autotune::scale.set_parameter_values(parameters);
+  }
+
+  {
+    autotune::sum.set_verbose(true);
+    auto &builder = autotune::sum.get_builder<cppjit::builder::gcc>();
+    builder.set_cpp_flags("-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
+                          "-march=native -mtune=native -fstrict-aliasing ");
+    builder.set_link_flags("-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
+    builder.set_do_cleanup(false);
+
+    autotune::sum.set_parameter_values(parameters);
+  }
+
+  {
+    autotune::triad.set_verbose(true);
+    auto &builder = autotune::triad.get_builder<cppjit::builder::gcc>();
+    builder.set_cpp_flags("-Wall -Wextra -fopenmp -std=c++17 -O3 -g "
+                          "-march=native -mtune=native -fstrict-aliasing ");
+    builder.set_link_flags("-std=c++17 -O3 -g -fopenmp -fstrict-aliasing ");
+    builder.set_do_cleanup(false);
+
+    autotune::triad.set_parameter_values(parameters);
+  }
+
+  size_t N = 1000000000 / 8;
+  std::cout << "N: " << N << " -> " << (static_cast<double>(8 * N) * 1E-9)
+            << "GB" << std::endl;
   std::vector<double> a(N, 1.0);
   std::vector<double> b(N, 2.0);
   std::vector<double> c(N, 3.0);
   double q = 5.0;
 
-  size_t repeat = 100;
+  size_t repeat = 10;
+  std::cout << "warning: not using non-temporal stores" << std::endl;
 
-  time_point start = high_resolution_clock::now();
-
-  for (size_t r = 0; r < repeat; r += 1) {
-    autotune::copy(a, b);
+  {
+    time_point start = high_resolution_clock::now();
+    for (size_t r = 0; r < repeat; r += 1) {
+      autotune::copy(a, b);
+    }
+    time_point end = high_resolution_clock::now();
+    double duration_s_avr =
+        std::chrono::duration<double>(end - start).count() / repeat;
+    double bytes_copied = 8.0 * 3.0 * N;
+    std::cout << "copy: 2 read, 1 write" << std::endl;
+    print_bandwidth(N, repeat, bytes_copied, duration_s_avr);
   }
-  time_point end = high_resolution_clock::now();
-  double duration_s = std::chrono::duration<double>(end - start).count();
-  double duration_s_avr = duration_s / repeat;
-  double bytes_copied = 8.0 * 3.0 * N;
-  double bandwidth_gb = (bytes_copied / duration_s_avr) * 1E-9;
-  std::cout << "N: " << N << std::endl;
-  std::cout << "repeat: " << repeat << std::endl;
-  std::cout << " 2 read, 1 write: (8B * 3 * N / (t / repeat)) * 1E-9 "
-               "-> achieved "
-               "bandwidth GB/s: "
-            << bandwidth_gb << std::endl;
-  std::cout << "not using non-temporal stores, with those only 1 read, 1 write"
-            << std::endl;
 
-  // bool ok = std::equal(a.begin(), a.end(), b.begin());
-  // if (!ok) {
-  //   throw;
-  // }
+  {
+    time_point start = high_resolution_clock::now();
+    for (size_t r = 0; r < repeat; r += 1) {
+      autotune::scale(a, b, q);
+    }
+    time_point end = high_resolution_clock::now();
+    double duration_s_avr =
+        std::chrono::duration<double>(end - start).count() / repeat;
+    double bytes_copied = 8.0 * 3.0 * N;
+    std::cout << "scale: 2 read, 1 write" << std::endl;
+    print_bandwidth(N, repeat, bytes_copied, duration_s_avr);
+  }
+
+  {
+    time_point start = high_resolution_clock::now();
+    for (size_t r = 0; r < repeat; r += 1) {
+      autotune::sum(a, b, c);
+    }
+    time_point end = high_resolution_clock::now();
+    double duration_s_avr =
+        std::chrono::duration<double>(end - start).count() / repeat;
+    double bytes_copied = 8.0 * 4.0 * N;
+    std::cout << "sum: 2 read, 2 write" << std::endl;
+    print_bandwidth(N, repeat, bytes_copied, duration_s_avr);
+  }
+
+  {
+    time_point start = high_resolution_clock::now();
+    for (size_t r = 0; r < repeat; r += 1) {
+      autotune::triad(a, b, c, q);
+    }
+    time_point end = high_resolution_clock::now();
+    double duration_s_avr =
+        std::chrono::duration<double>(end - start).count() / repeat;
+    double bytes_copied = 8.0 * 4.0 * N;
+    std::cout << "triad 2 read, 1 write" << std::endl;
+    print_bandwidth(N, repeat, bytes_copied, duration_s_avr);
+  }
+
   return 0;
 }

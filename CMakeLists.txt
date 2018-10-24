@@ -121,7 +121,7 @@ install(TARGETS minimal_example DESTINATION examples)
 
 add_executable(stream "examples/stream.cpp")
 target_link_libraries(stream AutoTuneTMP -fopenmp)
-target_compile_options(stream PUBLIC -fopenmp)
+target_compile_options(stream PUBLIC -fopenmp -g -O0)
 install(TARGETS stream DESTINATION examples)
 
 add_executable(jit_only_kernel "examples/jit_only_example.cpp")

@@ -6,7 +6,7 @@
 AUTOTUNE_EXPORT void copy(std::vector<double> &a, std::vector<double> &b) {
 
   omp_set_num_threads(KERNEL_OMP_THREADS);
-  std::cout << "KERNEL_OMP_THREADS: " << KERNEL_OMP_THREADS << std::endl;
+  // std::cout << "KERNEL_OMP_THREADS: " << KERNEL_OMP_THREADS << std::endl;
 
   const size_t N = a.size();
 #pragma omp parallel for
