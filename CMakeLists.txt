@@ -120,6 +120,7 @@ target_compile_options(minimal_example PUBLIC -fopenmp)
 install(TARGETS minimal_example DESTINATION examples)
 
 add_executable(stream "examples/stream.cpp")
+target_include_directories(stream PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(stream AutoTuneTMP -fopenmp)
 target_compile_options(stream PUBLIC -fopenmp -g -O0)
 install(TARGETS stream DESTINATION examples)
