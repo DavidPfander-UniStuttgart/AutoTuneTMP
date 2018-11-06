@@ -119,6 +119,11 @@ target_link_libraries(minimal_example AutoTuneTMP -fopenmp)
 target_compile_options(minimal_example PUBLIC -fopenmp)
 install(TARGETS minimal_example DESTINATION examples)
 
+add_executable(switchable_aos_soa "examples/switchable_aos_soa.cpp")
+target_link_libraries(switchable_aos_soa AutoTuneTMP -fopenmp)
+target_compile_options(switchable_aos_soa PUBLIC -fopenmp)
+install(TARGETS switchable_aos_soa DESTINATION examples)
+
 add_executable(stream "examples/stream.cpp")
 target_include_directories(stream PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(stream AutoTuneTMP -fopenmp)
