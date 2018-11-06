@@ -124,6 +124,16 @@ target_link_libraries(switchable_aos_soa AutoTuneTMP -fopenmp)
 target_compile_options(switchable_aos_soa PUBLIC -fopenmp)
 install(TARGETS switchable_aos_soa DESTINATION examples)
 
+add_executable(loop_interchange "examples/loop_interchange.cpp")
+target_link_libraries(loop_interchange AutoTuneTMP -fopenmp)
+target_compile_options(loop_interchange PUBLIC -fopenmp)
+install(TARGETS loop_interchange DESTINATION examples)
+
+add_executable(loop_interchange_tunable "examples/loop_interchange_tunable.cpp")
+target_link_libraries(loop_interchange_tunable AutoTuneTMP -fopenmp)
+target_compile_options(loop_interchange_tunable PUBLIC -fopenmp)
+install(TARGETS loop_interchange_tunable DESTINATION examples)
+
 add_executable(stream "examples/stream.cpp")
 target_include_directories(stream PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(stream AutoTuneTMP -fopenmp)
