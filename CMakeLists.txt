@@ -134,6 +134,11 @@ target_link_libraries(loop_interchange_tunable AutoTuneTMP -fopenmp)
 target_compile_options(loop_interchange_tunable PUBLIC -fopenmp)
 install(TARGETS loop_interchange_tunable DESTINATION examples)
 
+add_executable(switchable_parallelization "examples/switchable_parallelization.cpp")
+target_link_libraries(switchable_parallelization AutoTuneTMP -fopenmp)
+target_compile_options(switchable_parallelization PUBLIC -fopenmp)
+install(TARGETS switchable_parallelization DESTINATION examples)
+
 add_executable(stream "examples/stream.cpp")
 target_include_directories(stream PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(stream AutoTuneTMP -fopenmp)
