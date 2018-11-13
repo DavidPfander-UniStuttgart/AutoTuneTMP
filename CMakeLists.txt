@@ -220,6 +220,11 @@ target_link_libraries(register_blocking_example AutoTuneTMP -fopenmp)
 target_compile_options(register_blocking_example PUBLIC -fopenmp)
 install(TARGETS register_blocking_example DESTINATION examples)
 
+add_executable(loop_tiling_example "examples/loop_tiling.cpp")
+target_link_libraries(loop_tiling_example AutoTuneTMP -fopenmp)
+target_compile_options(loop_tiling_example PUBLIC -fopenmp)
+install(TARGETS loop_tiling_example DESTINATION examples)
+
 add_executable(register_blocking_minimal_example "examples/register_blocking_minimal.cpp")
 target_include_directories(register_blocking_minimal_example PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(register_blocking_minimal_example AutoTuneTMP -fopenmp)
