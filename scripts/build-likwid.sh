@@ -18,7 +18,7 @@ else
     git pull
 fi
 
-cd likwid
-make -j${PARALLEL_BUILD}
-# make install
-cd ..
+# cd likwid
+# make -j${PARALLEL_BUILD}
+# # make install
+# cd ..

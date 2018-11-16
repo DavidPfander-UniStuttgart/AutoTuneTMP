@@ -29,9 +29,9 @@ int main(void) {
   // std::cout << std::endl;
   // std::cout << "ffs(" << r << "): " << opttmp::bits::ffs_0(r) << std::endl;
 
-  // opttmp::numa_topology_t numa_topology;
+  opttmp::numa_topology_t numa_topology;
 
-  // numa_topology.print();
+  numa_topology.print();
 
   // auto cpu_set = numa_topology.get_cpuset_compact(2);
 
@@ -63,6 +63,11 @@ int main(void) {
     // std::cout << "meta.x: " << meta.x << std::endl;
     std::cout << "hello from my_function: " << a << std::endl << std::flush;
     // std::this_thread::sleep_for(2s);
+    double input_val = static_cast<double>(a);
+    for (size_t i = 0; i < 1000000000; i += 1) {
+      input_val = sqrt(input_val);
+    }
+    std::cout << "input_val: " << input_val << std::endl;
   };
 
   std::function<void(int)> my_function_without_meta = [](int a) {
@@ -74,17 +79,19 @@ int main(void) {
   // autotune::detail::delayed_executor exe(my_function_without_meta, 3);
   // exe();
 
-  autotune::queue_thread_pool<2> pool(true);
-  // pool.set_affinity(autotune::affinity_type_t::sparse);
-  pool.set_custom_affinity({2, 3});
+  autotune::queue_thread_pool<16> pool(true);
+  pool.set_affinity(autotune::affinity_type_t::sparse);
+  // pool.set_custom_affinity({2, 3});
   pool.start();
 
-  pool.enqueue_work(my_function, 1);
-  pool.enqueue_work(my_function, 2);
-  pool.enqueue_work(my_function, 3);
-  pool.enqueue_work(my_function_without_meta, 666);
-  pool.enqueue_work(my_function, 4);
-  pool.enqueue_work(my_function, 5);
+  for (size_t i = 0; i < 256; i += 1) {
+    pool.enqueue_work(my_function, static_cast<int>(i));
+  }
+  // pool.enqueue_work(my_function, 2);
+  // pool.enqueue_work(my_function, 3);
+  // pool.enqueue_work(my_function_without_meta, 666);
+  // pool.enqueue_work(my_function, 4);
+  // pool.enqueue_work(my_function, 5);
 
   pool.finish();
 }

@@ -159,8 +159,8 @@ public:
     numa_topology_t &numa_topology = *this;
     std::vector<bool> cpu_set(threads_total, false);
     size_t cpus_assigned = 0;
-    for (size_t i = 0; i < sockets; i += 1) {
-      for (size_t j = 0; j < threads_socket; j += 1) {
+    for (size_t j = 0; j < threads_socket; j += 1) {    
+      for (size_t i = 0; i < sockets; i += 1) {
         cpu_set[numa_topology(i, j)] = true;
         cpus_assigned += 1;
         if (cpus_assigned >= num_threads) {
