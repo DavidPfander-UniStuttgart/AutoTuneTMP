@@ -1,4 +1,7 @@
+#pragma once
+
 #include <likwid.h>
+#include <memory>
 #include <sched.h>
 
 namespace opttmp {
@@ -118,6 +121,79 @@ public:
     }
 
     return cpu_set;
+  }
+  std::shared_ptr<cpu_set_t> get_cpuset_full() {
+    numa_topology_t &numa_topology = *this;
+    std::shared_ptr<cpu_set_t> cpu_set(CPU_ALLOC(threads_total),
+                                       delete_cpu_set);
+    size_t size_bytes = CPU_ALLOC_SIZE(threads_total);
+    CPU_ZERO_S(size_bytes, cpu_set.get());
+    for (size_t j = 0; j < threads_total; j += 1) {
+      for (size_t i = 0; i < sockets; i += 1) {
+        CPU_SET(numa_topology(i, j), cpu_set);
+      }
+    }
+    return cpu_set;
+  }
+
+  std::vector<bool> get_compact(uint32_t num_threads) {
+    numa_topology_t &numa_topology = *this;
+    std::vector<bool> cpu_set(threads_total, false);
+    size_t cpus_assigned = 0;
+    for (size_t i = 0; i < sockets; i += 1) {
+      for (size_t j = 0; j < threads_socket; j += 1) {
+        cpu_set[numa_topology(i, j)] = true;
+        cpus_assigned += 1;
+        if (cpus_assigned >= num_threads) {
+          break;
+        }
+      }
+      if (cpus_assigned >= num_threads) {
+        break;
+      }
+    }
+    return cpu_set;
+  }
+
+  std::vector<bool> get_sparse(uint32_t num_threads) {
+    numa_topology_t &numa_topology = *this;
+    std::vector<bool> cpu_set(threads_total, false);
+    size_t cpus_assigned = 0;
+    for (size_t i = 0; i < sockets; i += 1) {
+      for (size_t j = 0; j < threads_socket; j += 1) {
+        cpu_set[numa_topology(i, j)] = true;
+        cpus_assigned += 1;
+        if (cpus_assigned >= num_threads) {
+          break;
+        }
+      }
+      if (cpus_assigned >= num_threads) {
+        break;
+      }
+    }
+    return cpu_set;
+  }
+
+  std::vector<bool> get_full() {
+    // numa_topology_t &numa_topology = *this;
+    std::vector<bool> cpu_set(threads_total, true);
+    return cpu_set;
+  }
+  std::vector<bool> get_empty() {
+    // numa_topology_t &numa_topology = *this;
+    std::vector<bool> cpu_set(threads_total, false);
+    return cpu_set;
+  }
+
+  void print_cpu_set(std::shared_ptr<cpu_set_t> cpu_set) {
+    for (size_t i = 0; i < threads_total; i += 1) {
+      if (CPU_ISSET(i, cpu_set.get())) {
+        std::cout << "1";
+      } else {
+        std::cout << "0";
+      }
+    }
+    std::cout << std::endl;
   }
 };
 } // namespace opttmp

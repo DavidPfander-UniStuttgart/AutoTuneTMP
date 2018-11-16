@@ -1,13 +1,14 @@
 #pragma once
 
 #include "execution_wrapper.hpp"
+#include "opttmp/bits.hpp"
+#include "opttmp/numa_topology.hpp"
 #include "thread_safe_queue.hpp"
 #include <boost/thread.hpp>
-#include <errno.h>
-#include <pthread.h>
-
 #include <condition_variable>
+#include <errno.h>
 #include <iostream>
+#include <pthread.h>
 #include <thread>
 
 // extern std::mutex print_mutex;
@@ -17,6 +18,8 @@
 // size_t get_thread_id() { return thread_id; }
 
 namespace autotune {
+
+enum class affinity_type_t { full, compact, sparse };
 
 template <size_t num_threads> class queue_thread_pool {
 private:
@@ -32,20 +35,43 @@ private:
 
   bool verbose;
 
+  opttmp::numa_topology_t numa_topology;
+  // cpu_set_t affinity_set;
+  std::vector<bool> affinity_set;
+
+  static void delete_cpu_set(cpu_set_t *cpu_set) { CPU_FREE(cpu_set); }
+
   void worker_main(size_t i) {
 
     // set thread affinity to the core of your number
     pthread_t thread = pthread_self();
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(static_cast<int>(i % physical_concurrency), &cpuset);
+    // cpu_set_t cpuset;
+    // CPU_ZERO(&cpuset);
+    // CPU_SET(static_cast<int>(i % physical_concurrency), &cpuset);
+    std::shared_ptr<cpu_set_t> cpu_set(
+        CPU_ALLOC(numa_topology.get_threads_total()), delete_cpu_set);
+    size_t cpu_set_size_bytes =
+        CPU_ALLOC_SIZE(numa_topology.get_threads_total());
+    CPU_ZERO_S(cpu_set_size_bytes, cpu_set.get());
+    int64_t thread_cpu = 0;
+    uint64_t counter = 0;
+    for (size_t j = 0; j < numa_topology.get_threads_total(); j += 1) {
+      if (affinity_set[j]) {
+        if (counter == i) {
+          thread_cpu = j;
+          break;
+        }
+        counter += 1;
+      }
+    }
+    CPU_SET(thread_cpu, cpu_set);
+    // numa_topology.print_cpu_set(cpu_set);
     if (verbose) {
       std::cout << "queue_thread_pool: thread i: " << i
-                << " bound to core: " << (i % physical_concurrency)
-                << std::endl;
+                << " bound to core: " << thread_cpu << std::endl;
     }
 
-    int s = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+    int s = pthread_setaffinity_np(thread, cpu_set_size_bytes, cpu_set.get());
     if (s != 0) {
       errno = s;
       perror("pthread_setaffinity_np");
@@ -107,6 +133,7 @@ public:
                    "available cores"
                 << std::endl;
     }
+    affinity_set = numa_topology.get_full();
   } // next_work(0), last_work(0)
 
   // creates and starts threads of thread pool (non-blocking)
@@ -149,6 +176,24 @@ public:
         new detail::delayed_executor_id<Args...>(f, std::move(args)...));
     safe_q.push_back(std::move(work_temp));
     threads_wait_cv.notify_one();
+  }
+
+  // has to be called before start
+  void set_affinity(affinity_type_t affinity_type) {
+    if (affinity_type == affinity_type_t::full) {
+      affinity_set = numa_topology.get_full();
+    } else if (affinity_type == affinity_type_t::compact) {
+      affinity_set = numa_topology.get_compact(num_threads);
+    } else { // (affinity_set == affinity_type_t::sparse)
+      affinity_set = numa_topology.get_sparse(num_threads);
+    }
+  }
+
+  void set_custom_affinity(std::array<uint32_t, num_threads> cpu_indices) {
+    affinity_set = numa_topology.get_empty();
+    for (uint32_t v : cpu_indices) {
+      affinity_set[v] = true;
+    }
   }
 
   // // // enqueue function with void return that accepts thread metadata as its

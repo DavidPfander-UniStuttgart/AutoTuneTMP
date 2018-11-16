@@ -1,3 +1,5 @@
+#pragma once
+
 #include <x86intrin.h>
 
 namespace opttmp {
