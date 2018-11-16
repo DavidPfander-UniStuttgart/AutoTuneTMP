@@ -11,6 +11,8 @@ find_package(Vc ${Vc_FIND_VERSION} QUIET NO_MODULE PATHS ${Vc_ROOT})
 
 find_package(Boost REQUIRED COMPONENTS unit_test_framework thread system)
 
+option(WITH_LIKWID "Use liblikwid to query hardware information" ON)
+
 message("Vc_INCLUDE_DIR: " ${Vc_INCLUDE_DIR})
 # message("BOOST_ROOT: " ${BOOST_ROOT})
 # message("Boost_FOUND: " ${Boost_FOUND})
@@ -224,6 +226,14 @@ add_executable(loop_tiling_example "examples/loop_tiling.cpp")
 target_link_libraries(loop_tiling_example AutoTuneTMP -fopenmp)
 target_compile_options(loop_tiling_example PUBLIC -fopenmp)
 install(TARGETS loop_tiling_example DESTINATION examples)
+
+if(WITH_LIKWID)
+  add_executable(switchable_affinity_policy_example "examples/switchable_affinity_policy.cpp")
+  target_include_directories(switchable_affinity_policy_example PUBLIC ${Boost_INCLUDE_DIRS})
+  target_link_libraries(switchable_affinity_policy_example AutoTuneTMP -pthread Boost::boost Boost::thread Boost::system -fopenmp likwid)
+  target_compile_options(switchable_affinity_policy_example PUBLIC -fopenmp)
+  install(TARGETS switchable_affinity_policy_example DESTINATION examples)
+endif(WITH_LIKWID)
 
 add_executable(register_blocking_minimal_example "examples/register_blocking_minimal.cpp")
 target_include_directories(register_blocking_minimal_example PUBLIC ${Boost_INCLUDE_DIRS})

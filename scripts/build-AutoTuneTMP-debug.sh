@@ -9,13 +9,13 @@ fi
 git pull
 
 
-mkdir -p build
-cd build
+mkdir -p build_debug
+cd build_debug
 
 echo "compiling AutoTuneTMP"
 # detection of Vc doesn't work with a relative path
 # > cmake_AutoTuneTMP.log 2>&1
-cmake -DBOOST_ROOT=$BOOST_ROOT -DCMAKE_INSTALL_PREFIX="$AUTOTUNETMP_ROOT" -DCPPJIT_ROOT="$CPPJIT_ROOT" -DVc_ROOT="$Vc_ROOT" -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_CXX_FLAGS=$CXX_FLAGS -DCMAKE_BUILD_TYPE=release -DWITH_LIKWID=ON ../
+cmake -DBOOST_ROOT=$BOOST_ROOT -DCMAKE_INSTALL_PREFIX="$AUTOTUNETMP_ROOT" -DCPPJIT_ROOT="$CPPJIT_ROOT" -DVc_ROOT="$Vc_ROOT" -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_CXX_FLAGS=$CXX_FLAGS -DCMAKE_BUILD_TYPE=debug -DWITH_LIKWID=ON ../
 
 # uses more than 4G with 4 threads (4G limit on Circle CI)
 #   > make_AutoTuneTMP.log 2>&1
