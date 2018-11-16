@@ -114,12 +114,12 @@ template <typename... Ts> class loop_index {
     } else {
       f(indices);
     }
-  };
+  }
 
 public:
   loop_index(Ts &... tiled_iterator) : iterators(tiled_iterator...) {}
 
-  template <class F> void iterate(F f) { iterate_rec<0>(f); };
+  template <class F> void iterate(F f) { iterate_rec<0>(f); }
 };
 } // namespace loop
 } // namespace opttmp
