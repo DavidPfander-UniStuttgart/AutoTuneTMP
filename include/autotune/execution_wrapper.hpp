@@ -68,19 +68,17 @@ private:
   std::function<void(Args...)> f;
   std::tuple<Args...> copied_arguments;
 
-  size_t THREAD_ID_PLACEHOLDER = 0;
+  static constexpr size_t THREAD_ID_PLACEHOLDER = 0;
 
   template <size_t... indices>
-  void tuple_unwrapped(autotune::detail::gen_non_zero_seq<
-                       indices...>) { // std::index_sequence<indices...>
+  void tuple_unwrapped(autotune::index_pack<
+                       indices...>) {
     f(this->thread_id, std::get<indices>(std::move(this->copied_arguments))...);
   }
 
 public:
   delayed_executor_id(std::function<void(Args...)> f, Args... args)
-      : // reduced_parameter_holder<typename remove_first<Args...>::remainder>(
-        //       args...),
-        f(f),
+    : f(f),
         copied_arguments(std::move(args)...) {
     // this->copied_arguments =
     //     std::tuple<Args_reduced...>(std::move<Args_reduced>(args), ...);
