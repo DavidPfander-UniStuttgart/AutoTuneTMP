@@ -18,7 +18,11 @@ else
     git pull
 fi
 
-# cd likwid
-# make -j${PARALLEL_BUILD}
-# # make install
-# cd ..
+cd likwid
+make -j${PARALLEL_BUILD}
+# make install
+cd ..
+
+# ensure necessary symlinks exist
+ln -sf likwid/ext/hwloc/liblikwid-hwloc.so liblikwid-hwloc.so.4.3
+ln -sf likwid/ext/lua/liblikwid-lua.so liblikwid-lua.so.4.3
