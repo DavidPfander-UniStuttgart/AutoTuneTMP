@@ -20,7 +20,7 @@ void print_bandwidth(double bytes_traffic, double duration_s_avr) {
   std::cout << "bandwidth GB/s: " << bandwidth_gb << std::endl;
 }
 
-AUTOTUNE_EXPORT void copy(const size_t N_per_task, const size_t repeat) {
+AUTOTUNE_EXPORT void copy(const size_t N_per_task, const size_t repeat, double &duration_kernel) {
 
   std::cout << "bytes overall: " << (N_per_task * 8 * 2 * KERNEL_THREADS * 1E-9) << "GB" << std::endl;
   
@@ -70,5 +70,6 @@ AUTOTUNE_EXPORT void copy(const size_t N_per_task, const size_t repeat) {
     double bytes_copied = 8.0 * 3.0 * N_per_task * KERNEL_THREADS;
     std::cout << "copy: 2 read, 1 write" << std::endl;
     print_bandwidth(bytes_copied, duration_s_avr);
+    duration_kernel = duration_s_avr / (bytes_copied * 1E-9); // s per GB
   }
 }

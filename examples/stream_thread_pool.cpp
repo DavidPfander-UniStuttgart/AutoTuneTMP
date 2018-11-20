@@ -5,8 +5,11 @@
 
 #include "autotune/autotune.hpp"
 #include "autotune/fixed_set_parameter.hpp"
+#include "autotune/log_parameter.hpp"
 #include "autotune/tuners/line_search.hpp"
+#include "autotune/tuners/neighborhood_search.hpp"
 #include "autotune/queue_thread_pool.hpp"
+#include "opttmp/numa_topology.hpp"
 
 #include <boost/align/aligned_allocator.hpp>
 
@@ -16,23 +19,27 @@ using high_resolution_clock = std::chrono::high_resolution_clock;
 using time_point = std::chrono::high_resolution_clock::time_point;
 
 // defines kernel, put in single compilation unit
-AUTOTUNE_KERNEL(void(size_t, size_t),
+AUTOTUNE_KERNEL(void(size_t, size_t, double &),
                 copy, "examples/stream_kernel_thread_pool")
-AUTOTUNE_KERNEL(void(size_t, size_t),
+AUTOTUNE_KERNEL(void(size_t, size_t, double &),
                 scale, "examples/stream_kernel_thread_pool")
-AUTOTUNE_KERNEL(void(size_t, size_t),
+AUTOTUNE_KERNEL(void(size_t, size_t, double &),
                 sum, "examples/stream_kernel_thread_pool")
-AUTOTUNE_KERNEL(void(size_t, size_t),
+AUTOTUNE_KERNEL(void(size_t, size_t, double &),
                 triad, "examples/stream_kernel_thread_pool")
 
 int main(void) {
 
+  opttmp::numa_topology_t numa_topology;
+  uint32_t threads_total = numa_topology.get_threads_total();
+  
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter<size_t> p1("KERNEL_THREADS", {16});
+  // 2^0=1 ... 2^6=64 cores
+  autotune::log_parameter p1("KERNEL_THREADS", 0, 2, 0, std::log2(static_cast<double>(threads_total)), 1); // {1, 2, 4, 8, 16}
   parameters.add_parameter(p1);
-  autotune::fixed_set_parameter<size_t> p2("REG_BLOCKING", {1});
+  autotune::fixed_set_parameter<size_t> p2("REG_BLOCKING", {1 , 2 , 4});
   parameters.add_parameter(p2);
-  autotune::fixed_set_parameter<uint64_t> p3("AFFINITY_POLICY", {static_cast<uint64_t>(autotune::affinity_type_t::sparse)});
+  autotune::fixed_set_parameter<uint64_t> p3("AFFINITY_POLICY", {static_cast<uint64_t>(autotune::affinity_type_t::sparse), static_cast<uint64_t>(autotune::affinity_type_t::compact)});
   parameters.add_parameter(p3);  
 
   {
@@ -103,10 +110,61 @@ int main(void) {
   }
   size_t repeat = 200;
   std::cout << "warning: not using non-temporal stores" << std::endl;
-  autotune::copy(N_per_task, repeat);
-  autotune::scale(N_per_task, repeat);
-  autotune::sum(N_per_task, repeat);
-  autotune::triad(N_per_task, repeat);
+  // autotune::copy(N_per_task, repeat);
+  // autotune::scale(N_per_task, repeat);
+  // autotune::sum(N_per_task, repeat);
+  // autotune::triad(N_per_task, repeat);
+
+  double duration_kernel;
+  
+  autotune::copy.set_kernel_duration_functor([&duration_kernel]() { return duration_kernel; });
+  autotune::scale.set_kernel_duration_functor([&duration_kernel]() { return duration_kernel; });
+  autotune::sum.set_kernel_duration_functor([&duration_kernel]() { return duration_kernel; });
+  autotune::triad.set_kernel_duration_functor([&duration_kernel]() { return duration_kernel; });
+
+  {
+    // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
+    // tuner.tune(N_per_task, repeat);
+    autotune::tuners::line_search tuner_line(autotune::copy, parameters, 20);
+    tuner_line.set_write_measurement("stream_thread_pool_copy_line");
+    autotune::countable_set optimal_parameters_line = tuner_line.tune(N_per_task, repeat, duration_kernel);
+    autotune::tuners::neighborhood_search tuner_neighbor(autotune::copy, parameters, 10);
+    tuner_neighbor.set_write_measurement("stream_thread_pool_copy_neighbor");
+    autotune::countable_set optimal_parameters_neighbor = tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
+  }
+
+  {
+    // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
+    // tuner.tune(N_per_task, repeat);
+    autotune::tuners::line_search tuner_line(autotune::scale, parameters, 20);
+    tuner_line.set_write_measurement("stream_thread_pool_scale_line");
+    autotune::countable_set optimal_parameters_line = tuner_line.tune(N_per_task, repeat, duration_kernel);
+    autotune::tuners::neighborhood_search tuner_neighbor(autotune::scale, parameters, 10);
+    tuner_neighbor.set_write_measurement("stream_thread_pool_scale_neighbor");
+    autotune::countable_set optimal_parameters_neighbor = tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
+  }
+
+  {
+    // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
+    // tuner.tune(N_per_task, repeat);
+    autotune::tuners::line_search tuner_line(autotune::sum, parameters, 20);
+    tuner_line.set_write_measurement("stream_thread_pool_sum_line");
+    autotune::countable_set optimal_parameters_line = tuner_line.tune(N_per_task, repeat, duration_kernel);
+    autotune::tuners::neighborhood_search tuner_neighbor(autotune::sum, parameters, 10);
+    tuner_neighbor.set_write_measurement("stream_thread_pool_sum_neighbor");
+    autotune::countable_set optimal_parameters_neighbor = tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
+  }
+
+  {
+    // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
+    // tuner.tune(N_per_task, repeat);
+    autotune::tuners::line_search tuner_line(autotune::triad, parameters, 20);
+    tuner_line.set_write_measurement("stream_thread_pool_triad_line");
+    autotune::countable_set optimal_parameters_line = tuner_line.tune(N_per_task, repeat, duration_kernel);
+    autotune::tuners::neighborhood_search tuner_neighbor(autotune::triad, parameters, 10);
+    tuner_neighbor.set_write_measurement("stream_thread_pool_triad_neighbor");
+    autotune::countable_set optimal_parameters_neighbor = tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
+  }    
 
   return 0;
 }

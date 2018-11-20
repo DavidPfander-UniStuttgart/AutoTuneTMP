@@ -1,4 +1,4 @@
-#include "tga.h"
+// #include "tga.h"
 #include <chrono>
 #include <cmath>
 #include <iostream>
