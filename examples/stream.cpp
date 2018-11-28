@@ -37,7 +37,7 @@ void print_bandwidth(size_t N, size_t repeat, double bytes_traffic,
 int main(void) {
 
   autotune::countable_set parameters;
-  autotune::fixed_set_parameter<size_t> p1("KERNEL_OMP_THREADS", {1});
+  autotune::fixed_set_parameter<size_t> p1("KERNEL_OMP_THREADS", {2});
   parameters.add_parameter(p1);
   autotune::fixed_set_parameter<size_t> p2("REG_BLOCKING", {1});
   parameters.add_parameter(p2);

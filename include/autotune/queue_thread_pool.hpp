@@ -19,7 +19,7 @@
 
 namespace autotune {
 
-enum class affinity_type_t { full, compact, sparse };
+enum class affinity_type_t : uint64_t { full = 0, compact = 1, sparse = 2 };
 
 template <size_t num_threads> class queue_thread_pool {
 private:

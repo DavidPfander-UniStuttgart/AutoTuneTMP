@@ -20,13 +20,15 @@ void print_bandwidth(double bytes_traffic, double duration_s_avr) {
   std::cout << "bandwidth GB/s: " << bandwidth_gb << std::endl;
 }
 
-AUTOTUNE_EXPORT void copy(const size_t N_per_task, const size_t repeat, double &duration_kernel) {
+AUTOTUNE_EXPORT void scale(const size_t N_per_task, const size_t repeat, double &duration_kernel) {
 
   std::cout << "bytes overall: " << (N_per_task * 8 * 2 * KERNEL_THREADS * 1E-9) << "GB" << std::endl;
   
   // const size_t N = N_per_task * KERNEL_THREADS;
   std::array<std::vector<double, align>, KERNEL_THREADS> a;
   std::array<std::vector<double, align>, KERNEL_THREADS> b;
+  const double q = 135.0;
+  const Vc::double_v q_vec = q;
 
   autotune::queue_thread_pool<KERNEL_THREADS> pool;
   pool.set_affinity(static_cast<autotune::affinity_type_t>(AFFINITY_POLICY));
@@ -55,6 +57,7 @@ AUTOTUNE_EXPORT void copy(const size_t N_per_task, const size_t repeat, double &
         std::vector<double, align> &b_thread = b[thread_id];
         for (size_t i = 0; i < N_per_task; i += REG_BLOCKING * Vc::double_v::size()) {
           reg_arr temp(&b_thread[i], Vc::flags::vector_aligned);
+	  temp = q_vec * temp;	  
           temp.memstore(&a_thread[i], Vc::flags::vector_aligned);
         }
       };
@@ -68,8 +71,8 @@ AUTOTUNE_EXPORT void copy(const size_t N_per_task, const size_t repeat, double &
     double duration_s_avr =
         std::chrono::duration<double>(end - start).count() / repeat;
     double bytes_copied = 8.0 * 3.0 * N_per_task * KERNEL_THREADS;
-    std::cout << "copy: 2 read, 1 write" << std::endl;
+    std::cout << "scale: 2 read, 1 write" << std::endl;
     print_bandwidth(bytes_copied, duration_s_avr);
-    duration_kernel = duration_s_avr / (bytes_copied * 1E-9); // s per GB
+    duration_kernel = duration_s_avr / (bytes_copied * 1E-9); // s per GB    
   }
 }

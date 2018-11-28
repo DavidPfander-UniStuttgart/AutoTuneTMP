@@ -39,5 +39,5 @@ export BOOST_ROOT=$BASE_PATH/boost_install
 export VC_ROOT=$BASE_PATH/Vc_install
 # export CPPJIT_ROOT=$BASE_PATH/cppjit_install
 export AUTOTUNETMP_ROOT=$BASE_PATH/AutoTuneTMP_install
-export LD_LIBRARY_PATH=$BASE_PATH/boost_install/lib:$BASE_PATH/Vc_install/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$BASE_PATH/boost_install/lib:$BASE_PATH/Vc_install/lib:$BASE_PATH/libkwid:$BASE_PATH:$BASE_PATH/likwid/ext/hwloc:$BASE_PATH/likwid/ext/lua:$LD_LIBRARY_PATH
 export AutoTuneTMP_source_me_sourced=1
