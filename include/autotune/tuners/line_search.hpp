@@ -1,8 +1,8 @@
 #pragma once
 
 #include "abstract_tuner.hpp"
+#include "autotune/tuners/evaluate.hpp"
 #include "countable_set.hpp"
-#include "parameter_result_cache.hpp"
 
 #include <random>
 
@@ -35,14 +35,14 @@ private:
       std::string old_value = p->get_value();
       p->set_initial();
 
-      bool is_better = this->evaluate(args...);
-      if (is_better) {
+      autotune::evaluate_t is_better = this->evaluate(args...);
+      if (is_better == autotune::evaluate_t::better) {
         last_updated = counter;
       }
 
       while (p->next()) {
-        bool is_better = this->evaluate(args...);
-        if (is_better) {
+        autotune::evaluate_t is_better = this->evaluate(args...);
+        if (is_better == autotune::evaluate_t::better) {
           last_updated = counter;
         }
       }
@@ -50,8 +50,8 @@ private:
       p->set_initial();
       // do not evaluate resetted value
       while (p->prev()) {
-        bool is_better = this->evaluate(args...);
-        if (is_better) {
+        autotune::evaluate_t is_better = this->evaluate(args...);
+        if (is_better == autotune::evaluate_t::better) {
           last_updated = counter;
         }
       }

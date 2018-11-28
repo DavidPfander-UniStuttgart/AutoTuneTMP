@@ -198,10 +198,20 @@ target_link_libraries(bruteforce_search_example AutoTuneTMP -fopenmp)
 target_compile_options(bruteforce_search_example PUBLIC -fopenmp)
 install(TARGETS bruteforce_search_example DESTINATION examples)
 
+add_executable(line_search_example "examples/line_search_example.cpp")
+target_link_libraries(line_search_example AutoTuneTMP -fopenmp)
+target_compile_options(line_search_example PUBLIC -fopenmp)
+install(TARGETS line_search_example DESTINATION examples)
+
 add_executable(parallel_line_search_example "examples/parallel_line_search_example.cpp")
 target_link_libraries(parallel_line_search_example AutoTuneTMP -fopenmp)
 target_compile_options(parallel_line_search_example PUBLIC -fopenmp)
 install(TARGETS parallel_line_search_example DESTINATION examples)
+
+add_executable(reentrant_line_search_example "examples/reentrant_line_search_example.cpp")
+target_link_libraries(reentrant_line_search_example AutoTuneTMP -fopenmp)
+target_compile_options(reentrant_line_search_example PUBLIC -fopenmp)
+install(TARGETS reentrant_line_search_example DESTINATION examples)
 
 add_executable(countable_set_example "examples/countable_set_example.cpp")
 target_link_libraries(countable_set_example AutoTuneTMP -fopenmp)

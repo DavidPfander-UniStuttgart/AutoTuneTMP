@@ -1,4 +1,3 @@
-#include "tga.h"
 #include <chrono>
 #include <cmath>
 #include <iostream>
@@ -148,23 +147,6 @@ int main(void) {
   SORSolve(grid, rhs, eps);
 
   std::cout << "Done" << std::endl;
-
-  /*RGB_t *img = new RGB_t[dimX*dimY];
-  double gmin, gmax;
-  gmin = gmax = grid[0];
-  for (int i = 0; i < dimX*dimY; ++i) {
-    if (gmin > grid[i]) gmin = grid[i];
-    if (gmax < grid[i]) gmax = grid[i];
-  }
-   for (int y = 0; y < dimY; ++y ) {
-    for (int x = 0; x < dimX; ++x) {
-      int i = x + (y+1)*(dimX + 2) + 1;
-      int val = (int)(255 * (grid[i] - gmin)/(gmax-gmin));
-      img[x + y*dimX] = ColorRGB(val, val, val);
-    }
-  }
-  write_tga("SOR_Diffusion.tga", img, dimX, dimY);
-  delete[] img;*/
 
   return 0;
 }
