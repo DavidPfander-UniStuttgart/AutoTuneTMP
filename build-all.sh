@@ -8,6 +8,7 @@ set -e
 # need this, otherwise have to push arguments to called scripts
 source source-me.sh
 
+./scripts/build-likwid.sh
 ./scripts/build-boost.sh
 ./scripts/build-Vc.sh
 ./scripts/build-AutoTuneTMP.sh
