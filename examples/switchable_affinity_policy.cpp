@@ -9,6 +9,7 @@
 #include <list>
 #include <sched.h>
 #include <thread>
+#include <cmath>
 
 // #include "opttmp/bits.hpp"
 // #include "opttmp/numa_topology.hpp"
@@ -65,7 +66,7 @@ int main(void) {
     // std::this_thread::sleep_for(2s);
     double input_val = static_cast<double>(a);
     for (size_t i = 0; i < 1000000000; i += 1) {
-      input_val = sqrt(input_val);
+      input_val = std::sqrt(input_val);
     }
     std::cout << "input_val: " << input_val << std::endl;
   };

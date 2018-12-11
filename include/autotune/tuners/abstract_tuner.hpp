@@ -200,7 +200,7 @@ public:
       optimal_parameters = adjusted_candidate;
       std::cout << "new best kernel; duration: " << candidate_duration
                 << std::endl;
-      parameters.print_values();
+      adjusted_candidate.print_values();
       is_better = evaluate_t::better;
     }
     return is_better;

@@ -8,6 +8,7 @@ namespace opttmp {
 class numa_topology_t {
 private:
   uint32_t threads_total;
+  uint32_t cores_total;
   uint32_t threads_socket;
   uint32_t sockets;
   std::vector<std::vector<uint32_t>> socket_threads_map;
@@ -27,6 +28,7 @@ public:
     // CpuTopology_t contains information about the topology of the CPUs.
     CpuTopology_t topo = get_cpuTopology();
     threads_total = topo->numHWThreads;
+    cores_total = topo->numCoresPerSocket * topo->numSockets;
 
     err = numa_init();
     if (err < 0) {
@@ -56,6 +58,7 @@ public:
     topology_finalize();
   }
   uint32_t get_threads_total() { return threads_total; }
+  uint32_t get_cores_total() { return cores_total; }
   uint32_t get_threads_socket() { return threads_socket; }
   uint32_t get_sockets() { return sockets; }
   uint32_t operator()(uint32_t socket, uint32_t cpu_num) {
@@ -159,7 +162,7 @@ public:
     numa_topology_t &numa_topology = *this;
     std::vector<bool> cpu_set(threads_total, false);
     size_t cpus_assigned = 0;
-    for (size_t j = 0; j < threads_socket; j += 1) {    
+    for (size_t j = 0; j < threads_socket; j += 1) {
       for (size_t i = 0; i < sockets; i += 1) {
         cpu_set[numa_topology(i, j)] = true;
         cpus_assigned += 1;

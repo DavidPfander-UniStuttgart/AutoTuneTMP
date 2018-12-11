@@ -4,7 +4,7 @@
 #include "opttmp/bits.hpp"
 #include "opttmp/numa_topology.hpp"
 #include "thread_safe_queue.hpp"
-#include <boost/thread.hpp>
+// #include <boost/thread.hpp>
 #include <condition_variable>
 #include <errno.h>
 #include <iostream>
@@ -31,7 +31,7 @@ private:
 
   detail::thread_safe_queue<std::unique_ptr<detail::abstract_executor>> safe_q;
 
-  uint32_t physical_concurrency;
+  // uint32_t physical_concurrency;
 
   bool verbose;
 
@@ -117,21 +117,22 @@ public:
 
   queue_thread_pool(bool verbose = false)
       : threads_finish(false),
-        physical_concurrency(boost::thread::physical_concurrency()),
+        // physical_concurrency(boost::thread::physical_concurrency()),
         verbose(verbose) {
     // std::cout << "using no. of cpu cores: " << cpu_cores << std::endl;
     // std::cout << "boost physical concurrency: "
     //           << boost::thread::physical_concurrency() << std::endl;
     // std::cout << "boost hardware concurrency: "
     //           << boost::thread::hardware_concurrency() << std::endl;
-    if (verbose) {
-      std::cout << "queue_thread_pool: physical_concurrency: "
-                << physical_concurrency << std::endl;
-    }
-    if (num_threads > physical_concurrency) {
+    // if (verbose) {
+    //   std::cout << "queue_thread_pool: physical_concurrency: "
+    //             << physical_concurrency << std::endl;
+    // }
+    if (num_threads > numa_topology.get_cores_total()) {
       std::cout << "queue_thread_pool: warning: using more threads than "
-                   "available cores"
-                << std::endl;
+                   "available cores: "
+                << num_threads << " threads > "
+                << numa_topology.get_cores_total() << " cores" << std::endl;
     }
     affinity_set = numa_topology.get_full();
   } // next_work(0), last_work(0)
