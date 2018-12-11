@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 
@@ -29,6 +30,8 @@ AUTOTUNE_KERNEL(void(size_t, size_t, double &), triad,
                 "examples/stream_kernel_thread_pool")
 
 int main(void) {
+
+  std::string hostname(getenv("HOSTNAME"));
 
   opttmp::numa_topology_t numa_topology;
   uint32_t threads_total = numa_topology.get_threads_total();
@@ -143,60 +146,83 @@ int main(void) {
   autotune::triad.set_kernel_duration_functor(
       [&duration_kernel]() { return duration_kernel; });
 
-  {
-    // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
-    // tuner.tune(N_per_task, repeat);
-    autotune::tuners::line_search tuner_line(autotune::copy, parameters, 20);
-    tuner_line.set_write_measurement("stream_thread_pool_copy_line");
-    autotune::countable_set optimal_parameters_line =
-        tuner_line.tune(N_per_task, repeat, duration_kernel);
-    autotune::tuners::neighborhood_search tuner_neighbor(autotune::copy,
-                                                         parameters, 10);
-    tuner_neighbor.set_write_measurement("stream_thread_pool_copy_neighbor");
-    autotune::countable_set optimal_parameters_neighbor =
-        tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
-  }
+  size_t restarts = 3;
+  // {
+  //   // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
+  //   // tuner.tune(N_per_task, repeat);
+  //   autotune::tuners::line_search tuner_line(autotune::copy, parameters, 20);
+  //   tuner_line.set_write_measurement("stream_thread_pool_copy_line");
+  //   for (size_t restart = 0; restart < restarts; restart += 1) {
+  //     // autotune::countable_set optimal_parameters_line =
+  //     tuner_line.tune(N_per_task, repeat, duration_kernel);
+  //   }
+  //   autotune::tuners::neighborhood_search tuner_neighbor(autotune::copy,
+  //                                                        parameters, 10);
+  //   tuner_neighbor.set_write_measurement("stream_thread_pool_copy_neighbor");
+  //   for (size_t restart = 0; restart < restarts; restart += 1) {
+  //     // autotune::countable_set optimal_parameters_neighbor =
+  //     tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
+  //   }
+  // }
 
-  {
-    // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
-    // tuner.tune(N_per_task, repeat);
-    autotune::tuners::line_search tuner_line(autotune::scale, parameters, 20);
-    tuner_line.set_write_measurement("stream_thread_pool_scale_line");
-    autotune::countable_set optimal_parameters_line =
-        tuner_line.tune(N_per_task, repeat, duration_kernel);
-    autotune::tuners::neighborhood_search tuner_neighbor(autotune::scale,
-                                                         parameters, 10);
-    tuner_neighbor.set_write_measurement("stream_thread_pool_scale_neighbor");
-    autotune::countable_set optimal_parameters_neighbor =
-        tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
-  }
+  // {
+  //   // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
+  //   // tuner.tune(N_per_task, repeat);
+  //   autotune::tuners::line_search tuner_line(autotune::scale, parameters,
+  //   20); tuner_line.set_write_measurement("stream_thread_pool_scale_line");
+  //   for (size_t restart = 0; restart < restarts; restart += 1) {
+  //     // autotune::countable_set optimal_parameters_line =
+  //     tuner_line.tune(N_per_task, repeat, duration_kernel);
+  //   }
+  //   autotune::tuners::neighborhood_search tuner_neighbor(autotune::scale,
+  //                                                        parameters, 10);
+  //   tuner_neighbor.set_write_measurement("stream_thread_pool_scale_neighbor");
+  //   for (size_t restart = 0; restart < restarts; restart += 1) {
+  //     // autotune::countable_set optimal_parameters_neighbor =
+  //     tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
+  //   }
+  // }
 
-  {
-    // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
-    // tuner.tune(N_per_task, repeat);
-    autotune::tuners::line_search tuner_line(autotune::sum, parameters, 20);
-    tuner_line.set_write_measurement("stream_thread_pool_sum_line");
-    autotune::countable_set optimal_parameters_line =
-        tuner_line.tune(N_per_task, repeat, duration_kernel);
-    autotune::tuners::neighborhood_search tuner_neighbor(autotune::sum,
-                                                         parameters, 10);
-    tuner_neighbor.set_write_measurement("stream_thread_pool_sum_neighbor");
-    autotune::countable_set optimal_parameters_neighbor =
-        tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
-  }
+  // {
+  //   // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
+  //   // tuner.tune(N_per_task, repeat);
+  //   autotune::tuners::line_search tuner_line(autotune::sum, parameters, 20);
+  //   tuner_line.set_write_measurement("stream_thread_pool_sum_line");
+  //   for (size_t restart = 0; restart < restarts; restart += 1) {
+  //     // autotune::countable_set optimal_parameters_line =
+  //     tuner_line.tune(N_per_task, repeat, duration_kernel);
+  //   }
+  //   autotune::tuners::neighborhood_search tuner_neighbor(autotune::sum,
+  //                                                        parameters, 10);
+  //   tuner_neighbor.set_write_measurement("stream_thread_pool_sum_neighbor");
+  //   for (size_t restart = 0; restart < restarts; restart += 1) {
+  //     // autotune::countable_set optimal_parameters_neighbor =
+  //     tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
+  //   }
+  // }
 
   {
     // autotune::tuners::monte_carlo tuner(autotune::copy, parameters, 20);
     // tuner.tune(N_per_task, repeat);
     autotune::tuners::line_search tuner_line(autotune::triad, parameters, 20);
     tuner_line.set_write_measurement("stream_thread_pool_triad_line");
-    autotune::countable_set optimal_parameters_line =
-        tuner_line.tune(N_per_task, repeat, duration_kernel);
+    for (size_t restart = 0; restart < restarts; restart += 1) {
+      // autotune::countable_set optimal_parameters_line =
+      for (size_t i = 0; i < parameters.size(); i += 1) {
+        parameters[i]->set_random_value();
+      }
+      tuner_line.tune(N_per_task, repeat, duration_kernel);
+    }
     autotune::tuners::neighborhood_search tuner_neighbor(autotune::triad,
                                                          parameters, 10);
     tuner_neighbor.set_write_measurement("stream_thread_pool_triad_neighbor");
-    autotune::countable_set optimal_parameters_neighbor =
-        tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
+    // autotune::countable_set optimal_parameters_neighbor =
+    for (size_t restart = 0; restart < restarts; restart += 1) {
+      for (size_t i = 0; i < parameters.size(); i += 1) {
+        parameters[i]->set_random_value();
+      }
+      tuner_neighbor.tune(N_per_task, repeat, duration_kernel);
+    }
   }
 
   return 0;

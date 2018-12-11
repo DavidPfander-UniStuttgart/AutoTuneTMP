@@ -106,6 +106,8 @@ private:
     // this->f.set_parameter_values(original_values);
     // return optimal_parameters;
   }
+
+  void reset_impl() override {}
 };
 } // namespace tuners
 } // namespace autotune

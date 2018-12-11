@@ -60,6 +60,8 @@ private:
       this->parameters = this->optimal_parameters;
     }
   }
+
+  void reset_impl() override { last_updated = -1; }
 };
 
 } // namespace tuners

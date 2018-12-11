@@ -56,6 +56,8 @@ private:
       this->parameters = this->optimal_parameters;
     }
   }
+
+  void reset_impl() override {}
 };
 } // namespace tuners
 } // namespace autotune

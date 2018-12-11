@@ -72,6 +72,8 @@ private:
       }
     }
   }
+
+  void reset_impl() override {}
 };
 } // namespace tuners
 } // namespace autotune

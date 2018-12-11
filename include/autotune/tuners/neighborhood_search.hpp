@@ -22,19 +22,7 @@ public:
 
 private:
   void tune_impl(Args &... args) override {
-
-    // this->result_cache.clear();
-
-    // parameter_value_set original_values = this->f.get_parameter_values();
-
-    // bool is_valid = true;
-    // double optimal_duration = -1.0;
     this->evaluate(args...);
-    // countable_set optimal_parameters;
-    // if (is_valid) {
-    //   optimal_parameters = this->parameters;
-    //   optimal_duration = duration;
-    // }
 
     for (size_t i = 0; i < iterations; i++) {
       if (this->verbose) {
@@ -48,36 +36,18 @@ private:
         this->parameters = base_parameters;
         if (this->parameters[d]->next()) {
           this->evaluate(args...);
-          // if (is_valid &&
-          //     (optimal_duration == -1.0 || duration < optimal_duration)) {
-          //   optimal_parameters = this->parameters;
-          //   optimal_duration = duration;
-          //   this->report_verbose("new best kernel", optimal_duration,
-          //                        this->parameters);
-          // }
         }
         // test previous
         this->parameters = base_parameters;
         if (this->parameters[d]->prev()) {
           this->evaluate(args...);
-          // if (is_valid &&
-          //     (optimal_duration == -1.0 || duration < optimal_duration)) {
-          //   optimal_parameters = this->parameters;
-          //   optimal_duration = duration;
-          //   this->report_verbose("new best kernel", optimal_duration,
-          //                        this->parameters);
-          // }
         }
       }
       this->parameters = this->optimal_parameters;
     }
-
-    // this->f.set_parameter_values(original_values);
-    // if (this->parameter_adjustment_functor) {
-    //   this->parameter_adjustment_functor(optimal_parameters);
-    // }
-    // return optimal_parameters;
   }
+
+  void reset_impl() override {}
 };
 } // namespace tuners
 } // namespace autotune

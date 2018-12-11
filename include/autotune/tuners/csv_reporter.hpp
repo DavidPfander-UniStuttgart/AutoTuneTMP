@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdlib>
+
 namespace autotune {
 class csv_reporter {
 private:
@@ -19,16 +21,24 @@ private:
     }
     scenario_file
         << ","
-        << "kernel_s,kernel_s_raw,compile_s,par_compile_s,par_compile_count,"
+        << "kernel_s,kernel_s_raw,compile_s,par_compile_s,par_compile_count"
         << std::endl;
   }
 
 public:
   csv_reporter(const std::string &scenario_name,
-               const parameter_value_set &parameter_values)
-      : scenario_name(scenario_name),
-        num_parameters(parameter_values.size()) { // do_write_header(true)
-    scenario_file.open(scenario_name + "_kernel.csv");
+               const parameter_value_set &parameter_values,
+               const uint64_t tune_counter)
+      : scenario_name(scenario_name), num_parameters(parameter_values.size()) {
+    std::string hostname(getenv("HOSTNAME"));
+    if (hostname.compare("") != 0) {
+      scenario_file.open(scenario_name + std::string("_tune_") + hostname +
+                         std::string("_") + std::to_string(tune_counter) +
+                         std::string("r.csv"));
+    } else {
+      scenario_file.open(scenario_name + std::string("_tune_nohostname_") +
+                         std::to_string(tune_counter) + std::string("r.csv"));
+    }
     write_header(parameter_values);
   }
 

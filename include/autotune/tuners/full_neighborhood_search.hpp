@@ -123,6 +123,8 @@ private:
     // }
     // return optimal_parameters;
   }
+
+  void reset_impl() override {}
 };
 } // namespace tuners
 } // namespace autotune

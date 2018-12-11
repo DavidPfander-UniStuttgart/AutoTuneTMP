@@ -18,7 +18,7 @@ class abstract_tuner
 protected:
   autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f;
   // always-unadjusted, state managed by tuner impl.!
-  parameter_interface parameters;
+  parameter_interface &parameters;
   parameter_interface optimal_parameters; // adjusted
   double optimal_duration;
   bool verbose;
@@ -37,6 +37,10 @@ protected:
   // excluding skipped or failed evaluations
   uint64_t evaluations_passed;
 
+  bool write_measurement;
+  std::string scenario_name;
+  uint64_t tune_counter;
+
   virtual void tune_impl(Args &... args) = 0;
 
 public:
@@ -46,7 +50,7 @@ public:
                  parameter_interface &parameters)
       : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
         repetitions(1), clear_tuner(true), evaluations(0),
-        evaluations_passed(0) {}
+        evaluations_passed(0), write_measurement(false), tune_counter(0) {}
 
   parameter_interface tune(Args &... args) {
     // if first run or auto clear is active
@@ -56,6 +60,11 @@ public:
       optimal_parameters = parameters;
       evaluations = 0;
       evaluations_passed = 0;
+      tune_counter += 1;
+      if (write_measurement) {
+        reporter = std::make_shared<csv_reporter>(
+            scenario_name, to_parameter_values(parameters), tune_counter);
+      }
     }
 
     parameter_value_set original_values = this->f.get_parameter_values();
@@ -147,8 +156,10 @@ public:
   void set_verbose(bool verbose) { this->verbose = verbose; }
 
   void set_write_measurement(const std::string &scenario_name) {
-    reporter = std::make_shared<csv_reporter>(scenario_name,
-                                              to_parameter_values(parameters));
+    write_measurement = true;
+    this->scenario_name = scenario_name;
+    // reporter = std::make_shared<csv_reporter>(
+    //     scenario_name, to_parameter_values(parameters), tune_counter);
   }
 
   void set_parameter_adjustment_functor(
@@ -170,6 +181,8 @@ public:
 
   // reset cache and optimal for each run (group tuner disables this)
   void set_auto_clear(bool clear_tuner) { this->clear_tuner = clear_tuner; };
+
+  virtual void reset_impl() = 0;
 
   parameter_interface &get_parameters() { return parameters; }
 

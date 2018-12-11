@@ -11,15 +11,17 @@ namespace tuners {
 
 template <typename R, typename... Args>
 class parallel_line_search : public abstract_tuner<countable_set, R, Args...> {
- private:
+private:
   size_t max_iterations;
 
- public:
-  parallel_line_search(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-                       countable_set &parameters, size_t max_iterations)
-      : abstract_tuner<countable_set, R, Args...>(f, parameters), max_iterations(max_iterations) {}
+public:
+  parallel_line_search(
+      autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+      countable_set &parameters, size_t max_iterations)
+      : abstract_tuner<countable_set, R, Args...>(f, parameters),
+        max_iterations(max_iterations) {}
 
- private:
+private:
   virtual void tune_impl(Args &... args) override {
     size_t counter = 0;
     size_t cur_index = 0;
@@ -55,7 +57,9 @@ class parallel_line_search : public abstract_tuner<countable_set, R, Args...> {
       this->parameters = this->optimal_parameters;
     }
   }
+
+  void reset_impl() override {}
 };
 
-}  // namespace tuners
-}  // namespace autotune
+} // namespace tuners
+} // namespace autotune

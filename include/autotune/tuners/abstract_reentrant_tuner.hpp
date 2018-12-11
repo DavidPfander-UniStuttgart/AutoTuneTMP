@@ -39,6 +39,9 @@ protected:
   // excluding skipped or failed evaluations
   uint64_t evaluations_passed;
 
+  std::string scenario_name;
+  uint64_t tune_counter;
+
   virtual void tune_impl(Args &... args) = 0;
 
 public:
@@ -48,7 +51,8 @@ public:
       autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
       parameter_interface &parameters)
       : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
-        weight(1.0), repetitions(1), evaluations(0), evaluations_passed(0) {}
+        weight(1.0), repetitions(1), evaluations(0), evaluations_passed(0),
+        tune_counter(0) {}
 
   void reentrant_tune(Args &... args) { tune_impl(args...); }
 
@@ -82,8 +86,8 @@ public:
   void set_verbose(bool verbose) { this->verbose = verbose; }
 
   void set_write_measurement(const std::string &scenario_name) {
-    reporter = std::make_shared<csv_reporter>(scenario_name,
-                                              to_parameter_values(parameters));
+    reporter = std::make_shared<csv_reporter>(
+        scenario_name, to_parameter_values(parameters), tune_counter);
   }
 
   void set_parameter_adjustment_functor(
@@ -152,6 +156,11 @@ public:
     evaluations = 0;
     evaluations_passed = 0;
     reset_impl();
+    tune_counter += 1;
+    if (reporter) {
+      reporter = std::make_shared<csv_reporter>(
+          scenario_name, to_parameter_values(parameters), tune_counter);
+    }
   }
 
   int64_t get_evaluations() { return evaluations; }
