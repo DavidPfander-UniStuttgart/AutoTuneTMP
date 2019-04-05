@@ -34,10 +34,10 @@ public:
     if (hostname.compare("") != 0) {
       scenario_file.open(scenario_name + std::string("_tune_") + hostname +
                          std::string("_") + std::to_string(tune_counter) +
-                         std::string("r.csv"));
+                         std::string("it.csv"));
     } else {
       scenario_file.open(scenario_name + std::string("_tune_nohostname_") +
-                         std::to_string(tune_counter) + std::string("r.csv"));
+                         std::to_string(tune_counter) + std::string("it.csv"));
     }
     write_header(parameter_values);
   }
