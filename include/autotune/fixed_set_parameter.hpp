@@ -27,15 +27,13 @@ public:
   void set_index(size_t new_index) { cur_index = new_index; };
 
   const std::string get_value() const {
-    if
-      constexpr(std::is_same<T, bool>::value) {
-        if (this->values[cur_index]) {
-          return "true";
-        } else {
-          return "false";
-        }
+    if constexpr (std::is_same<T, bool>::value) {
+      if (this->values[cur_index]) {
+        return "true";
+      } else {
+        return "false";
       }
-    else {
+    } else {
       return std::to_string(this->values[cur_index]);
     }
   }
@@ -169,4 +167,4 @@ public:
     }
   }
 };
-}
+} // namespace autotune

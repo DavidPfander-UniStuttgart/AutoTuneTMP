@@ -41,6 +41,8 @@ protected:
   std::string scenario_name;
   uint64_t tune_counter;
 
+  bool do_warmup_eval;
+
   virtual void tune_impl(Args &... args) = 0;
 
 public:
@@ -50,7 +52,8 @@ public:
                  parameter_interface &parameters)
       : f(f), parameters(parameters), optimal_duration(-1.0), verbose(false),
         repetitions(1), clear_tuner(true), evaluations(0),
-        evaluations_passed(0), write_measurement(false), tune_counter(0) {}
+        evaluations_passed(0), write_measurement(false), tune_counter(0),
+        do_warmup_eval(false) {}
 
   parameter_interface tune(Args &... args) {
     // if first run or auto clear is active
@@ -215,6 +218,12 @@ public:
   int64_t get_evaluations() { return evaluations; }
 
   int64_t get_passed_evaluations() { return evaluations_passed; }
+
+  void set_do_warmup(bool do_warmup_eval) {
+    this->do_warmup_eval = do_warmup_eval;
+  }
+
+  bool do_warmup() { return do_warmup_eval; }
 };
 
 } // namespace autotune

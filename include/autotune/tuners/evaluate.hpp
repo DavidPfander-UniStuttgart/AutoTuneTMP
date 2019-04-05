@@ -49,6 +49,29 @@ evaluate_parameters(tuner_t<parameter_interface, R, Args...> &tuner,
     }
   }
 
+  // do warmup-iteration if so configured, for more stable duration measurements
+  if (tuner.do_warmup()) {
+    if constexpr (!std::is_same<R, void>::value) {
+      if (tuner.has_test()) {
+        bool test_ok = tuner.test(kernel(args...));
+        if (!test_ok) {
+          if (verbose) {
+            std::cout << "warning: test for combination failed!" << std::endl;
+          }
+          return evaluate_t::skipped_failed;
+        } else {
+          if (verbose) {
+            std::cout << "test for combination passed" << std::endl;
+          }
+        }
+      } else {
+        kernel(args...);
+      }
+    } else {
+      kernel(args...);
+    }
+  }
+
   auto start = std::chrono::high_resolution_clock::now();
 
   // call kernel, discard possibly returned values
