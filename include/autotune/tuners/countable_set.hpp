@@ -5,11 +5,10 @@
 
 namespace autotune {
 
-template <typename T>
-class countable_parameter_wrapper;
+template <typename T> class countable_parameter_wrapper;
 
 class countable_parameter : public abstract_parameter {
- public:
+public:
   virtual bool next() = 0;
   virtual bool prev() = 0;
   virtual void set_min() = 0;
@@ -20,8 +19,7 @@ class countable_parameter : public abstract_parameter {
   virtual void set_random_value() = 0;
   virtual void set_value_unsafe(const std::string &v) = 0;
   virtual std::shared_ptr<countable_parameter> clone_wrapper() = 0;
-  template <typename T>
-  T &get_unwrapped_parameter() {
+  template <typename T> T &get_unwrapped_parameter() {
     auto derived = dynamic_cast<countable_parameter_wrapper<T> *>(this);
     return derived->unwrapped_parameter();
   }
@@ -34,12 +32,13 @@ template <typename T>
 class countable_parameter_wrapper : public countable_parameter {
   T p;
 
- public:
+public:
   // calls either constructor or copy-constructor
 
   countable_parameter_wrapper(T p) : p(std::move(p)) {}
 
-  countable_parameter_wrapper(const countable_parameter_wrapper<T> &other) : p(other.p) {}
+  countable_parameter_wrapper(const countable_parameter_wrapper<T> &other)
+      : p(other.p) {}
 
   virtual bool next() override { return p.next(); }
   virtual bool prev() override { return p.prev(); }
@@ -58,7 +57,7 @@ class countable_parameter_wrapper : public countable_parameter {
 };
 
 class countable_set : std::vector<std::shared_ptr<countable_parameter>> {
- public:
+public:
   using parameter_type = countable_parameter;
 
   using std::vector<std::shared_ptr<countable_parameter>>::operator[];
@@ -66,7 +65,8 @@ class countable_set : std::vector<std::shared_ptr<countable_parameter>> {
 
   countable_set() : std::vector<std::shared_ptr<countable_parameter>>() {}
 
-  countable_set(const countable_set &other) : std::vector<std::shared_ptr<countable_parameter>>() {
+  countable_set(const countable_set &other)
+      : std::vector<std::shared_ptr<countable_parameter>>() {
     for (size_t i = 0; i < other.size(); i++) {
       this->push_back(other[i]->clone_wrapper());
     }
@@ -80,8 +80,16 @@ class countable_set : std::vector<std::shared_ptr<countable_parameter>> {
     return *this;
   }
 
-  template <typename T>
-  T &get_by_name(const std::string &name) {
+  std::shared_ptr<countable_parameter> get_by_name(const std::string &name) {
+    for (auto p : *this) {
+      if (p->get_name().compare(name) == 0) {
+        return p;
+      }
+    }
+    throw autotune_exception("parameter not in set");
+  }
+
+  template <typename T> T &get_by_name(const std::string &name) {
     for (auto p : *this) {
       if (p->get_name().compare(name) == 0) {
         return p->get_unwrapped_parameter<T>();
@@ -90,15 +98,24 @@ class countable_set : std::vector<std::shared_ptr<countable_parameter>> {
     throw autotune_exception("parameter not in set");
   }
 
-  template <typename T>
-  void add_parameter(T &p) {
+  int64_t find(const std::string &name) {
+    size_t index = 0;
+    for (auto p : *this) {
+      if (p->get_name().compare(name) == 0) {
+        return index;
+      }
+      index += 1;
+    }
+    return -1;
+  }
+
+  template <typename T> void add_parameter(T &p) {
     std::shared_ptr<countable_parameter_wrapper<T>> cloned =
         std::make_shared<countable_parameter_wrapper<T>>(p);
     this->push_back(cloned);
   }
 
-  template <typename T, typename... Ts>
-  void emplace_parameter(Ts &&... args) {
+  template <typename T, typename... Ts> void emplace_parameter(Ts &&... args) {
     T p(std::forward<Ts>(args)...);
     std::shared_ptr<countable_parameter_wrapper<T>> wrapper =
         std::make_shared<countable_parameter_wrapper<T>>(std::move(p));
@@ -122,8 +139,8 @@ class countable_set : std::vector<std::shared_ptr<countable_parameter>> {
         first = false;
       }
       std::cout << p->get_name();
-      int64_t padding =
-          std::max(p->get_name().size(), p->get_value().size()) - p->get_name().size();
+      int64_t padding = std::max(p->get_name().size(), p->get_value().size()) -
+                        p->get_name().size();
       if (padding > 0) {
         std::stringstream ss;
         for (int64_t i = 0; i < padding; i++) {
@@ -142,8 +159,8 @@ class countable_set : std::vector<std::shared_ptr<countable_parameter>> {
         first = false;
       }
       std::cout << p->get_value();
-      int64_t padding =
-          std::max(p->get_name().size(), p->get_value().size()) - p->get_value().size();
+      int64_t padding = std::max(p->get_name().size(), p->get_value().size()) -
+                        p->get_value().size();
       if (padding > 0) {
         std::stringstream ss;
         for (int64_t i = 0; i < padding; i++) {
@@ -155,4 +172,4 @@ class countable_set : std::vector<std::shared_ptr<countable_parameter>> {
     std::cout << std::endl;
   }
 };
-}  // namespace autotune
+} // namespace autotune
