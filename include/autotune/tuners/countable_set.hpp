@@ -2,6 +2,7 @@
 
 #include "../abstract_parameter.hpp"
 #include "../autotune_exception.hpp"
+#include "../parameter_value_set.hpp"
 
 namespace autotune {
 
