@@ -170,6 +170,13 @@ public:
     threads_wait_cv.notify_one();
   }
 
+  template <typename F, typename... Args> void enqueue_work(F f, Args... args) {
+    auto work_temp = std::unique_ptr<detail::abstract_executor>(
+        new detail::delayed_executor<Args...>(f, std::move(args)...));
+    safe_q.push_back(std::move(work_temp));
+    threads_wait_cv.notify_one();
+  }
+
   // enqueue arbitrary function with void return, arguments have to be copyable
   template <typename... Args>
   void enqueue_work_id(std::function<void(Args...)> f, Args... args) {
