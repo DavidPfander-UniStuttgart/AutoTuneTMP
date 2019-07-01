@@ -1,8 +1,9 @@
 #pragma once
 
+#include <fstream>
+#include <iostream>
 #include <map>
 #include <sstream>
-#include <iostream>
 
 namespace autotune {
 
@@ -10,15 +11,13 @@ using parameter_value_set = std::map<std::string, std::string>;
 
 template <size_t i = 0, typename F, typename... Us>
 void iterate_parameter_group_tuple(F f, std::tuple<Us...> &t) {
-  if
-    constexpr(i < sizeof...(Us)) {
-      auto &ps = std::get<i>(t);
-      for (size_t j = 0; j < ps.size(); j++) {
-        f(ps[j]);
-      }
-      iterate_parameter_group_tuple<i + 1>(f, t);
+  if constexpr (i < sizeof...(Us)) {
+    auto &ps = std::get<i>(t);
+    for (size_t j = 0; j < ps.size(); j++) {
+      f(ps[j]);
     }
-  else {
+    iterate_parameter_group_tuple<i + 1>(f, t);
+  } else {
     // to silence unused parameter warning in last instantiation
     (void)f;
   }
@@ -84,4 +83,28 @@ print_parameter_values(const parameter_value_set &parameter_values) {
   }
   std::cout << std::endl;
 }
+
+inline void parameter_values_to_file(const parameter_value_set &pv,
+                                     const std::string &file_name) {
+  std::ofstream out_file(file_name);
+
+  for (auto &p : pv) {
+    out_file << p.first << "=" << p.second << std::endl;
+  }
 }
+
+inline parameter_value_set
+parameter_values_from_file(const std::string &file_name) {
+  std::ifstream in_file(file_name);
+  parameter_value_set pv;
+  std::string line;
+  while (std::getline(in_file, line)) {
+    std::size_t pos = line.find("=");
+    std::string k = line.substr(0, pos);
+    std::string v = line.substr(pos + 1, line.size());
+    pv[k] = v;
+  }
+  return pv;
+}
+
+} // namespace autotune

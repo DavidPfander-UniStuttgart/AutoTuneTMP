@@ -59,6 +59,15 @@ public:
     return *this;
   }
 
+  std::shared_ptr<randomizable_parameter> get_by_name(const std::string &name) {
+    for (auto p : *this) {
+      if (p->get_name().compare(name) == 0) {
+        return p;
+      }
+    }
+    throw autotune_exception("parameter not in set");
+  }
+
   template <typename T> T &get_by_name(const std::string &name) {
     for (auto p : *this) {
       if (p->get_name().compare(name) == 0) {

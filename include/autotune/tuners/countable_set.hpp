@@ -90,6 +90,16 @@ public:
     throw autotune_exception("parameter not in set");
   }
 
+  // template <typename T> T &get_by_name(const std::string &name) {
+  //   for (auto p : *this) {
+  //     if (p->get_name().compare(name) == 0) {
+  //       return p->get_unwrapped_parameter<T>();
+  //     }
+  //   }
+  //   throw autotune_exception("parameter not in set");
+  // }  
+    
+
   template <typename T> T &get_by_name(const std::string &name) {
     for (auto p : *this) {
       if (p->get_name().compare(name) == 0) {
