@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(run_monte_carlo) {
 
   int a = 5;
 
-  autotune::tuners::monte_carlo tuner(autotune::run_monte_carlo_kernel, parameters, 10);
+  autotune::tuners::monte_carlo tuner(autotune::run_monte_carlo_kernel, parameters, 10, 100);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::randomizable_set optimal_parameters = tuner.tune(a);

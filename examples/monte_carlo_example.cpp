@@ -27,7 +27,7 @@ int main(void) {
   int a = 5;
 
   autotune::tuners::monte_carlo tuner(autotune::smooth_cost_function,
-                                      parameters, 10);
+                                      parameters, 10, 100);
   tuner.setup_test(test_result);
   tuner.set_verbose(true);
   autotune::randomizable_set optimal_parameters = tuner.tune(a);

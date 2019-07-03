@@ -12,53 +12,32 @@ template <typename R, typename... Args>
 class monte_carlo : public abstract_tuner<randomizable_set, R, Args...> {
 private:
   size_t iterations;
+  size_t max_attempts;
 
 public:
   monte_carlo(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
-              randomizable_set &parameters, size_t iterations)
+              randomizable_set &parameters, size_t iterations,
+              size_t max_attempts)
       : abstract_tuner<randomizable_set, R, Args...>(f, parameters),
-        iterations(iterations) {}
+        iterations(iterations), max_attempts(max_attempts) {}
 
 private:
   void tune_impl(Args &... args) override {
-
-    // this->result_cache.clear();
-
-    // parameter_value_set original_values = this->f.get_parameter_values();
-
-    // bool first = true;
-    // bool is_valid = true;
-    // double optimal_duration = this->evaluate(is_valid, args...);
-    // randomizable_set optimal_parameters = this->parameters;
-
-    // if (is_valid) {
-    //   first = false;
-    //   std::cout << "initial values tested" << std::endl;
-    // }
-
-    for (size_t i = 0; i < iterations; i++) {
-
+    size_t i = 0;
+    size_t attempts = 0;
+    while (i < iterations && attempts < max_attempts) {
       for (size_t parameter_index = 0;
-           parameter_index < this->parameters.size(); parameter_index++) {
+           parameter_index < this->parameters.size(); parameter_index += 1) {
         auto &p = this->parameters[parameter_index];
         p->set_random_value();
       }
 
-      this->evaluate(args...);
-      // if (is_valid && (first || duration < optimal_duration)) {
-      //   first = false;
-      //   optimal_parameters = this->parameters;
-      //   optimal_duration = duration;
-      //   this->report_verbose("new best kernel", optimal_duration,
-      //                        optimal_parameters);
-      // }
+      evaluate_t state = this->evaluate(args...);
+      if (state != evaluate_t::skipped_failed) {
+        i += 1;
+      }
+      attempts += 1;
     }
-
-    // this->f.set_parameter_values(original_values);
-    // if (this->parameter_adjustment_functor) {
-    //   this->parameter_adjustment_functor(optimal_parameters);
-    // }
-    // return optimal_parameters;
   }
 
   void reset_impl() override {}
