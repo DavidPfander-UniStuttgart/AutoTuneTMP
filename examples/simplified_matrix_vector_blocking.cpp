@@ -33,7 +33,7 @@ int main(void) {
   parameters.emplace_parameter<autotune::countable_continuous_parameter>(
       "BLOCKING", 1.0, 2.0, 1.0, 16.0, true);
   tuners::bruteforce tuner(autotune::matrix_vector, parameters);
-  tuner.set_repetitions(100); // for more accurate tuning
+  tuner.set_repetitions(10); // for more accurate tuning
   countable_set optimal_parameters = tuner.tune(m, v);
   matrix_vector.set_parameter_values(optimal_parameters);
   vector<double> result = matrix_vector(m, v);

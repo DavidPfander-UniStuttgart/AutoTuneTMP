@@ -9,7 +9,7 @@ using time_point = std::chrono::high_resolution_clock::time_point;
 
 #include "autotune/autotune.hpp"
 using namespace autotune;
-using namespace cppjit::builder;
+using cppjit::builder::gcc;
 #include "autotune/parameter.hpp"
 #include "autotune/tuners/bruteforce.hpp"
 
@@ -39,8 +39,8 @@ int main(void) {
   std::default_random_engine generator;
   std::uniform_real_distribution<double> distribution(0.0, 100.0);
 
-  size_t repetitions = 100;
-  size_t N = 8192; // L1 32kB -> max. 4096 double variables
+  size_t repetitions = 10;
+  size_t N = 8192*2; // L1 32kB -> max. 4096 double variables
                    // vector<double> m(N * N, 2.0);
                    // vector<double> v(N, 4.0);
 
@@ -71,6 +71,8 @@ int main(void) {
   autotune::tuners::bruteforce tuner(autotune::matrix_vector, parameters);
   tuner.set_repetitions(repetitions);
   tuner.set_verbose(true);
+  tuner.set_write_measurement("matrix_vector");
+  
   autotune::countable_set optimal_parameters = tuner.tune(N, m, v);
   autotune::matrix_vector.set_parameter_values(optimal_parameters);
   std::cout << "optimal_parameters:" << std::endl;

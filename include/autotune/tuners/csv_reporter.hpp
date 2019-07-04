@@ -30,7 +30,7 @@ public:
                const parameter_value_set &parameter_values,
                const uint64_t tune_counter)
       : scenario_name(scenario_name), num_parameters(parameter_values.size()) {
-    std::string hostname(getenv("HOSTNAME"));
+    std::string hostname(std::getenv("HOSTNAME"));
     if (hostname.compare("") != 0) {
       scenario_file.open(scenario_name + std::string("_tune_") + hostname +
                          std::string("_") + std::to_string(tune_counter) +

@@ -14,7 +14,7 @@ template <class F, size_t from, size_t increment, std::size_t... I>
 void unroll_loop(F f, std::index_sequence<I...>) {
   (f(from + I * increment), ...);
 }
-}
+} // namespace detail
 
 template <size_t from, size_t to, size_t increment, class F>
 void unroll_loop(F f) {
@@ -25,17 +25,17 @@ void unroll_loop(F f) {
 namespace detail {
 template <class F, size_t from, size_t increment, std::size_t... I>
 void unroll_loop_template(const F &f, std::index_sequence<I...>) {
-  (f.template operator() < from + I * increment > (), ...);
+  (f.template operator()<from + I * increment>(), ...);
 }
-}
+} // namespace detail
 
 template <size_t from, size_t to, size_t increment, class F>
 void unroll_loop_template(const F &f) {
   detail::unroll_loop_template<F, from, increment>(
       f, std::make_index_sequence<(to - from) / increment>());
 }
-}
-}
+} // namespace loop
+} // namespace opttmp
 
 // needed, because templates cannot be passed as arguments
 #define DEFINE_LOOP_BODY(function_name)                                        \

@@ -43,26 +43,34 @@ calculate_tiles_dir(const tiling_configuration &tiling_info) {
   }
   return tiles_dir;
 }
-}
+} // namespace detail
 
 template <size_t dim, typename T, typename U> class tile_view {
 private:
   std::vector<T, U> &tiled;
   const size_t tile_size;
-  const size_t base_offset;
-  const std::array<size_t, dim> tile_index;
   const std::array<size_t, dim> tiles_dir;
   const tiling_configuration tiling_info;
+  size_t base_offset;
+  std::array<size_t, dim> tile_index;
+  std::array<size_t, dim> subdim_sizes; // for inc to skip sub-dim structures
 
 public:
   tile_view(std::vector<T, U> &tiled, std::array<size_t, dim> &tile_index,
             const tiling_configuration &tiling_info)
       : tiled(tiled), tile_size(detail::calculate_tile_size<dim>(tiling_info)),
+        tiles_dir(detail::calculate_tiles_dir<dim>(tiling_info)),
+        tiling_info(tiling_info),
         base_offset(detail::calculate_base_offset<dim>(tile_index, tiling_info,
                                                        tile_size)),
-        tile_index(tile_index),
-        tiles_dir(detail::calculate_tiles_dir<dim>(tiling_info)),
-        tiling_info(tiling_info) {}
+        tile_index(tile_index) {
+    size_t prod = 1;
+    subdim_sizes[0] = prod;
+    for (size_t d = 1; d < dim; d += 1) {
+      prod *= tiles_dir[d - 1];
+      subdim_sizes[d] = prod;
+    }
+  }
 
   inline T &operator[](const size_t tile_offset) const {
     return tiled[base_offset + tile_offset];
@@ -83,6 +91,11 @@ public:
     std::array<size_t, dim> inner_index = {indices...};
     return tiled[base_offset + flat_index(inner_index)];
   }
+
+  // template <size_t d> void inc_index() {
+  //   tile_index[d] += 1;
+  //   base_offset += tile_size * subdim_sizes[d];
+  // }
 
   inline size_t size() const { return tile_size; }
 
@@ -115,4 +128,4 @@ make_view_from_index(std::array<size_t, dim> index, std::vector<T, U> &tiled,
   }
   return tile_view<dim, T, U>(tiled, tile_index, tiling_info);
 }
-}
+} // namespace memory_layout

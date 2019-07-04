@@ -1,6 +1,6 @@
 #!/bin/bash
 # set -e
-set -x
+# set -x
 
 # it is possible for the configuration to have been done by a project that uses AutoTuneTMP
 if [[ -z "$CONFIGURATION_DONE" ]]; then
