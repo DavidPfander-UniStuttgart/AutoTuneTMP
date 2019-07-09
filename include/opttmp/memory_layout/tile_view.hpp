@@ -53,7 +53,7 @@ private:
   const tiling_configuration tiling_info;
   size_t base_offset;
   std::array<size_t, dim> tile_index;
-  std::array<size_t, dim> subdim_sizes; // for inc to skip sub-dim structures
+  // std::array<size_t, dim> subdim_sizes; // for inc to skip sub-dim structures
 
 public:
   tile_view(std::vector<T, U> &tiled, std::array<size_t, dim> &tile_index,
@@ -64,12 +64,12 @@ public:
         base_offset(detail::calculate_base_offset<dim>(tile_index, tiling_info,
                                                        tile_size)),
         tile_index(tile_index) {
-    size_t prod = 1;
-    subdim_sizes[0] = prod;
-    for (size_t d = 1; d < dim; d += 1) {
-      prod *= tiles_dir[d - 1];
-      subdim_sizes[d] = prod;
-    }
+    // size_t prod = 1;
+    // subdim_sizes[0] = prod;
+    // for (size_t d = 1; d < dim; d += 1) {
+    //   prod *= tiles_dir[d - 1];
+    //   subdim_sizes[d] = prod;
+    // }
   }
 
   inline T &operator[](const size_t tile_offset) const {
@@ -115,6 +115,22 @@ public:
       cur_stride *= tiling_info[(dim - 1) - d].tile_size_dir;
     }
     return inner_flat_index;
+  }
+
+  void move_to_tile_outer(std::array<size_t, dim> index) {
+    for (size_t d = 0; d < dim; d++) {
+      tile_index[d] = index[d] / tiling_info[d].tile_size_dir;
+    }
+    base_offset =
+        detail::calculate_base_offset<dim>(tile_index, tiling_info, tile_size);
+  }
+
+  void move_to_tile_inner(std::array<size_t, dim> tile_index) {
+    for (size_t d = 0; d < dim; d++) {
+      this->tile_index[d] = tile_index[d];
+    }
+    base_offset =
+        detail::calculate_base_offset<dim>(tile_index, tiling_info, tile_size);
   }
 };
 
