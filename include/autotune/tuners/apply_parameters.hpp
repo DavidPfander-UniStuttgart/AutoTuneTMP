@@ -16,7 +16,12 @@ bool apply_parameters(
 
   // consider parameter adjusts (by value or by parameter)
   parameter_interface adjusted = parameters;
-  parameter_value_set adjusted_values = to_parameter_values(parameters);
+  // merge already existing parameter values with current values
+  // necessary to properly suppor value-adjustment of group tuners
+  parameter_value_set adjusted_values = kernel.get_parameter_values();
+  for (size_t i = 0; i < parameters.size(); i += 1) { //to_parameter_values(parameters);
+      adjusted_values[parameters[i]->get_name()] = parameters[i]->get_value();
+  }
   if (parameter_adjustment_functor) {
     if (verbose) {
       std::cout

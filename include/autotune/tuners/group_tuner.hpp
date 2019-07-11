@@ -100,49 +100,6 @@ public:
       this->tuners.setup_test(test_functional);
     }
   };
-
-  // void
-  // set_simple_constraints(autotune::simple_constraints &my_simple_constraints)
-  // {
-  //   this->simple_constraints_wrapper =
-  //       std::shared_ptr<simple_constraints>(&my_simple_constraints);
-
-  //   for (size_t i = 0; i < this->tuners.size(); i++) {
-  //     this->simple_constraints_wrapper->add_parameters(
-  //         this->tuners[i].get().get_parameters());
-  //   }
-
-  //   for (size_t i = 0; i < this->tuners.size(); i++) {
-  //     this->tuners[i].get().set_simple_constraints(
-  //         *this->simple_constraints_wrapper);
-  //   }
-  // }
-
-  // void
-  // set_constraint_graph(autotune::constraint_graph &constraint_graph_wrapper)
-  // {
-  //   this->constraint_graph_wrapper =
-  //       std::shared_ptr<autotune::constraint_graph>(&constraint_graph_wrapper);
-
-  //   for (size_t i = 0; i < this->tuners.size(); i++) {
-  //     this->constraint_graph_wrapper->add_parameters(
-  //         this->tuners[i].get().get_parameters());
-  //   }
-
-  //   for (size_t i = 0; i < this->tuners.size(); i++) {
-  //     this->tuners[i].get().set_constraint_graph(
-  //         *this->constraint_graph_wrapper);
-  //   }
-  // }
-
-  // void adjust_through_group_tuner() {
-  //   if (simple_constraints_wrapper) {
-  //     simple_constraints_wrapper->apply_dependencies(tuners);
-  //   }
-  //   if (constraint_graph_wrapper) {
-  //     constraint_graph_wrapper->apply_dependencies(tuners);
-  //   }
-  // }
 };
 }
 }

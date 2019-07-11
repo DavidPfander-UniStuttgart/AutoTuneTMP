@@ -11,12 +11,11 @@
 
 namespace autotune {
 
-template <typename R, typename... Args>
-class abstract_kernel;
+template <typename R, typename... Args> class abstract_kernel;
 
 template <typename R, typename... Args>
 class abstract_kernel<R, cppjit::detail::pack<Args...>> {
- protected:
+protected:
   bool verbose;
 
   std::string kernel_name;
@@ -26,18 +25,21 @@ class abstract_kernel<R, cppjit::detail::pack<Args...>> {
 
   bool parameters_changed;
 
-  std::function<bool(parameter_value_set &)> precompile_validate_parameters_functor;
+  std::function<bool(parameter_value_set &)>
+      precompile_validate_parameters_functor;
 
- public:
+public:
   abstract_kernel(const std::string &kernel_name)
       : verbose(false), kernel_name(kernel_name), parameters_changed(true) {}
 
-  abstract_kernel(const abstract_kernel<R, cppjit::detail::pack<Args...>> &other)
-      : verbose(other.verbose),
-        kernel_name(other.kernel_name),
+  abstract_kernel(
+      const abstract_kernel<R, cppjit::detail::pack<Args...>> &other)
+      : verbose(other.verbose), kernel_name(other.kernel_name),
+        parameter_values(other.parameter_values),
         kernel_duration_functor(other.kernel_duration_functor),
         parameters_changed(true),
-        precompile_validate_parameters_functor(other.precompile_validate_parameters_functor) {}
+        precompile_validate_parameters_functor(
+            other.precompile_validate_parameters_functor) {}
 
   virtual void set_verbose(bool verbose) { this->verbose = verbose; }
 
@@ -45,8 +47,7 @@ class abstract_kernel<R, cppjit::detail::pack<Args...>> {
 
   virtual bool is_valid_parameter_combination() = 0;
 
-  template <typename T>
-  void set_parameter_value(const T &p) {
+  template <typename T> void set_parameter_value(const T &p) {
     parameters_changed = true;
     parameter_values[p.get_name()] = p.get_value();
   }
@@ -75,7 +76,9 @@ class abstract_kernel<R, cppjit::detail::pack<Args...>> {
     parameter_values.clear();
   }
 
-  const parameter_value_set &get_parameter_values() const { return parameter_values; }
+  const parameter_value_set &get_parameter_values() const {
+    return parameter_values;
+  }
 
   virtual R operator()(Args... args) = 0;
 
@@ -85,7 +88,8 @@ class abstract_kernel<R, cppjit::detail::pack<Args...>> {
 
   virtual void create_parameter_file() = 0;
 
-  void set_kernel_duration_functor(std::function<double()> kernel_duration_functor) {
+  void
+  set_kernel_duration_functor(std::function<double()> kernel_duration_functor) {
     this->kernel_duration_functor = kernel_duration_functor;
   }
 
@@ -105,8 +109,10 @@ class abstract_kernel<R, cppjit::detail::pack<Args...>> {
   }
 
   void set_precompile_validate_parameter_functor(
-      const std::function<bool(parameter_value_set &parameters)> &precompile_validate_parameters) {
-    this->precompile_validate_parameters_functor = precompile_validate_parameters;
+      const std::function<bool(parameter_value_set &parameters)>
+          &precompile_validate_parameters) {
+    this->precompile_validate_parameters_functor =
+        precompile_validate_parameters;
   }
 
   bool precompile_validate_parameters(parameter_value_set &parameters) {
@@ -122,4 +128,4 @@ class abstract_kernel<R, cppjit::detail::pack<Args...>> {
 
   virtual thread_meta get_meta() = 0;
 };
-}  // namespace autotune
+} // namespace autotune
