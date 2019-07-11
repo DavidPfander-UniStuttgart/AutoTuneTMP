@@ -45,6 +45,8 @@ protected:
 
   virtual void tune_impl(Args &... args) = 0;
 
+  std::shared_ptr<csv_reporter> meta_reporter;
+
 public:
   std::shared_ptr<csv_reporter> reporter;
 
@@ -57,7 +59,7 @@ public:
 
   parameter_interface tune(Args &... args) {
     // if first run or auto clear is active
-    if (clear_tuner || optimal_duration < 0) {
+    if (clear_tuner || (optimal_duration < 0 && tune_counter == 0)) {
       result_cache.clear();
       optimal_duration = -1.0;
       optimal_parameters = parameters;
@@ -65,8 +67,20 @@ public:
       evaluations_passed = 0;
       tune_counter += 1;
       if (write_measurement) {
+
+        // add preset parameters to tuned parameters
+        parameter_value_set kernel_total_parameters =
+            this->f.get_parameter_values();
+        for (size_t i = 0; i < parameters.size();
+             i += 1) { // to_parameter_values(parameters);
+          kernel_total_parameters[parameters[i]->get_name()] =
+              parameters[i]->get_value();
+        }
         reporter = std::make_shared<csv_reporter>(
-            scenario_name, to_parameter_values(parameters), tune_counter);
+            scenario_name, kernel_total_parameters, tune_counter);
+        if (meta_reporter) {
+          reporter->set_meta_reporter(meta_reporter);
+        }
       }
     }
 
@@ -161,8 +175,11 @@ public:
   void set_write_measurement(const std::string &scenario_name) {
     write_measurement = true;
     this->scenario_name = scenario_name;
-    // reporter = std::make_shared<csv_reporter>(
-    //     scenario_name, to_parameter_values(parameters), tune_counter);
+    reporter.reset();
+  }
+
+  void set_meta_reporter(std::shared_ptr<csv_reporter> &meta_reporter) {
+    this->meta_reporter = meta_reporter;
   }
 
   void set_parameter_adjustment_functor(
@@ -193,7 +210,20 @@ public:
                                double candidate_duration,
                                double duration_compile) {
     if (reporter) {
-      reporter->write_measurement(to_parameter_values(adjusted_candidate),
+      // add preset parameters to tuned parameters
+      parameter_value_set kernel_total_parameters_adjusted =
+          this->f.get_parameter_values();
+      for (size_t i = 0; i < adjusted_candidate.size();
+           i += 1) { // to_parameter_values(parameters);
+        kernel_total_parameters_adjusted[adjusted_candidate[i]->get_name()] =
+            adjusted_candidate[i]->get_value();
+      }
+      // as the preset parameters might need adjustment, do adjust
+      // can only do for values, as only values are known
+      if (parameter_values_adjustment_functor) {
+        parameter_values_adjustment_functor(kernel_total_parameters_adjusted);
+      }
+      reporter->write_measurement(kernel_total_parameters_adjusted,
                                   candidate_duration, candidate_duration,
                                   duration_compile);
     }

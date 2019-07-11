@@ -1,35 +1,37 @@
 #pragma once
 
-#include "../autotune.hpp"
-#include "../parameter.hpp"
 #include "abstract_tuner.hpp"
 #include "countable_set.hpp"
+#include "parameter_result_cache.hpp"
+
+#include <random>
 
 namespace autotune {
 namespace tuners {
 
 template <typename R, typename... Args>
-class full_neighborhood_search
+class parallel_full_neighborhood_search
     : public abstract_tuner<countable_set, R, Args...> {
 private:
-  size_t iterations;
+  size_t max_iterations;
 
 public:
-  full_neighborhood_search(
-      autotune::cppjit_kernel<R, cppjit::detail::pack<Args...>> &f,
-      countable_set &parameters, size_t iterations)
+  parallel_full_neighborhood_search(
+      autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
+      countable_set &parameters, size_t max_iterations)
       : abstract_tuner<countable_set, R, Args...>(f, parameters),
-        iterations(iterations) {}
+        max_iterations(max_iterations) {}
 
 private:
-  void tune_impl(Args &... args) override {
-    for (size_t i = 0; i < iterations; i++) {
+  virtual void tune_impl(Args &... args) override {
+
+    bool is_initial = true;
+
+    for (size_t i = 0; i < max_iterations; i++) {
       if (this->verbose) {
         std::cout << "--------- next iteration: " << i << " ---------"
                   << std::endl;
       }
-      this->parameters.print_values();
-
       // initialize to first parameter combination and evaluate it
       size_t cur_index = 0;
       std::vector<int64_t> cur_offsets(this->parameters.size());
@@ -42,8 +44,13 @@ private:
         }
       }
 
-      this->evaluate(args...);
+      std::vector<countable_set> parameters_to_evaluate;
+      if (is_initial) {
+        parameters_to_evaluate.push_back(this->parameters);
+      }
 
+      // iterate hypercube and collect all valid grid points (= parameter
+      // combinations)
       while (true) {
         if (cur_index == this->parameters.size()) {
           break;
@@ -68,17 +75,29 @@ private:
           }
           cur_index = 0;
 
-          this->evaluate(args...);
+          // std::cout << "cur_offsets: ";
+          // for (size_t i = 0; i < cur_offsets.size(); i += 1) {
+          //   if (i > 0) {
+          //     std::cout << ", ";
+          //   }
+          //   std::cout << cur_offsets[i];
+          // }
+          // std::cout << std::endl;
+          // this->parameters.print_values();
+
+          parameters_to_evaluate.push_back(this->parameters);
         } else {
           cur_index += 1;
         }
       }
 
+      this->evaluate_parallel(parameters_to_evaluate, args...);
       this->parameters = this->optimal_parameters;
     }
   }
 
   void reset_impl() override {}
 };
+
 } // namespace tuners
 } // namespace autotune

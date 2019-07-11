@@ -25,13 +25,18 @@ class group_tuner {
 
   std::shared_ptr<simple_constraints> simple_constraints_wrapper;
   std::shared_ptr<constraint_graph> constraint_graph_wrapper;
+  std::shared_ptr<csv_reporter> reporter;
+  bool write_measurement;
+  std::string scenario_name;
+  size_t tune_counter;
 
 public:
   template <typename... Rs>
   group_tuner(autotune::abstract_kernel<R, cppjit::detail::pack<Args...>> &f,
               size_t group_repeat,
               abstract_tuner<parameter_interface, Rs, Args...> &... tuners)
-      : f(f), group_repeat(group_repeat), verbose(false) {
+      : f(f), group_repeat(group_repeat), verbose(false),
+        write_measurement(false), scenario_name(""), tune_counter(0) {
 
     static_assert(detail::is_all_same<R, Rs...>::value);
 
@@ -45,12 +50,30 @@ public:
   }
 
   parameter_value_set tune(Args &... args) {
+
     parameter_value_set original_values = this->f.get_parameter_values();
 
     // setup parameters in kernel, so that kernel is aware of all parameters
     // during tuning
+    // also collect parameters accross all tuners
+    parameter_value_set kernel_total_parameters;
     for (size_t i = 0; i < tuners.size(); i++) {
-      f.set_parameter_values(tuners[i].get().get_parameters());
+      auto &tuner_parameters = tuners[i].get().get_parameters();
+      f.set_parameter_values(tuner_parameters);
+      for (size_t i = 0; i < tuner_parameters.size();
+           i += 1) { // to_parameter_values(parameters);
+        kernel_total_parameters[tuner_parameters[i]->get_name()] =
+            tuner_parameters[i]->get_value();
+      }
+    }
+
+    tune_counter += 1;
+    if (write_measurement) {
+      reporter = std::make_shared<csv_reporter>(
+          scenario_name, kernel_total_parameters, tune_counter);
+      for (size_t i = 0; i < tuners.size(); i++) {
+        tuners[i].get().set_meta_reporter(reporter);
+      }
     }
 
     for (size_t group_restart = 0; group_restart < group_repeat;
@@ -100,6 +123,12 @@ public:
       this->tuners.setup_test(test_functional);
     }
   };
+
+  void set_write_measurement(const std::string &scenario_name) {
+    write_measurement = true;
+    this->scenario_name = scenario_name;
+    reporter.reset();
+  }
 };
-}
-}
+} // namespace tuners
+} // namespace autotune
