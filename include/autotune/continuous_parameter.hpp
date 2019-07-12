@@ -15,8 +15,8 @@ protected:
   double current;
   double step;
   bool multiply;
-  std::function<double(double, double)> next_functional;
-  std::function<double(double, double)> prev_functional;
+  // std::function<double(double, double)> next_functional;
+  // std::function<double(double, double)> prev_functional;
 
 public:
   stepable_continuous_parameter(const std::string &name, double initial,
@@ -24,21 +24,28 @@ public:
       : name(name), initial(initial), current(initial), step(step),
         multiply(multiply) {
     if (multiply) {
-      next_functional = std::multiplies<double>();
-      prev_functional = std::divides<double>();
-    } else {
-      next_functional = std::plus<double>();
-      prev_functional = std::minus<double>();
+      initial = initial / step; // step is factor for multiply
+      current = initial;
     }
   }
 
   const std::string &get_name() const { return this->name; }
 
   const std::string get_value() const {
-    return detail::truncate_trailing_zeros(current);
+    if (multiply) {
+      return detail::truncate_trailing_zeros(current * step);
+    } else {
+      return detail::truncate_trailing_zeros(current);
+    }
   }
 
-  double get_raw_value() const { return current; }
+  double get_raw_value() const {
+    if (multiply) {
+      return current * step;
+    } else {
+      return current;
+    }
+  }
 
   void set_initial() {
     // TODO: should be extended, so that an initial guess can be supplied
@@ -46,14 +53,20 @@ public:
   }
 
   bool next() {
-    // current += step;
-    current = next_functional(current, step);
+    if (multiply) {
+      current += 1;
+    } else {
+      current += step;
+    }
     return true;
   }
 
   bool prev() {
-    // current -= step;
-    current = prev_functional(current, step);
+    if (multiply) {
+      current -= 1;
+    } else {
+      current -= step;
+    }
     return true;
   }
 
@@ -61,8 +74,8 @@ public:
     if (!multiply) {
       current = autotune::detail::round_to_nearest(current, factor);
     } else {
-      throw autotune_exception(
-          "cannot adjust to nearest valid value with multiplied steps");
+      current =
+          autotune::detail::round_to_nearest(current * step, factor) / step;
     }
   }
 
@@ -73,53 +86,68 @@ class countable_continuous_parameter : public stepable_continuous_parameter {
 private:
   double min;
   double max;
+  size_t value_range;
 
 public:
   countable_continuous_parameter(const std::string &name, double initial,
                                  double step, double min, double max,
                                  bool multiply = false)
       : stepable_continuous_parameter(name, initial, step, multiply), min(min),
-        max(max) {}
+        max(max), value_range(1) {
+    set_min();
+    while (next()) {
+      value_range += 1;
+    }
+    set_initial();
+  }
 
   bool next() {
-    // if (this->current + this->step <= max) {
-    if (next_functional(current, step) <= max) {
-      // this->current += this->step;
-      current = next_functional(current, step);
-      return true;
+    if (multiply) {
+      if ((current + 1.0) * step > max) {
+        return false;
+      }
+    } else {
+      if (current + step > max) {
+        return false;
+      }
     }
-    return false;
+    return stepable_continuous_parameter::next();
   }
 
   bool prev() {
-    // if (this->current - this->step >= min) {
-    // std::cout << "current: " << current << " step: " << step << " min: " <<
-    // min
-    //           << std::endl;
-    if (prev_functional(current, step) >= min) {
-      // this->current -= this->step;
-      current = prev_functional(current, step);
-      return true;
+    if (multiply) {
+      if ((current - 1.0) * step < min) {
+        return false;
+      }
+    } else {
+      if (current - step < min) {
+        return false;
+      }
     }
-    return false;
+    return stepable_continuous_parameter::prev();
   }
 
-  void set_min() { this->current = min; }
+  void set_min() {
+    if (multiply) {
+      this->current = min / step;
+    } else {
+      this->current = min;
+    }
+  }
 
-  void set_max() { this->current = max; }
+  void set_max() {
+    if (multiply) {
+      this->current = max / step;
+    } else {
+      this->current = max;
+    }
+  }
 
   double get_min() const { return min; }
 
   double get_max() const { return max; }
 
-  size_t count_values() const {
-    if (multiply) {
-      double range = max / min;
-      return std::log2(range) / std::log2(step) + 1;
-    } else {
-      return static_cast<size_t>(std::floor((max - min) / this->step)) + 1;
-    }
-  }
+  size_t count_values() const { return value_range; }
 
   void set_random_value() {
     size_t num_values = count_values();
@@ -127,12 +155,10 @@ public:
 
     size_t value_index = random_gen();
 
-    double value = get_min();
-    for (size_t i = 0; i < value_index; i++) {
-      value = next_functional(value, step);
+    set_min();
+    for (size_t i = 0; i < value_index; i += 1) {
+      next();
     }
-
-    current = value;
   }
 
   void set_value_unsafe(const std::string &v) { current = std::stod(v); }
@@ -142,8 +168,9 @@ public:
       current =
           autotune::detail::round_to_nearest_bounded(current, factor, min, max);
     } else {
-      throw autotune_exception(
-          "cannot adjust to nearest valid value with multiplied steps");
+      current = autotune::detail::round_to_nearest_bounded(current * step,
+                                                           factor, min, max) /
+                step;
     }
   }
 };
