@@ -161,7 +161,13 @@ public:
     }
   }
 
-  void set_value_unsafe(const std::string &v) { current = std::stod(v); }
+  void set_value_unsafe(const std::string &v) {
+    if (multiply) {
+      current = std::stod(v) / step;
+    } else {
+      current = std::stod(v);
+    }
+  }
 
   void to_nearest_valid(double factor) {
     if (!multiply) {
