@@ -179,6 +179,16 @@ public:
                 step;
     }
   }
+
+  void to_nearest_valid_nonzero(double factor) {
+    if (!multiply) {
+      current = autotune::detail::round_to_nearest_nonzero(current, factor);
+    } else {
+      current =
+          autotune::detail::round_to_nearest_nonzero(current * step, factor) /
+          step;
+    }
+  }
 };
 
 class limited_continuous_parameter {
