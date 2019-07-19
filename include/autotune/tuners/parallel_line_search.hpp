@@ -33,14 +33,11 @@ private:
       auto &p = this->parameters[cur_index];
       std::string old_value = p->get_value();
       p->set_initial();
-
       // evaluate current and next values
       std::vector<countable_set> parameters_to_evaluate;
       parameters_to_evaluate.push_back(this->parameters);
-      // this->evaluate(args...);
       while (p->next()) {
         parameters_to_evaluate.push_back(this->parameters);
-        // this->evaluate(args...);
       }
 
       // evaluate previous values
@@ -48,7 +45,6 @@ private:
       // skip current value (already processed above)
       while (p->prev()) {
         parameters_to_evaluate.push_back(this->parameters);
-        // this->evaluate(args...);
       }
       this->evaluate_parallel(parameters_to_evaluate, args...);
 

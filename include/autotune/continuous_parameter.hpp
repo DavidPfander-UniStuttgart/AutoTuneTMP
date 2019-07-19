@@ -49,7 +49,11 @@ public:
 
   void set_initial() {
     // TODO: should be extended, so that an initial guess can be supplied
-    current = initial;
+    if (multiply) {
+      current = initial / step;
+    } else {
+      current = initial;
+    }
   }
 
   bool next() {
