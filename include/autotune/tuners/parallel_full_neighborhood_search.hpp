@@ -32,6 +32,13 @@ private:
         std::cout << "--------- next iteration: " << i << " ---------"
                   << std::endl;
       }
+
+			std::vector<countable_set> parameters_to_evaluate;
+      if (is_initial) {
+        parameters_to_evaluate.push_back(this->parameters);
+        is_initial = false;
+      }
+
       // initialize to first parameter combination and evaluate it
       size_t cur_index = 0;
       std::vector<int64_t> cur_offsets(this->parameters.size());
@@ -44,10 +51,9 @@ private:
         }
       }
 
-      std::vector<countable_set> parameters_to_evaluate;
-      if (is_initial) {
-        parameters_to_evaluate.push_back(this->parameters);
-      }
+      // initial parameter combination occurs as cur_offsets[i] = 0 for all i;
+      // only computed once due to cache
+
 
       // iterate hypercube and collect all valid grid points (= parameter
       // combinations)
@@ -63,8 +69,12 @@ private:
           for (size_t k = 0; k < cur_index; k++) {
             // resets parameters
             // prev() won't do anything if result would be out of bounds
-            if (this->parameters[k]->prev()) {
-              cur_offsets[k] -= 1;
+            // if was 1 -> 0; if 0 -> -1, cannot have been -1 as 0 is always
+            // valid
+            if (cur_offsets[k] > -1) {
+              if (this->parameters[k]->prev()) {
+                cur_offsets[k] -= 1;
+              }
             }
             // if was at 1, now at 0, attempt -1
             if (cur_offsets[k] == 0) {
